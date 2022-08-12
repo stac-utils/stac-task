@@ -103,7 +103,7 @@ class Task(ABC):
         return item
 
     def upload_item_assets(self, item: Dict, assets: Optional[List[str]]=None):
-        if self._local:
+        if self._skip_upload:
             self.logger.warn('Running in local mode, assets not uploaded')
             return item
         item = upload_item_assets(item, assets=assets, **self.output_options)
