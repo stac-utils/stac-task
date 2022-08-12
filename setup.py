@@ -15,8 +15,8 @@ setup(
     description=(
         "STAC Task class provides a class interface for running custom algorithms on STAC Items"
     ),
-    long_description=readme,
-    long_description_content_type="text/markdown",
+    #long_description=readme,
+    #long_description_content_type="text/markdown",
     author=u"Matthew Hanson",
     author_email="matt.a.hanson@gmail.com",
     url="https://github.com/stac-utils/stactask",
