@@ -193,9 +193,8 @@ class Task(ABC):
 
         # logging
         loglevel = args.pop('logging')
-        logging.basicConfig(stream=sys.stdout,
-                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                            level=loglevel)
+        logging.basicConfig(level=loglevel)
+    
         # quiet these loud loggers
         quiet_loggers = ['botocore', 's3transfer', 'urllib3']
         for ql in quiet_loggers:
