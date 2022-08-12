@@ -119,9 +119,10 @@ def download_item_assets(item: Dict, path: str='', assets: Optional[List[str]]=N
     _item = deepcopy(item)
 
     for a in assets:
+        logging.info(a)
         # download each asset
         url = item['assets'][a]['href']
-        logger.debug(f"Downloading {url}")
+        logging.info(f"Downloading {url}")
 
         # http URL to s3 source
         if 'amazonaws.com' in url:
