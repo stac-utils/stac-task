@@ -206,8 +206,8 @@ class Task(ABC):
             if href.startswith('s3://'):
                 item_collection = s3().read_json(href)
             else:
-                # open local payload
-                with open(args.pop('filename')) as f:
+                # open local item collection
+                with open(href) as f:
                     item_collection = json.loads(f.read())
             # run task handler
             output = cls.handler(item_collection, **args)
