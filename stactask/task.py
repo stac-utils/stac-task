@@ -168,7 +168,7 @@ class Task(ABC):
         h = 'Use this as work directory. Will be created but not deleted)'
         parser.add_argument('--workdir', help=h, default=None, type=Path)
         h = 'Skip uploading of any generated assets and resulting STAC Items'
-        parser.add_argument('--skip-upload', target='skip_upload', action='store_true', default=False)
+        parser.add_argument('--skip-upload', dest='skip_upload', action='store_true', default=False)
         return parser0
 
     @classmethod
