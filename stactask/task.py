@@ -104,7 +104,7 @@ class Task(ABC):
 
     def upload_item_assets(self, item: Dict, assets: Optional[List[str]]=None):
         if self._skip_upload:
-            self.logger.warn('Running in local mode, assets not uploaded')
+            self.logger.warn('Skipping upload of new and modified assets')
             return item
         item = upload_item_assets(item, assets=assets, **self.output_options)
         return item
@@ -144,7 +144,9 @@ class Task(ABC):
         try:
             items = task.process(**task.parameters)
             task._item_collection['features'] = cls.add_software_version(items)
-            return task.items
+            with open(task._workdir / "stac.json", "w") as f:
+                f.write(json.dumps(task._item_collection))
+            return task._item_collection
         except Exception as err:
             task.logger.error(err, exc_info=True)
             raise err
