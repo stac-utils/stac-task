@@ -44,7 +44,9 @@ JSON under the "process" field. An example process definition:
 
 
 def stac_jsonpath_match(item: Dict, expr: str) -> Boolean:
-    """Match jsonpath expression against STAC JSON
+    """Match jsonpath expression against STAC JSON.
+       Use https://jsonpath.herokuapp.com/ to experiment with JSONpath
+        and https://regex101.com/ to experiment with regex
 
     Args:
         item (Dict): A STAC Item
