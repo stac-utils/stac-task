@@ -9,13 +9,58 @@ from shutil import rmtree
 import sys
 from tempfile import mkdtemp
 from typing import Dict, List, Optional, Union
+from xmlrpc.client import Boolean
 
 from boto3utils import s3
+from jsonpath_ng.ext import parser
 
 from .asset_io import download_item_assets, upload_item_assets
 
 # types
 PathLike = Union[str, Path]
+
+
+'''
+Tasks can use parameters provided in a `process` Dictionary that is supplied in the ItemCollection
+JSON under the "process" field. An example process definition:
+
+```
+{
+    "description": "My process configuration"
+    "output_options": {
+        "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}",
+        "collections": {
+            "landsat-c2l2": ""
+        }
+    },
+    "tasks": {
+        "task-name": {
+            "param": "value"
+        }
+    }
+}
+```
+'''
+
+
+def stac_jsonpath_match(item: Dict, expr: str) -> Boolean:
+    """Match jsonpath expression against STAC JSON
+
+    Args:
+        item (Dict): A STAC Item
+        expr (str): A valid JSONPath expression
+
+    Raises:
+        err: Invalid inputs
+
+    Returns:
+        Boolean: Returns True if the jsonpath expression matches the STAC Item JSON
+    """
+    result = [x.value for x in parser.parse(expr).find([item])]
+    if len(result) == 1:
+        return True
+    else:
+        return False
 
 
 class Task(ABC):
@@ -90,6 +135,14 @@ class Task(ABC):
             }
         return items
 
+    def assign_collections(self):
+        """Assigns new collection names based on
+        """
+        for i in self.items:
+            for col, expr in self.output_options.get('collections').items():
+                if stac_jsonpath_match(i, expr):
+                    i['collection'] = col
+
     def download_item_assets(self, item: Dict, assets: Optional[List[str]]=None):
         """Download provided asset keys for all items in payload. Assets are saved in workdir in a
            directory named by the Item ID, and the items are updated with the new asset hrefs.
@@ -144,6 +197,7 @@ class Task(ABC):
         try:
             items = task.process(**task.parameters)
             task._item_collection['features'] = cls.add_software_version(items)
+            task.assign_collections()
             with open(task._workdir / "stac.json", "w") as f:
                 f.write(json.dumps(task._item_collection))
             return task._item_collection
