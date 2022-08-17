@@ -107,11 +107,11 @@ class Task(ABC):
 
     @property
     def process_definition(self) -> Dict:
-        return self._item_collection['process']
+        return self._item_collection.get('process', {})
 
     @property
     def parameters(self) -> Dict:
-        return self.process_definition['tasks'].get(self.name, {})
+        return self.process_definition.get('tasks', {}).get(self.name, {})
 
     @property
     def output_options(self) -> Dict:
