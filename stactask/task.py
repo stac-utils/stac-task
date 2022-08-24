@@ -72,10 +72,18 @@ class Task(ABC):
     version = '0.1.0'
 
     def __init__(self: "Task", item_collection: Dict,
-                 workdir: Optional[PathLike]=None,
+                 tempdir: Optional[PathLike] = None,
                  skip_validation: Optional[bool] = False,
-                 skip_upload: Optional[bool] = False):
-
+                 skip_upload: Optional[bool] = False,
+                 save_workdir: Optional[bool] = False):
+        """
+        Args:
+          item_collection (Dict): A STAC ItemCollection
+          tempdir (PathLike): Alternate location to make temporaries
+          skip_valiation (bool): Don't validate the item_collection
+          skip_upload (bool):  Don't upload newly created Items
+          save_workdir (bool): Don't remove temporary work directories
+        """
         if not skip_validation:
             self.validate(item_collection)
 
@@ -84,25 +92,22 @@ class Task(ABC):
         # set up logger
         self.logger = logging.getLogger(self.name)
 
-        # skip uploading returned STAC Items and assets 
+        # skip uploading returned STAC Items and assets
         self._skip_upload = skip_upload
 
-        # save any output options to be passed to
+        # create temporary work directory.
+        # If workdir is None, it is created in the system temporary directory.
+        # Otherwise, it is used as the directory in which a temp dir will be created.
+        self._workdir = Path(mkdtemp(dir=tempdir))
 
-        # create temporary work directory if workdir is None
-        self._workdir = workdir
-        if workdir is None:
-            self._workdir = Path(mkdtemp())
-            self._tmpworkdir = True
-        else:
-            self._workdir = Path(workdir)
-            self._tmpworkdir = False
-            makedirs(self._workdir, exist_ok=True)
+        self.save_workdir = save_workdir
 
     def __del__(self):
-        # remove work directory if not running locally
-        if self._tmpworkdir:
-            self.logger.debug(f"Removing work directory {self._workdir}")
+        # remove work directory unless directed otherwise
+        if self.save_workdir:
+            self.logger.debug('Orphaning temporary workdir %s', self._workdir)
+        else:
+            self.logger.debug('Removing work directory %s', self._workdir)
             rmtree(self._workdir)
 
     @property
@@ -223,10 +228,13 @@ class Task(ABC):
         h = 'Process STAC Item Collection'
         parser = subparsers.add_parser('run', parents=[pparser], help=h, formatter_class=dhf)
         parser.add_argument('input', help='Full path of item collection to process (s3 or local)')
-        h = 'Use this as work directory. Will be created but not deleted)'
-        parser.add_argument('--workdir', help=h, default=None, type=Path)
+        h = ('Use tempdir (instead of system default - /tmp) as place where temporaries will be created.'
+             ' (see --save-workdir if you want them not to be deleted)')
+        parser.add_argument('--tempdir', help=h, default=None, type=Path)
         h = 'Skip uploading of any generated assets and resulting STAC Items'
         parser.add_argument('--skip-upload', dest='skip_upload', action='store_true', default=False)
+        h = 'Contents of workdir will not be deleted.'
+        pparser.add_argument('--save-workdir', default=False, action='store_true', help=h)
         return parser0
 
     @classmethod
