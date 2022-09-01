@@ -75,28 +75,29 @@ class Task(ABC):
                  workdir: Optional[PathLike]=None,
                  skip_validation: Optional[bool] = False,
                  skip_upload: Optional[bool] = False):
+        # set up logger
+        self.logger = logging.getLogger(self.name)
+        # setup defaults
+        self._tmpworkdir = False
+        self._workdir = workdir
 
         if not skip_validation:
-            self.validate(item_collection)
+            if not self.validate(item_collection):
+                sys.exit(1)
 
         self._item_collection = item_collection
 
-        # set up logger
-        self.logger = logging.getLogger(self.name)
-
-        # skip uploading returned STAC Items and assets 
+        # skip uploading returned STAC Items and assets
         self._skip_upload = skip_upload
 
         # save any output options to be passed to
 
         # create temporary work directory if workdir is None
-        self._workdir = workdir
         if workdir is None:
             self._workdir = Path(mkdtemp())
             self._tmpworkdir = True
         else:
             self._workdir = Path(workdir)
-            self._tmpworkdir = False
             makedirs(self._workdir, exist_ok=True)
 
     def __del__(self):
@@ -252,7 +253,7 @@ class Task(ABC):
         # logging
         loglevel = args.pop('logging')
         logging.basicConfig(level=loglevel)
-    
+
         # quiet these loud loggers
         quiet_loggers = ['botocore', 's3transfer', 'urllib3']
         for ql in quiet_loggers:
