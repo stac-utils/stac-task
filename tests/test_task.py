@@ -37,10 +37,10 @@ def get_test_items(name='sentinel2-items'):
 def test_task_init():
     item_collection = get_test_items()
     t = NothingTask(item_collection)
-    assert(len(t._item_collection['features']) == 1)
-    assert(len(t.items) == 1)
-    assert(str(t._workdir).startswith('/tmp'))
-    assert(t.logger.name == 'nothing-task')
+    assert len(t._item_collection["features"]) == 1
+    assert len(t.items) == 1
+    assert t.logger.name == t.name
+    assert t._tmpworkdir == True
 
 
 def test_edit_items():
@@ -58,13 +58,12 @@ def test_edit_items():
 
 def test_tmp_workdir():
     t = NothingTask(get_test_items())
-    assert(t._tmpworkdir == True)
+    assert t._tmpworkdir == True
     workdir = t._workdir
-    assert(workdir.parts[1] == 'tmp')
-    assert(workdir.parts[2].startswith('tmp'))
-    assert(workdir.is_dir() == True)
+    assert workdir.parts[-1].startswith("tmp")
+    assert workdir.is_dir() == True
     del t
-    assert(workdir.is_dir() == False)
+    assert workdir.is_dir() == False
 
 
 def test_workdir():
@@ -106,8 +105,10 @@ def test_task_handler():
     items = get_test_items()
     self_link = [l for l in items['features'][0]['links'] if l['rel'] == 'self'][0]
     output_items = DerivedItemTask.handler(items)
-    derived_link = [l for l in output_items[0]['links'] if l['rel'] == 'derived_from'][0]
-    assert(derived_link['href'] == self_link['href'])
+    derived_link = [
+        l for l in output_items["features"][0]["links"] if l["rel"] == "derived_from"
+    ][0]
+    assert derived_link["href"] == self_link["href"]
 
 
 #@vcr.use_cassette(str(cassettepath/'download_assets'))
