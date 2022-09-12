@@ -289,4 +289,3 @@ class Task(ABC):
                     item_collection = json.loads(f.read())
             # run task handler
             output = cls.handler(item_collection, **args)
-            return output
