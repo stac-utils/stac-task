@@ -16,6 +16,76 @@ logger = logging.getLogger(__name__)
 ## global dictionary of sessions per bucket
 s3_sessions = {}
 
+import asyncio
+import os
+
+import fsspec
+from pystac.layout import LayoutTemplate
+
+SIMULTANEOUS_DOWNLOADS = 3
+
+sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
+    
+async def download_file(fs, src, dest):
+    async with sem:
+        print(f"{src} start")
+        await fs._get_file(src, dest)
+        print(f"{src} completed")
+
+    
+async def download_item_assets(item, assets=None, save_item=True, overwrite=False,
+                         path_template='${collection}/${id}', absolute_path=False):
+    
+    _assets = item.assets.keys() if assets is None else assets
+    
+    # determine path from template and item
+    layout = LayoutTemplate(path_template)
+    path = layout.substitute(item)
+
+    # make necessary directories
+    os.makedirs(path, exist_ok=True)
+    
+    new_item = item.clone()
+    
+    tasks = []
+    for a in _assets:
+        if a not in item.assets:
+            continue
+        href = item.assets[a].href
+        
+        # local filename
+        ext = os.path.splitext(href)[-1]
+        new_href = os.path.join(path, a + ext)
+        if absolute_path:
+            new_href = os.path.abspath(new_href)
+        
+        # save file
+        if not os.path.exists(new_href) or overwrite:
+            fs = fsspec.filesystem("http", asynchronous=True)
+            tasks.append(asyncio.create_task(download_file(fs, href, new_href)))
+
+        # update
+        new_item.assets[a].href = new_href
+    
+    #async with sem:
+    await asyncio.wait(tasks)
+    
+    # save Item metadata alongside saved assets
+    if save_item:
+        new_item.remove_links('root')
+        new_item.save_object(dest_href=os.path.join(path, 'item.json'))
+    
+    return new_item
+
+
+async def download_items_assets(items, max_downloads=3, **kwargs):
+    tasks = []
+    for item in items:
+        tasks.append(asyncio.create_task(download_item_assets(item, **kwargs)))
+    new_items = await asyncio.wait(tasks)
+    return new_items
+
+
 
 # note this file has been copied from https://github.com/cirrus-geo/cirrus-lib/blob/main/src/cirrus/lib/transfer.py
 # functionality for supplying relative paths has been removed
@@ -100,49 +170,6 @@ def download_from_http(url: str, path: str='') -> str:
             if chunk:
                 f.write(chunk)
     return filename
-
-
-def download_item_assets(item: Dict, path: str='', assets: Optional[List[str]]=None) -> Dict:
-    """Download STAC Item assets to local filesystem
-    Args:
-        item (Dict): A STAC Item dictionary
-        path (str, optional): Path to download files to. Defaults to current directory
-        assets (Optional[List[str]], optional): List of asset keys to download. Defaults to all assets
-        s3_session (s3, optional): boto3-utils s3 object for s3 interactions. Defaults to None
-    Returns:
-        Dict: A new STAC Item with downloaded assets pointing to newly downloaded files
-    """
-
-    # if assets not provided, download all assets
-    assets = assets if assets is not None else item['assets'].keys()
-
-    _item = deepcopy(item)
-
-    for a in assets:
-        # download each asset
-        url = item['assets'][a]['href']
-        logging.info(f"Downloading {a}: {url}")
-
-        # http URL to s3 source
-        if 'amazonaws.com' in url:
-            url = s3.https_to_s3(url)
-
-        filename = None
-        # s3 source
-        if url.startswith('s3://'):
-            parts = s3.urlparse(url)
-            s3_session = get_s3_session(parts['bucket'])
-            filename = s3_session.download(url, path=path)
-        # general http source
-        elif url.startswith('http'):
-            filename = download_from_http(url, path=path)
-        else:
-            logger.error(f"Unknown protocol for {url}")
-
-        # if downloaded update href in Item
-        if filename:
-            _item['assets'][a]['href'] = op.abspath(filename)
-    return _item
 
 
 def upload_item_assets(item: Dict, assets: List[str]=None, public_assets: List[str]=[],
