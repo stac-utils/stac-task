@@ -27,7 +27,7 @@ JSON under the "process" field. An example process definition:
 ```
 {
     "description": "My process configuration"
-    "output_options": {
+    "upload_options": {
         "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}",
         "collections": {
             "landsat-c2l2": ""
@@ -114,8 +114,8 @@ class Task(ABC):
         return self.process_definition.get('tasks', {}).get(self.name, {})
 
     @property
-    def output_options(self) -> Dict:
-        return self.process_definition.get('output_options', {})
+    def upload_options(self) -> Dict:
+        return self.process_definition.get('upload_options', {})
 
     @property
     def items(self) -> List[Dict]:
@@ -141,7 +141,7 @@ class Task(ABC):
         """Assigns new collection names based on
         """
         for i in self.items:
-            for col, expr in self.output_options.get('collections').items():
+            for col, expr in self.upload_options.get('collections').items():
                 if stac_jsonpath_match(i, expr):
                     i['collection'] = col
 
@@ -161,7 +161,7 @@ class Task(ABC):
         if self._skip_upload:
             self.logger.warn('Skipping upload of new and modified assets')
             return item
-        item = upload_item_assets(item, assets=assets, **self.output_options)
+        item = upload_item_assets(item, assets=assets, **self.upload_options)
         return item
 
     # this should be in PySTAC
