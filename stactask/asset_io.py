@@ -61,7 +61,7 @@ async def download_item_assets(item, assets=None, save_item=True, overwrite=Fals
         
         # save file
         if not os.path.exists(new_href) or overwrite:
-            fs = fsspec.filesystem("http", asynchronous=True)
+            fs = fsspec.core.url_to_fs(href, asynchronous=True)[0]
             tasks.append(asyncio.create_task(download_file(fs, href, new_href)))
 
         # update
@@ -84,39 +84,6 @@ async def download_items_assets(items, max_downloads=3, **kwargs):
         tasks.append(asyncio.create_task(download_item_assets(item, **kwargs)))
     new_items = await asyncio.wait(tasks)
     return new_items
-
-
-
-# note this file has been copied from https://github.com/cirrus-geo/cirrus-lib/blob/main/src/cirrus/lib/transfer.py
-# functionality for supplying relative paths has been removed
-# and the get_path function comes from https://github.com/cirrus-geo/cirrus-lib/blob/main/src/cirrus/lib/utils.py
-
-def get_path(item: Dict, template: str='${collection}/${id}') -> str:
-    """Get path name based on STAC Item and template string
-    Args:
-        item (Dict): A STAC Item.
-        template (str, optional): Path template using variables referencing Item fields. Defaults to '${collection}/${id}'.
-    Returns:
-        [str]: A path name
-    """
-    _template = template.replace(':', '__colon__')
-    subs = {}
-    for key in [i[1] for i in Formatter().parse(_template.rstrip('/')) if i[1] is not None]:
-        # collection
-        if key == 'collection':
-            subs[key] = item['collection']
-        # ID
-        elif key == 'id':
-            subs[key] = item['id']
-        # derived from date
-        elif key in ['year', 'month', 'day']:
-            dt = dateparse(item['properties']['datetime'])
-            vals = {'year': dt.year, 'month': dt.month, 'day': dt.day}
-            subs[key] = vals[key]
-        # Item property
-        else:
-            subs[key] = item['properties'][key.replace('__colon__', ':')]
-    return Template(_template).substitute(**subs).replace('__colon__', ':')
 
 
 def get_s3_session(bucket: str=None, s3url: str=None, **kwargs) -> s3:
@@ -148,28 +115,10 @@ def get_s3_session(bucket: str=None, s3url: str=None, **kwargs) -> s3:
             raise e
         logger.info(f"Secret not found, using default credentials: '{secret_name}'")
 
-
     requester_pays = creds.pop('requester_pays', False)
     session = boto3.Session(**creds)
     s3_sessions[bucket] = s3(session, requester_pays=requester_pays)
     return s3_sessions[bucket]
-
-
-def download_from_http(url: str, path: str='') -> str:
-    """ Download a file over http and save to path
-    Args:
-        url (str): A URL to download
-        path (str, optional): A local path name to save file. Defaults to '' (current directory)
-    Returns:
-        str: Local filename of saved file. Basename is the same as the URL basename
-    """
-    filename = op.join(path, op.basename(url))
-    resp = requests.get(url, stream=True)
-    with open(filename, 'wb') as f:
-        for chunk in resp.iter_content(chunk_size=1024):
-            if chunk:
-                f.write(chunk)
-    return filename
 
 
 def upload_item_assets(item: Dict, assets: List[str]=None, public_assets: List[str]=[],
@@ -209,7 +158,8 @@ def upload_item_assets(item: Dict, assets: List[str]=None, public_assets: List[s
             _headers['ContentType'] = asset['type']
         _headers.update(headers)
         # output URL
-        url = get_path(item, op.join(path_template, op.basename(filename)))
+        layout = LayoutTemplate(op.join(path_template, op.basename(filename)))
+        url = layout.substitute(item)
         parts = s3.urlparse(url)
         s3_session = get_s3_session(parts['bucket'])
 
