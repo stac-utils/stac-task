@@ -83,7 +83,7 @@ class Task(ABC):
         self.logger = logging.getLogger(self.name)
         # setup defaults
         self._tmpworkdir = False
-        self._workdir = workdir
+        self._workdir: Path = None
 
         if not skip_validation:
             if not self.validate(item_collection):
@@ -106,8 +106,8 @@ class Task(ABC):
 
     def __del__(self):
         # remove work directory if not running locally
-        if self._tmpworkdir:
-            self.logger.debug(f"Removing work directory {self._workdir}")
+        if self._tmpworkdir and self._workdir:
+            self.logger.debug("Removing work directory %s", self._workdir)
             rmtree(self._workdir)
 
     @property
@@ -149,7 +149,7 @@ class Task(ABC):
             self.output_options.get("collections", dict()).items(),
         ):
             if stac_jsonpath_match(i, expr):
-                i["collection"] = col
+                i["collection"] = coll
 
     def download_item_assets(self, item: Dict, assets: Optional[List[str]] = None):
         """Download provided asset keys for all items in payload. Assets are saved in workdir in a
