@@ -21,7 +21,7 @@ from .asset_io import download_item_assets, upload_item_assets
 PathLike = Union[str, Path]
 
 
-"""
+'''
 Tasks can use parameters provided in a `process` Dictionary that is supplied in the ItemCollection
 JSON under the "process" field. An example process definition:
 
@@ -41,7 +41,7 @@ JSON under the "process" field. An example process definition:
     }
 }
 ```
-"""
+'''
 
 
 def stac_jsonpath_match(item: Dict, expr: str) -> Boolean:
@@ -68,17 +68,14 @@ def stac_jsonpath_match(item: Dict, expr: str) -> Boolean:
 
 class Task(ABC):
 
-    name = "task"
-    description = "A task for doing things"
-    version = "0.1.0"
+    name = 'task'
+    description = 'A task for doing things'
+    version = '0.1.0'
 
-    def __init__(
-        self: "Task",
-        item_collection: Dict,
-        workdir: Optional[PathLike] = None,
-        skip_validation: Optional[bool] = False,
-        skip_upload: Optional[bool] = False,
-    ):
+    def __init__(self: "Task", item_collection: Dict,
+                 workdir: Optional[PathLike]=None,
+                 skip_validation: Optional[bool] = False,
+                 skip_upload: Optional[bool] = False):
         # set up logger
         self.logger = logging.getLogger(self.name)
         # setup defaults
@@ -112,19 +109,19 @@ class Task(ABC):
 
     @property
     def process_definition(self) -> Dict:
-        return self._item_collection.get("process", {})
+        return self._item_collection.get('process', {})
 
     @property
     def parameters(self) -> Dict:
-        return self.process_definition.get("tasks", {}).get(self.name, {})
+        return self.process_definition.get('tasks', {}).get(self.name, {})
 
     @property
     def upload_options(self) -> Dict:
-        return self.process_definition.get("upload_options", {})
+        return self.process_definition.get('upload_options', {})
 
     @property
     def items(self) -> List[Dict]:
-        return self._item_collection["features"]
+        return self._item_collection['features']
 
     @classmethod
     def validate(cls, payload) -> bool:
@@ -133,13 +130,11 @@ class Task(ABC):
 
     @classmethod
     def add_software_version(cls, items):
-        processing_ext = (
-            "https://stac-extensions.github.io/processing/v1.1.0/schema.json"
-        )
+        processing_ext = 'https://stac-extensions.github.io/processing/v1.1.0/schema.json'
         for i in items:
-            i["stac_extensions"].append(processing_ext)
-            i["stac_extensions"] = list(set(i["stac_extensions"]))
-            i["properties"]["processing:software"] = {cls.name: cls.version}
+            i['stac_extensions'].append(processing_ext)
+            i['stac_extensions'] = list(set(i['stac_extensions']))
+            i['properties']['processing:software'] = {cls.name: cls.version}
         return items
 
     def assign_collections(self):
@@ -151,21 +146,21 @@ class Task(ABC):
             if stac_jsonpath_match(i, expr):
                 i["collection"] = coll
 
-    def download_item_assets(self, item: Dict, assets: Optional[List[str]] = None):
+    def download_item_assets(self, item: Dict, assets: Optional[List[str]]=None):
         """Download provided asset keys for all items in payload. Assets are saved in workdir in a
            directory named by the Item ID, and the items are updated with the new asset hrefs.
 
         Args:
             assets (Optional[List[str]], optional): List of asset keys to download. Defaults to all assets.
         """
-        outdir = self._workdir / Path(item["id"])
+        outdir = self._workdir / Path(item['id'])
         makedirs(outdir, exist_ok=True)
         item = download_item_assets(item, path=outdir, assets=assets)
         return item
 
-    def upload_item_assets(self, item: Dict, assets: Optional[List[str]] = None):
+    def upload_item_assets(self, item: Dict, assets: Optional[List[str]]=None):
         if self._skip_upload:
-            self.logger.warn("Skipping upload of new and modified assets")
+            self.logger.warn('Skipping upload of new and modified assets')
             return item
         item = upload_item_assets(item, assets=assets, **self.upload_options)
         return item
@@ -175,17 +170,15 @@ class Task(ABC):
     def create_item_from_item(item):
         new_item = deepcopy(item)
         # create a derived output item
-        links = [l["href"] for l in item["links"] if l["rel"] == "self"]
+        links = [l['href'] for l in item['links'] if l['rel'] == 'self']
         if len(links) == 1:
             # add derived from link
-            new_item["links"].append(
-                {
-                    "title": "Source STAC Item",
-                    "rel": "derived_from",
-                    "href": links[0],
-                    "type": "application/json",
-                }
-            )
+            new_item['links'].append({
+                'title': 'Source STAC Item',
+                'rel': 'derived_from',
+                'href': links[0],
+                'type': 'application/json'
+            })
         return new_item
 
     @abstractmethod
@@ -196,9 +189,9 @@ class Task(ABC):
             [type]: [description]
         """
         # download assets of interest, this will update self.items
-        # self.download_assets(['key1', 'key2'])
+        #self.download_assets(['key1', 'key2'])
         # do some stuff
-        # self.upload_assets(['key1', 'key2'])
+        #self.upload_assets(['key1', 'key2'])
         return self.items
 
     @classmethod
@@ -206,7 +199,7 @@ class Task(ABC):
         task = cls(payload, **kwargs)
         try:
             items = task.process(**task.parameters)
-            task._item_collection["features"] = cls.add_software_version(items)
+            task._item_collection['features'] = cls.add_software_version(items)
             task.assign_collections()
             with open(task._workdir / "stac.json", "w") as f:
                 f.write(json.dumps(task._item_collection))
@@ -217,37 +210,24 @@ class Task(ABC):
 
     @classmethod
     def get_cli_parser(cls):
-        """Parse CLI arguments"""
+        """ Parse CLI arguments """
         dhf = argparse.ArgumentDefaultsHelpFormatter
         parser0 = argparse.ArgumentParser(description=cls.description)
-        parser0.add_argument(
-            "--version",
-            help="Print version and exit",
-            action="version",
-            version=cls.version,
-        )
+        parser0.add_argument('--version', help='Print version and exit', action='version', version=cls.version)
 
         pparser = argparse.ArgumentParser(add_help=False)
-        pparser.add_argument(
-            "--logging", default="INFO", help="DEBUG, INFO, WARN, ERROR, CRITICAL"
-        )
+        pparser.add_argument('--logging', default='INFO', help='DEBUG, INFO, WARN, ERROR, CRITICAL')
 
-        subparsers = parser0.add_subparsers(dest="command")
+        subparsers = parser0.add_subparsers(dest='command')
 
         # run
-        h = "Process STAC Item Collection"
-        parser = subparsers.add_parser(
-            "run", parents=[pparser], help=h, formatter_class=dhf
-        )
-        parser.add_argument(
-            "input", help="Full path of item collection to process (s3 or local)"
-        )
-        h = "Use this as work directory. Will be created but not deleted)"
-        parser.add_argument("--workdir", help=h, default=None, type=Path)
-        h = "Skip uploading of any generated assets and resulting STAC Items"
-        parser.add_argument(
-            "--skip-upload", dest="skip_upload", action="store_true", default=False
-        )
+        h = 'Process STAC Item Collection'
+        parser = subparsers.add_parser('run', parents=[pparser], help=h, formatter_class=dhf)
+        parser.add_argument('input', help='Full path of item collection to process (s3 or local)')
+        h = 'Use this as work directory. Will be created but not deleted)'
+        parser.add_argument('--workdir', help=h, default=None, type=Path)
+        h = 'Skip uploading of any generated assets and resulting STAC Items'
+        parser.add_argument('--skip-upload', dest='skip_upload', action='store_true', default=False)
         return parser0
 
     @classmethod
@@ -259,7 +239,7 @@ class Task(ABC):
         # only keep keys that are not None
         pargs = {k: v for k, v in pargs.items() if v is not None}
 
-        if pargs.get("command", None) is None:
+        if pargs.get('command', None) is None:
             parser.print_help()
             sys.exit(0)
 
@@ -268,20 +248,20 @@ class Task(ABC):
     @classmethod
     def cli(cls, parser=None):
         args = cls.parse_args(sys.argv[1:], parser=parser)
-        cmd = args.pop("command")
+        cmd = args.pop('command')
 
         # logging
-        loglevel = args.pop("logging")
+        loglevel = args.pop('logging')
         logging.basicConfig(level=loglevel)
 
         # quiet these loud loggers
-        quiet_loggers = ["botocore", "s3transfer", "urllib3"]
+        quiet_loggers = ['botocore', 's3transfer', 'urllib3']
         for ql in quiet_loggers:
             logging.getLogger(ql).propagate = False
 
-        if cmd == "run":
-            href = args.pop("input")
-            if href.startswith("s3://"):
+        if cmd == 'run':
+            href = args.pop('input')
+            if href.startswith('s3://'):
                 item_collection = s3().read_json(href)
             else:
                 # open local item collection
