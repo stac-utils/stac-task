@@ -178,7 +178,7 @@ class Task(ABC):
         links = [l["href"] for l in item["links"] if l["rel"] == "self"]
         if len(links) == 1:
             # add derived from link
-            item["links"].append(
+            new_item["links"].append(
                 {
                     "title": "Source STAC Item",
                     "rel": "derived_from",
@@ -186,7 +186,7 @@ class Task(ABC):
                     "type": "application/json",
                 }
             )
-        return item
+        return new_item
 
     @abstractmethod
     def process(self, **kwargs) -> List[Dict]:
