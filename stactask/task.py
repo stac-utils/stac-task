@@ -141,7 +141,7 @@ class Task(ABC):
         """Assigns new collection names based on"""
         for i, (coll, expr) in itertools.product(
             self._item_collection["features"],
-            self.output_options.get("collections", dict()).items(),
+            self.upload_options.get("collections", dict()).items(),
         ):
             if stac_jsonpath_match(i, expr):
                 i["collection"] = coll

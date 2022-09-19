@@ -81,8 +81,11 @@ def test_workdir():
 def test_parameters():
     items = get_test_items()
     t = NothingTask(items)
-    assert(t.process_definition['workflow'] == 'cog-archive')
-    assert(t.output_options['path_template'] == items['process']['output_options']['path_template'])
+    assert t.process_definition["workflow"] == "cog-archive"
+    assert (
+        t.upload_options["path_template"]
+        == items["process"]["upload_options"]["path_template"]
+    )
 
 
 def test_process():
