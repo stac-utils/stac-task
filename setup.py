@@ -26,7 +26,9 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "python-dateutil>=2.7.0",
-        "boto3-utils>=0.3.2"
+        "boto3-utils>=0.3.2",
+        "jsonpath_ng>=1.5.3",
+        "requests>=2.28.1",
     ],
     extras_require={
         "validation": ["jsonschema>=4.0.1"],

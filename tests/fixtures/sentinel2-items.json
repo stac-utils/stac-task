@@ -474,11 +474,11 @@
             "sentinel-s2-l2a"
         ],
         "workflow": "cog-archive",
-        "output_options": {
+        "upload_options": {
             "path_template": "s3://sentinel-cogs/${collection}/${sentinel:utm_zone}/${sentinel:latitude_band}/${sentinel:grid_square}/${year}/${month}/${id}",
             "public_assets": "ALL",
             "collections": {
-                "sentinel-s2-l2a-cogs": ".*"
+              "sentinel-s2-l2a-cogs": "$[?(@.id =~ 'S2[AB].*')]"
             },
             "headers": {
                 "CacheControl": "public, max-age=31536000, immutable"

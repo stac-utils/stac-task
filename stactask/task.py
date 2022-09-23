@@ -10,6 +10,7 @@ import sys
 from tempfile import mkdtemp
 from typing import Dict, List, Optional, Union
 from xmlrpc.client import Boolean
+import itertools
 
 from boto3utils import s3
 from jsonpath_ng.ext import parser
@@ -75,34 +76,35 @@ class Task(ABC):
                  workdir: Optional[PathLike]=None,
                  skip_validation: Optional[bool] = False,
                  skip_upload: Optional[bool] = False):
+        # set up logger
+        self.logger = logging.getLogger(self.name)
+        # setup defaults
+        self._tmpworkdir = False
+        self._workdir: Path = None
 
         if not skip_validation:
-            self.validate(item_collection)
+            if not self.validate(item_collection):
+                sys.exit(1)
 
         self._item_collection = item_collection
 
-        # set up logger
-        self.logger = logging.getLogger(self.name)
-
-        # skip uploading returned STAC Items and assets 
+        # skip uploading returned STAC Items and assets
         self._skip_upload = skip_upload
 
         # save any output options to be passed to
 
         # create temporary work directory if workdir is None
-        self._workdir = workdir
         if workdir is None:
             self._workdir = Path(mkdtemp())
             self._tmpworkdir = True
         else:
             self._workdir = Path(workdir)
-            self._tmpworkdir = False
             makedirs(self._workdir, exist_ok=True)
 
     def __del__(self):
         # remove work directory if not running locally
-        if self._tmpworkdir:
-            self.logger.debug(f"Removing work directory {self._workdir}")
+        if self._tmpworkdir and self._workdir:
+            self.logger.debug("Removing work directory %s", self._workdir)
             rmtree(self._workdir)
 
     @property
@@ -132,18 +134,17 @@ class Task(ABC):
         for i in items:
             i['stac_extensions'].append(processing_ext)
             i['stac_extensions'] = list(set(i['stac_extensions']))
-            i['properties']['processing:software'] = {
-                cls.name: cls.version
-            }
+            i['properties']['processing:software'] = {cls.name: cls.version}
         return items
 
     def assign_collections(self):
-        """Assigns new collection names based on
-        """
-        for i in self.items:
-            for col, expr in self.upload_options.get('collections').items():
-                if stac_jsonpath_match(i, expr):
-                    i['collection'] = col
+        """Assigns new collection names based on"""
+        for i, (coll, expr) in itertools.product(
+            self._item_collection["features"],
+            self.upload_options.get("collections", dict()).items(),
+        ):
+            if stac_jsonpath_match(i, expr):
+                i["collection"] = coll
 
     def download_item_assets(self, item: Dict, assets: Optional[List[str]]=None):
         """Download provided asset keys for all items in payload. Assets are saved in workdir in a
@@ -172,13 +173,13 @@ class Task(ABC):
         links = [l['href'] for l in item['links'] if l['rel'] == 'self']
         if len(links) == 1:
             # add derived from link
-            item['links'].append({
+            new_item['links'].append({
                 'title': 'Source STAC Item',
                 'rel': 'derived_from',
                 'href': links[0],
                 'type': 'application/json'
             })
-        return item
+        return new_item
 
     @abstractmethod
     def process(self, **kwargs) -> List[Dict]:
@@ -252,7 +253,7 @@ class Task(ABC):
         # logging
         loglevel = args.pop('logging')
         logging.basicConfig(level=loglevel)
-    
+
         # quiet these loud loggers
         quiet_loggers = ['botocore', 's3transfer', 'urllib3']
         for ql in quiet_loggers:
@@ -268,4 +269,3 @@ class Task(ABC):
                     item_collection = json.loads(f.read())
             # run task handler
             output = cls.handler(item_collection, **args)
-            return output
