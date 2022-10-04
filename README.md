@@ -71,16 +71,18 @@ would have `param2=value2` passed. If there were a `task-b` to be run it would n
 
 | Field Name    | Type | Description |
 | ------------- | ---- | ----------- |
-| path_template | string | REQUIRED A string template for specifying the location of uploaded assets |
+| path_template | string | **REQUIRED** A string template for specifying the location of uploaded assets |
 | public_assets | [str] | A list of asset keys that should be marked as public when uploaded |
 | headers | Map<str, str> | A set of key, value headers to send when uploading data to s3 |
-| s3_urls | bool | Controls if the final published URLs should be an s3 (s3://<bucket>/<key>) or https URL |
+| s3_urls | bool | Controls if the final published URLs should be an s3 (s3://*bucket*/*key*) or https URL |
 
 #### path_template
 
 The path_template string is a way to control the output location of uploaded assets from a STAC Item using metadata from the Item itself. The template can contain fixed strings along with variables used for substitution. The following variables can be used in the template.
 
-Example
+See [https://jsonpath.herokuapp.com/](Jayway JsonPath Evaluator) to experiment with JSONpath and [https://regex101.com/](regex101) to experiment with regex
+
+**Full Example**
 ```
 {
     "description": "My process configuration",
