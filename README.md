@@ -80,7 +80,7 @@ would have `param2=value2` passed. If there were a `task-b` to be run it would n
 
 The path_template string is a way to control the output location of uploaded assets from a STAC Item using metadata from the Item itself. The template can contain fixed strings along with variables used for substitution. The following variables can be used in the template.
 
-See [https://jsonpath.herokuapp.com/](Jayway JsonPath Evaluator) to experiment with JSONpath and [https://regex101.com/](regex101) to experiment with regex
+See [Jayway JsonPath Evaluator](https://jsonpath.herokuapp.com/) to experiment with JSONpath and [regex101](https://regex101.com/) to experiment with regex
 
 **Full Example**
 ```
