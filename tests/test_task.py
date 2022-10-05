@@ -57,7 +57,7 @@ def test_edit_items2():
 
 def test_tmp_workdir():
     t = NothingTask(get_test_items())
-    assert t._tmpworkdir is True
+    assert t._save_workdir is False
     workdir = t._workdir
     assert workdir.parts[-1].startswith("tmp")
     assert workdir.is_dir() is True
@@ -66,8 +66,10 @@ def test_tmp_workdir():
 
 
 def test_workdir():
-    t = NothingTask(get_test_items(), workdir=testpath / 'test_task')
-    assert (t._tmpworkdir is False)
+    t = NothingTask(get_test_items(),
+                    workdir=testpath / 'test_task',
+                    save_workdir=True)
+    assert (t._save_workdir is True)
     workdir = t._workdir
     assert (workdir.parts[-1] == 'test_task')
     assert (workdir.is_dir() is True)
@@ -118,10 +120,10 @@ def test_task_handler():
 def test_download_assets():
     t = NothingTask(get_test_items(),
                     workdir=testpath / 'test-task-download-assets')
-    t.download_assets(['metadata'])
-    filename = Path(t.items[0]['assets']['metadata']['href'])
+    item = t.download_item_assets(t.items[0], ['metadata'])
+    filename = Path(item['assets']['metadata']['href'])
     assert (filename.is_file() is True)
-    t._tmpworkdir = True
+    t._save_workdir = False
     del t
     assert (filename.is_file() is False)
 
