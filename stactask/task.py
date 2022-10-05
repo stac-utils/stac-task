@@ -19,8 +19,6 @@ from .asset_io import download_item_assets, upload_item_assets
 
 # types
 PathLike = Union[str, Path]
-
-
 '''
 Tasks can use parameters provided in a `process` Dictionary that is supplied in the ItemCollection
 JSON under the "process" field. An example process definition:
@@ -72,38 +70,35 @@ class Task(ABC):
     description = 'A task for doing things'
     version = '0.1.0'
 
-    def __init__(self: "Task", item_collection: Dict,
-                 workdir: Optional[PathLike]=None,
-                 skip_validation: Optional[bool] = False,
-                 skip_upload: Optional[bool] = False):
+    def __init__(self: "Task",
+                 item_collection: Dict,
+                 workdir: Optional[PathLike] = None,
+                 save_workdir: Optional[bool] = False,
+                 skip_upload: Optional[bool] = False,
+                 skip_validation: Optional[bool] = False):
         # set up logger
         self.logger = logging.getLogger(self.name)
-        # setup defaults
-        self._tmpworkdir = False
-        self._workdir: Path = None
 
+        # validate input payload...or not
         if not skip_validation:
             if not self.validate(item_collection):
                 sys.exit(1)
 
-        self._item_collection = item_collection
-
-        # skip uploading returned STAC Items and assets
+        # set instance variables
+        self._save_workdir = save_workdir
         self._skip_upload = skip_upload
-
-        # save any output options to be passed to
+        self._item_collection = item_collection
 
         # create temporary work directory if workdir is None
         if workdir is None:
             self._workdir = Path(mkdtemp())
-            self._tmpworkdir = True
         else:
             self._workdir = Path(workdir)
             makedirs(self._workdir, exist_ok=True)
 
     def __del__(self):
         # remove work directory if not running locally
-        if self._tmpworkdir and self._workdir:
+        if not self._save_workdir:
             self.logger.debug("Removing work directory %s", self._workdir)
             rmtree(self._workdir)
 
@@ -140,13 +135,15 @@ class Task(ABC):
     def assign_collections(self):
         """Assigns new collection names based on"""
         for i, (coll, expr) in itertools.product(
-            self._item_collection["features"],
-            self.upload_options.get("collections", dict()).items(),
+                self._item_collection["features"],
+                self.upload_options.get("collections", dict()).items(),
         ):
             if stac_jsonpath_match(i, expr):
                 i["collection"] = coll
 
-    def download_item_assets(self, item: Dict, assets: Optional[List[str]]=None):
+    def download_item_assets(self,
+                             item: Dict,
+                             assets: Optional[List[str]] = None):
         """Download provided asset keys for all items in payload. Assets are saved in workdir in a
            directory named by the Item ID, and the items are updated with the new asset hrefs.
 
@@ -158,7 +155,9 @@ class Task(ABC):
         item = download_item_assets(item, path=outdir, assets=assets)
         return item
 
-    def upload_item_assets(self, item: Dict, assets: Optional[List[str]]=None):
+    def upload_item_assets(self,
+                           item: Dict,
+                           assets: Optional[List[str]] = None):
         if self._skip_upload:
             self.logger.warn('Skipping upload of new and modified assets')
             return item
@@ -213,21 +212,46 @@ class Task(ABC):
         """ Parse CLI arguments """
         dhf = argparse.ArgumentDefaultsHelpFormatter
         parser0 = argparse.ArgumentParser(description=cls.description)
-        parser0.add_argument('--version', help='Print version and exit', action='version', version=cls.version)
+        parser0.add_argument('--version',
+                             help='Print version and exit',
+                             action='version',
+                             version=cls.version)
 
         pparser = argparse.ArgumentParser(add_help=False)
-        pparser.add_argument('--logging', default='INFO', help='DEBUG, INFO, WARN, ERROR, CRITICAL')
+        pparser.add_argument('--logging',
+                             default='INFO',
+                             help='DEBUG, INFO, WARN, ERROR, CRITICAL')
 
         subparsers = parser0.add_subparsers(dest='command')
 
         # run
         h = 'Process STAC Item Collection'
-        parser = subparsers.add_parser('run', parents=[pparser], help=h, formatter_class=dhf)
-        parser.add_argument('input', help='Full path of item collection to process (s3 or local)')
+        parser = subparsers.add_parser('run',
+                                       parents=[pparser],
+                                       help=h,
+                                       formatter_class=dhf)
+        parser.add_argument(
+            'input',
+            help='Full path of item collection to process (s3 or local)')
         h = 'Use this as work directory. Will be created but not deleted)'
         parser.add_argument('--workdir', help=h, default=None, type=Path)
+        h = 'Save workdir after completion'
+        parser.add_argument('--save-workdir',
+                            dest='save_workdir',
+                            action='store_true',
+                            default=False)
         h = 'Skip uploading of any generated assets and resulting STAC Items'
-        parser.add_argument('--skip-upload', dest='skip_upload', action='store_true', default=False)
+        parser.add_argument('--skip-upload',
+                            dest='skip_upload',
+                            action='store_true',
+                            default=False)
+        h = 'Skip validation of input payload'
+        parser.add_argument('--skip-validation',
+                            dest='skip_validation',
+                            action='store_true',
+                            default=False)
+        h = 'Run local mode (save-workdir, skip-upload, skip-validation set to True)'
+        parser.add_argument('--local', action='store_true', default=False)
         return parser0
 
     @classmethod
@@ -238,6 +262,11 @@ class Task(ABC):
         pargs = vars(parser.parse_args(args))
         # only keep keys that are not None
         pargs = {k: v for k, v in pargs.items() if v is not None}
+
+        if pargs.get('local'):
+            # local mode sets all of
+            for k in ['save_workdir', 'skip_upload', 'skip_validation']:
+                pargs[k] = True
 
         if pargs.get('command', None) is None:
             parser.print_help()
