@@ -169,7 +169,7 @@ class Task(ABC):
     def create_item_from_item(item):
         new_item = deepcopy(item)
         # create a derived output item
-        links = [l['href'] for l in item['links'] if l['rel'] == 'self']
+        links = [link['href'] for link in item['links'] if link['rel'] == 'self']
         if len(links) == 1:
             # add derived from link
             new_item['links'].append({
@@ -188,9 +188,9 @@ class Task(ABC):
             [type]: [description]
         """
         # download assets of interest, this will update self.items
-        #self.download_assets(['key1', 'key2'])
+        # self.download_assets(['key1', 'key2'])
         # do some stuff
-        #self.upload_assets(['key1', 'key2'])
+        # self.upload_assets(['key1', 'key2'])
         return self.items
 
     @classmethod
@@ -297,4 +297,4 @@ class Task(ABC):
                 with open(href) as f:
                     item_collection = json.loads(f.read())
             # run task handler
-            output = cls.handler(item_collection, **args)
+            cls.handler(item_collection, **args)

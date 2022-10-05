@@ -1,8 +1,7 @@
 import boto3
 from copy import deepcopy
-import json
 import logging
-from os import getenv, path as op
+from os import path as op
 import requests
 from string import Formatter, Template
 from typing import Dict, Optional, List
@@ -13,7 +12,7 @@ from dateutil.parser import parse as dateparse
 
 logger = logging.getLogger(__name__)
 
-## global dictionary of sessions per bucket
+# global dictionary of sessions per bucket
 s3_sessions = {}
 
 # note this file has been copied from https://github.com/cirrus-geo/cirrus-lib/blob/main/src/cirrus/lib/transfer.py
