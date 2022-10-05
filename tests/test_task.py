@@ -116,13 +116,14 @@ def test_task_handler():
 
 @vcr.use_cassette(str(cassettepath / 'download_assets'))
 def test_download_assets():
-    t = NothingTask(get_test_items(), workdir=testpath / 'test-task-download-assets')
+    t = NothingTask(get_test_items(),
+                    workdir=testpath / 'test-task-download-assets')
     t.download_assets(['metadata'])
     filename = Path(t.items[0]['assets']['metadata']['href'])
-    assert(filename.is_file() is True)
+    assert (filename.is_file() is True)
     t._tmpworkdir = True
     del t
-    assert(filename.is_file() is False)
+    assert (filename.is_file() is False)
 
 
 if __name__ == "__main__":
