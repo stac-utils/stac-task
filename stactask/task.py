@@ -1,16 +1,16 @@
-from abc import ABC, abstractmethod
 import argparse
 import asyncio
-from copy import deepcopy
+import itertools
 import json
 import logging
+import sys
+from abc import ABC, abstractmethod
+from copy import deepcopy
 from os import makedirs
 from pathlib import Path
 from shutil import rmtree
-import sys
 from tempfile import mkdtemp
 from typing import Dict, List, Optional, Union
-import itertools
 
 from boto3utils import s3
 from pystac import ItemCollection

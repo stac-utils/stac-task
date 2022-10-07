@@ -1,12 +1,12 @@
 import asyncio
-from copy import deepcopy
 import logging
 import os
+from copy import deepcopy
 from os import path as op
 from typing import Dict, List
 
-from boto3utils import s3
 import fsspec
+from boto3utils import s3
 from pystac.layout import LayoutTemplate
 
 logger = logging.getLogger(__name__)
