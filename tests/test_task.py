@@ -22,7 +22,8 @@ class DerivedItemTask(Task):
     name = 'derived-item-task'
     description = 'this task creates a dervied item'
 
-    def process(self):
+    def process(self, parameter = None):
+        assert parameter == 'value'
         return [self.create_item_from_item(self.items_as_dicts[0])]
 
 
@@ -96,11 +97,12 @@ def test_process():
 
 def test_derived_item():
     t = DerivedItemTask(get_test_items())
-    items = t.process()
+    items = t.process(**t.parameters)
     links = [lk for lk in items[0]['links'] if lk['rel'] == 'derived_from']
     assert (len(links) == 1)
     self_link = [lk for lk in items[0]['links'] if lk['rel'] == 'self'][0]
     assert (links[0]['href'] == self_link['href'])
+    
 
 
 def test_task_handler():
@@ -114,18 +116,30 @@ def test_task_handler():
         if lk["rel"] == "derived_from"
     ][0]
     assert derived_link["href"] == self_link["href"]
+    assert 'derived-item-task' in output_items['features'][0]['properties']['processing:software']
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
 def test_download_assets():
     t = NothingTask(get_test_items(),
-                    workdir=testpath / 'test-task-download-assets')
-    item = t.download_item_assets(t.items[0], assets=['metadata']).to_dict()
-    filename = Path(item['assets']['metadata']['href'])
+                    workdir=testpath / 'test-task-download-assets', save_workdir=True)
+    item = t.download_item_assets(t.items[0], assets=['tileinfo_metadata']).to_dict()
+    filename = Path(item['assets']['tileinfo_metadata']['href'])
     assert (filename.is_file() is True)
-    t._save_workdir = False
+    # t._save_workdir = False
     del t
-    assert (filename.is_file() is False)
+    # assert (filename.is_file() is False)
+
+# @vcr.use_cassette(str(cassettepath / 'download_assets'))
+def test_download_large_asset():
+    t = NothingTask(get_test_items(),
+                    workdir=testpath / 'test-task-download-assets', save_workdir=True)
+    item = t.download_item_assets(t.items[0], assets=['red'], requester_pays=True).to_dict()
+    filename = Path(item['assets']['red']['href'])
+    assert (filename.is_file() is True)
+    # t._save_workdir = False
+    del t
+    # assert (filename.is_file() is False)
 
 
 if __name__ == "__main__":
