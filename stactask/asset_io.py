@@ -3,11 +3,9 @@ from copy import deepcopy
 import logging
 import os
 from os import path as op
-from typing import Dict, Optional, List
+from typing import Dict, List
 
-import boto3
 from boto3utils import s3
-from botocore.exceptions import ClientError
 import fsspec
 from pystac.layout import LayoutTemplate
 
@@ -22,53 +20,57 @@ sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
 
 async def download_file(fs, src, dest):
     async with sem:
-        #logger.debug(f"{src} start")
+        logger.debug(f"{src} start")
         await fs._get_file(src, dest)
-        #logger.debug(f"{src} completed")
+        logger.debug(f"{src} completed")
 
-    
-async def download_item_assets(item, assets=None, save_item=True, overwrite=False,
-                         path_template='${collection}/${id}', absolute_path=False):
-    
+
+async def download_item_assets(item,
+                               assets=None,
+                               save_item=True,
+                               overwrite=False,
+                               path_template='${collection}/${id}',
+                               absolute_path=False):
+
     _assets = item.assets.keys() if assets is None else assets
-    
+
     # determine path from template and item
     layout = LayoutTemplate(path_template)
     path = layout.substitute(item)
 
     # make necessary directories
     os.makedirs(path, exist_ok=True)
-    
+
     new_item = item.clone()
-    
+
     tasks = []
     for a in _assets:
         if a not in item.assets:
             continue
         href = item.assets[a].href
-        
+
         # local filename
         ext = os.path.splitext(href)[-1]
         new_href = os.path.join(path, a + ext)
         if absolute_path:
             new_href = os.path.abspath(new_href)
-        
+
         # save file
         if not os.path.exists(new_href) or overwrite:
             fs = fsspec.core.url_to_fs(href, asynchronous=True)[0]
-            tasks.append(asyncio.create_task(download_file(fs, href, new_href)))
+            tasks.append(asyncio.create_task(download_file(fs, href,
+                                                           new_href)))
 
         # update
         new_item.assets[a].href = new_href
-    
-    #async with sem:
+
     await asyncio.gather(*tasks)
-    
+
     # save Item metadata alongside saved assets
     if save_item:
         new_item.remove_links('root')
         new_item.save_object(dest_href=os.path.join(path, 'item.json'))
-    
+
     return new_item
 
 
@@ -81,12 +83,12 @@ async def download_items_assets(items, max_downloads=3, **kwargs):
 
 
 def upload_item_assets_to_s3(item: Dict,
-                       assets: List[str] = None,
-                       public_assets: List[str] = [],
-                       path_template: str = '${collection}/${id}',
-                       s3_urls: bool = False,
-                       headers: Dict = {},
-                       **kwargs) -> Dict:
+                             assets: List[str] = None,
+                             public_assets: List[str] = [],
+                             path_template: str = '${collection}/${id}',
+                             s3_urls: bool = False,
+                             headers: Dict = {},
+                             **kwargs) -> Dict:
     """Upload Item assets to s3 bucket
     Args:
         item (Dict): STAC Item
@@ -125,10 +127,10 @@ def upload_item_assets_to_s3(item: Dict,
 
         # upload
         logger.debug(f"Uploading {filename} to {url}")
-        #url_out = s3_client.upload(filename,
-        #                            url,
-        #                            public=public,
-        #                            extra=_headers,
-        #                            http_url=not s3_urls)
-        _item['assets'][key]['href'] = url #url_out
+        url_out = s3_client.upload(filename,
+                                   url,
+                                   public=public,
+                                   extra=_headers,
+                                   http_url=not s3_urls)
+        _item['assets'][key]['href'] = url_out
     return _item

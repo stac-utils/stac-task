@@ -18,7 +18,6 @@ from pystac import ItemCollection
 from .asset_io import download_item_assets, upload_item_assets_to_s3
 from .utils import stac_jsonpath_match
 
-
 # types
 PathLike = Union[str, Path]
 '''
@@ -42,9 +41,6 @@ JSON under the "process" field. An example process definition:
 }
 ```
 '''
-
-
-
 
 
 class Task(ABC):
@@ -103,7 +99,10 @@ class Task(ABC):
 
     @property
     def items(self) -> ItemCollection:
-        items_dict = {'type': 'FeatureCollection', 'features': self.items_as_dicts}
+        items_dict = {
+            'type': 'FeatureCollection',
+            'features': self.items_as_dicts
+        }
         return ItemCollection.from_dict(items_dict, preserve_dict=True)
 
     @classmethod
@@ -140,16 +139,19 @@ class Task(ABC):
             assets (Optional[List[str]], optional): List of asset keys to download. Defaults to all assets.
         """
         outdir = str(self._workdir / path_template)
-        item = asyncio.run(download_item_assets(item, path_template=outdir, **kwargs))
+        item = asyncio.run(
+            download_item_assets(item, path_template=outdir, **kwargs))
         return item
 
     def upload_item_assets_to_s3(self,
-                           item: Dict,
-                           assets: Optional[List[str]] = None):
+                                 item: Dict,
+                                 assets: Optional[List[str]] = None):
         if self._skip_upload:
             self.logger.warn('Skipping upload of new and modified assets')
             return item
-        item = upload_item_assets_to_s3(item, assets=assets, **self.upload_options)
+        item = upload_item_assets_to_s3(item,
+                                        assets=assets,
+                                        **self.upload_options)
         return item
 
     # this should be in PySTAC
