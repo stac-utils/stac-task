@@ -44,6 +44,18 @@ At the end of processing, before the final STAC Items are returned, the Task cla
 all of the Items to specific collection IDs. For each Item the JSONPath pattern for all collections will be
 compared. The first match will cause the Item's Collection ID to be set to the provided value.
 
+**Example**
+
+```
+    "collections": {
+        "landsat-c2l2": "$[?(@.id =~ 'LC08.*')]"
+    }
+```
+
+In this example, the task will set any STAC Items that have an ID beginning with "LC08" to the `landsat-c2l2` collection.
+
+See [Jayway JsonPath Evaluator](https://jsonpath.herokuapp.com/) to experiment with JSONpath and [regex101](https://regex101.com/) to experiment with regex.
+
 ### tasks
 
 The tasks field is a dictionary with an optional key for each task. If present, it contains a dictionary 
@@ -87,7 +99,7 @@ See [https://jsonpath.herokuapp.com/](Jayway JsonPath Evaluator) to experiment w
 {
     "description": "My process configuration",
     "collections": {
-        "landsat-c2l2": ""
+        "landsat-c2l2": "$[?(@.id =~ 'LC08.*')]"
     },
     "upload_options": {
         "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}"

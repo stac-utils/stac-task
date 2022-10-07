@@ -1,8 +1,7 @@
 import boto3
 from copy import deepcopy
-import json
 import logging
-from os import getenv, path as op
+from os import path as op
 import requests
 from string import Formatter, Template
 from typing import Dict, Optional, List
@@ -13,7 +12,7 @@ from dateutil.parser import parse as dateparse
 
 logger = logging.getLogger(__name__)
 
-## global dictionary of sessions per bucket
+# global dictionary of sessions per bucket
 s3_sessions = {}
 
 import asyncio
@@ -86,7 +85,44 @@ async def download_items_assets(items, max_downloads=3, **kwargs):
     return new_items
 
 
-def get_s3_session(bucket: str=None, s3url: str=None, **kwargs) -> s3:
+
+# note this file has been copied from https://github.com/cirrus-geo/cirrus-lib/blob/main/src/cirrus/lib/transfer.py
+# functionality for supplying relative paths has been removed
+# and the get_path function comes from https://github.com/cirrus-geo/cirrus-lib/blob/main/src/cirrus/lib/utils.py
+
+
+def get_path(item: Dict, template: str = '${collection}/${id}') -> str:
+    """Get path name based on STAC Item and template string
+    Args:
+        item (Dict): A STAC Item.
+        template (str, optional): Path template using variables referencing Item fields. Defaults to '${collection}/${id}'.
+    Returns:
+        [str]: A path name
+    """
+    _template = template.replace(':', '__colon__')
+    subs = {}
+    for key in [
+            i[1] for i in Formatter().parse(_template.rstrip('/'))
+            if i[1] is not None
+    ]:
+        # collection
+        if key == 'collection':
+            subs[key] = item['collection']
+        # ID
+        elif key == 'id':
+            subs[key] = item['id']
+        # derived from date
+        elif key in ['year', 'month', 'day']:
+            dt = dateparse(item['properties']['datetime'])
+            vals = {'year': dt.year, 'month': dt.month, 'day': dt.day}
+            subs[key] = vals[key]
+        # Item property
+        else:
+            subs[key] = item['properties'][key.replace('__colon__', ':')]
+    return Template(_template).substitute(**subs).replace('__colon__', ':')
+
+
+def get_s3_session(bucket: str = None, s3url: str = None, **kwargs) -> s3:
     """Get boto3-utils s3 class for interacting with an s3 bucket. A secret will be looked for with the name
     `cirrus-creds-<bucket-name>`. If no secret is found the default session will be used
     Args:
@@ -113,7 +149,8 @@ def get_s3_session(bucket: str=None, s3url: str=None, **kwargs) -> s3:
         if e.response["Error"]["Code"] != "ResourceNotFoundException":
             # some other client error we cannot handle
             raise e
-        logger.info(f"Secret not found, using default credentials: '{secret_name}'")
+        logger.info(
+            f"Secret not found, using default credentials: '{secret_name}'")
 
     requester_pays = creds.pop('requester_pays', False)
     session = boto3.Session(**creds)
@@ -121,9 +158,76 @@ def get_s3_session(bucket: str=None, s3url: str=None, **kwargs) -> s3:
     return s3_sessions[bucket]
 
 
-def upload_item_assets(item: Dict, assets: List[str]=None, public_assets: List[str]=[],
-                       path_template: str='${collection}/${id}', s3_urls: bool=False,
-                       headers: Dict={}, s3_session: s3=None, **kwargs) -> Dict:
+def download_from_http(url: str, path: str = '') -> str:
+    """ Download a file over http and save to path
+    Args:
+        url (str): A URL to download
+        path (str, optional): A local path name to save file. Defaults to '' (current directory)
+    Returns:
+        str: Local filename of saved file. Basename is the same as the URL basename
+    """
+    filename = op.join(path, op.basename(url))
+    resp = requests.get(url, stream=True)
+    with open(filename, 'wb') as f:
+        for chunk in resp.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+    return filename
+
+
+def download_item_assets(item: Dict,
+                         path: str = '',
+                         assets: Optional[List[str]] = None) -> Dict:
+    """Download STAC Item assets to local filesystem
+    Args:
+        item (Dict): A STAC Item dictionary
+        path (str, optional): Path to download files to. Defaults to current directory
+        assets (Optional[List[str]], optional): List of asset keys to download. Defaults to all assets
+        s3_session (s3, optional): boto3-utils s3 object for s3 interactions. Defaults to None
+    Returns:
+        Dict: A new STAC Item with downloaded assets pointing to newly downloaded files
+    """
+
+    # if assets not provided, download all assets
+    assets = assets if assets is not None else item['assets'].keys()
+
+    _item = deepcopy(item)
+
+    for a in assets:
+        # download each asset
+        url = item['assets'][a]['href']
+        logging.info(f"Downloading {a}: {url}")
+
+        # http URL to s3 source
+        if 'amazonaws.com' in url:
+            url = s3.https_to_s3(url)
+
+        filename = None
+        # s3 source
+        if url.startswith('s3://'):
+            parts = s3.urlparse(url)
+            s3_session = get_s3_session(parts['bucket'])
+            filename = s3_session.download(url, path=path)
+        # general http source
+        elif url.startswith('http'):
+            filename = download_from_http(url, path=path)
+        else:
+            logger.error(f"Unknown protocol for {url}")
+
+        # if downloaded update href in Item
+        if filename:
+            _item['assets'][a]['href'] = op.abspath(filename)
+    return _item
+
+
+def upload_item_assets(item: Dict,
+                       assets: List[str] = None,
+                       public_assets: List[str] = [],
+                       path_template: str = '${collection}/${id}',
+                       s3_urls: bool = False,
+                       headers: Dict = {},
+                       s3_session: s3 = None,
+                       **kwargs) -> Dict:
     """Upload Item assets to s3 bucket
     Args:
         item (Dict): STAC Item
@@ -165,6 +269,10 @@ def upload_item_assets(item: Dict, assets: List[str]=None, public_assets: List[s
 
         # upload
         logger.debug(f"Uploading {filename} to {url}")
-        url_out = s3_session.upload(filename, url, public=public, extra=_headers, http_url=not s3_urls)
+        url_out = s3_session.upload(filename,
+                                    url,
+                                    public=public,
+                                    extra=_headers,
+                                    http_url=not s3_urls)
         _item['assets'][key]['href'] = url_out
     return _item

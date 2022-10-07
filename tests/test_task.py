@@ -6,7 +6,6 @@ import vcr
 
 from stactask import Task
 
-
 testpath = Path(__file__).parent
 cassettepath = testpath / 'fixtures' / 'cassettes'
 
@@ -37,88 +36,96 @@ def get_test_items(name='sentinel2-items'):
 def test_task_init():
     item_collection = get_test_items()
     t = NothingTask(item_collection)
-    assert(len(t._item_collection['features']) == 1)
-    assert(len(t.items) == 1)
-    assert(str(t._workdir).startswith('/tmp'))
-    assert(t.logger.name == 'nothing-task')
+    assert len(t._item_collection["features"]) == 1
+    assert len(t.items) == 1
+    assert t.logger.name == t.name
+    assert t._save_workdir is False
 
 
 def test_edit_items():
     items = get_test_items()
     t = NothingTask(items)
     t.process_definition['workflow'] = 'test-task-workflow'
-    assert(t._item_collection['process']['workflow'] == 'test-task-workflow')
+    assert (t._item_collection['process']['workflow'] == 'test-task-workflow')
 
 
-def test_edit_items():
+def test_edit_items2():
     items = get_test_items()
     t = NothingTask(items)
-    assert(t._item_collection['features'][0]['type'] == 'Feature')
+    assert (t._item_collection['features'][0]['type'] == 'Feature')
 
 
 def test_tmp_workdir():
     t = NothingTask(get_test_items())
-    assert(t._tmpworkdir == True)
+    assert t._save_workdir is False
     workdir = t._workdir
-    assert(workdir.parts[1] == 'tmp')
-    assert(workdir.parts[2].startswith('tmp'))
-    assert(workdir.is_dir() == True)
+    assert workdir.parts[-1].startswith("tmp")
+    assert workdir.is_dir() is True
     del t
-    assert(workdir.is_dir() == False)
+    assert workdir.is_dir() is False
 
 
 def test_workdir():
-    t = NothingTask(get_test_items(), workdir = testpath / 'test_task')
-    assert(t._tmpworkdir == False)
+    t = NothingTask(get_test_items(),
+                    workdir=testpath / 'test_task',
+                    save_workdir=True)
+    assert (t._save_workdir is True)
     workdir = t._workdir
-    assert(workdir.parts[-1] == 'test_task')
-    assert(workdir.is_dir() == True)
+    assert (workdir.parts[-1] == 'test_task')
+    assert (workdir.is_dir() is True)
     del t
-    assert(workdir.is_dir() == True)    
+    assert (workdir.is_dir() is True)
     workdir.rmdir()
-    assert(workdir.is_dir() == False)
+    assert (workdir.is_dir() is False)
 
 
 def test_parameters():
     items = get_test_items()
     t = NothingTask(items)
-    assert(t.process_definition['workflow'] == 'cog-archive')
-    assert(t.output_options['path_template'] == items['process']['output_options']['path_template'])
+    assert t.process_definition["workflow"] == "cog-archive"
+    assert (t.upload_options["path_template"] == items["process"]
+            ["upload_options"]["path_template"])
 
 
 def test_process():
     items = get_test_items()
     t = NothingTask(items)
     items = t.process()
-    assert(items[0]['type'] == 'Feature')
+    assert (items[0]['type'] == 'Feature')
 
 
 def test_derived_item():
     t = DerivedItemTask(get_test_items())
     items = t.process()
-    links = [l for l in items[0]['links'] if l['rel'] == 'derived_from']
-    assert(len(links) == 1)
-    self_link = [l for l in items[0]['links'] if l['rel'] == 'self'][0]
-    assert(links[0]['href'] == self_link['href'])
+    links = [lk for lk in items[0]['links'] if lk['rel'] == 'derived_from']
+    assert (len(links) == 1)
+    self_link = [lk for lk in items[0]['links'] if lk['rel'] == 'self'][0]
+    assert (links[0]['href'] == self_link['href'])
 
 
 def test_task_handler():
     items = get_test_items()
-    self_link = [l for l in items['features'][0]['links'] if l['rel'] == 'self'][0]
+    self_link = [
+        lk for lk in items['features'][0]['links'] if lk['rel'] == 'self'
+    ][0]
     output_items = DerivedItemTask.handler(items)
-    derived_link = [l for l in output_items[0]['links'] if l['rel'] == 'derived_from'][0]
-    assert(derived_link['href'] == self_link['href'])
+    derived_link = [
+        lk for lk in output_items["features"][0]["links"]
+        if lk["rel"] == "derived_from"
+    ][0]
+    assert derived_link["href"] == self_link["href"]
 
 
-#@vcr.use_cassette(str(cassettepath/'download_assets'))
-#def test_download_assets():
-#    t = NothingTask(get_test_items(), workdir=testpath/'test-task-download-assets')
-#    t.download_assets(['metadata'])
-#    filename = Path(t.items[0]['assets']['metadata']['href'])
-#    assert(filename.is_file() == True)
-#    t._tmpworkdir = True
-#    del t
-#    assert(filename.is_file() == False)
+@vcr.use_cassette(str(cassettepath / 'download_assets'))
+def test_download_assets():
+    t = NothingTask(get_test_items(),
+                    workdir=testpath / 'test-task-download-assets')
+    item = t.download_item_assets(t.items[0], ['metadata'])
+    filename = Path(item['assets']['metadata']['href'])
+    assert (filename.is_file() is True)
+    t._save_workdir = False
+    del t
+    assert (filename.is_file() is False)
 
 
 if __name__ == "__main__":

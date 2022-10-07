@@ -1,5 +1,3 @@
-
-
 class InvalidInput(Exception):
     """Exception class for when processing fails due to invalid input
 
@@ -7,4 +5,3 @@ class InvalidInput(Exception):
         Exception (Exception): Base class
     """
     pass
-
