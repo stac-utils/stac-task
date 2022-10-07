@@ -1,7 +1,9 @@
-coverage==5.2.*
-flake8==3.8.*
-pytest~=6.2.3
-pytest-cov~=2.11.1
+black
+codespell
+flake8
+isort
+mypy
 pre-commit
-yapf==0.30.*
-vcrpy
+pytest
+pytest-cov
+types-setuptools
