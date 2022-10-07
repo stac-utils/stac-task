@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import argparse
+import asyncio
 from copy import deepcopy
 import json
 import logging
@@ -9,13 +10,14 @@ from shutil import rmtree
 import sys
 from tempfile import mkdtemp
 from typing import Dict, List, Optional, Union
-from xmlrpc.client import Boolean
 import itertools
 
 from boto3utils import s3
-from jsonpath_ng.ext import parser
+from pystac import ItemCollection
 
-from .asset_io import download_item_assets, upload_item_assets
+from .asset_io import download_item_assets, upload_item_assets_to_s3
+from .utils import stac_jsonpath_match
+
 
 # types
 PathLike = Union[str, Path]
@@ -42,26 +44,7 @@ JSON under the "process" field. An example process definition:
 '''
 
 
-def stac_jsonpath_match(item: Dict, expr: str) -> Boolean:
-    """Match jsonpath expression against STAC JSON.
-       Use https://jsonpath.herokuapp.com/ to experiment with JSONpath
-        and https://regex101.com/ to experiment with regex
 
-    Args:
-        item (Dict): A STAC Item
-        expr (str): A valid JSONPath expression
-
-    Raises:
-        err: Invalid inputs
-
-    Returns:
-        Boolean: Returns True if the jsonpath expression matches the STAC Item JSON
-    """
-    result = [x.value for x in parser.parse(expr).find([item])]
-    if len(result) == 1:
-        return True
-    else:
-        return False
 
 
 class Task(ABC):
@@ -115,8 +98,13 @@ class Task(ABC):
         return self.process_definition.get('upload_options', {})
 
     @property
-    def items(self) -> List[Dict]:
+    def items_as_dicts(self) -> List[Dict]:
         return self._item_collection['features']
+
+    @property
+    def items(self) -> ItemCollection:
+        items_dict = {'type': 'FeatureCollection', 'features': self.items_as_dicts}
+        return ItemCollection.from_dict(items_dict, preserve_dict=True)
 
     @classmethod
     def validate(cls, payload) -> bool:
@@ -143,25 +131,25 @@ class Task(ABC):
 
     def download_item_assets(self,
                              item: Dict,
-                             assets: Optional[List[str]] = None):
+                             path_template='${collection}/${id}',
+                             **kwargs):
         """Download provided asset keys for all items in payload. Assets are saved in workdir in a
            directory named by the Item ID, and the items are updated with the new asset hrefs.
 
         Args:
             assets (Optional[List[str]], optional): List of asset keys to download. Defaults to all assets.
         """
-        outdir = self._workdir / Path(item['id'])
-        makedirs(outdir, exist_ok=True)
-        item = download_item_assets(item, path=outdir, assets=assets)
+        outdir = str(self._workdir / path_template)
+        item = asyncio.run(download_item_assets(item, path_template=outdir, **kwargs))
         return item
 
-    def upload_item_assets(self,
+    def upload_item_assets_to_s3(self,
                            item: Dict,
                            assets: Optional[List[str]] = None):
         if self._skip_upload:
             self.logger.warn('Skipping upload of new and modified assets')
             return item
-        item = upload_item_assets(item, assets=assets, **self.upload_options)
+        item = upload_item_assets_to_s3(item, assets=assets, **self.upload_options)
         return item
 
     # this should be in PySTAC
