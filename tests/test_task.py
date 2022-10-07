@@ -21,7 +21,7 @@ class NothingTask(Task):
 
 class DerivedItemTask(Task):
     name = "derived-item-task"
-    description = "this task creates a dervied item"
+    description = "this task creates a derived item"
 
     def process(self, parameter=None):
         assert parameter == "value"
