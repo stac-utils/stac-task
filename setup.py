@@ -17,7 +17,7 @@ setup(
     ),
     long_description=readme,
     long_description_content_type="text/markdown",
-    author=u"Matthew Hanson",
+    author="Matthew Hanson",
     author_email="matt.a.hanson@gmail.com",
     url="https://github.com/stac-utils/stactask",
     packages=find_packages(exclude=["tests*"]),
@@ -30,10 +30,7 @@ setup(
         "jsonpath_ng>=1.5.3",
         "requests>=2.28.1",
     ],
-    extras_require={
-        "validation": ["jsonschema>=4.0.1"],
-        "orjson": ["orjson>=3.5"]
-    },
+    extras_require={"validation": ["jsonschema>=4.0.1"], "orjson": ["orjson>=3.5"]},
     license="Apache Software License 2.0",
     license_files=["LICENSE"],
     zip_safe=False,

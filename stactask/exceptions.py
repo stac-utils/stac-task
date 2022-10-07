@@ -4,4 +4,5 @@ class InvalidInput(Exception):
     Args:
         Exception (Exception): Base class
     """
+
     pass

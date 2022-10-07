@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # global dictionary of sessions per bucket
 s3_client = s3()
 
-SIMULTANEOUS_DOWNLOADS = os.getenv('STAC_SIMULTANEOUS_DOWNLOADS', 3)
+SIMULTANEOUS_DOWNLOADS = os.getenv("STAC_SIMULTANEOUS_DOWNLOADS", 3)
 sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
 
 
@@ -25,13 +25,15 @@ async def download_file(fs, src, dest):
         logger.debug(f"{src} completed")
 
 
-async def download_item_assets(item,
-                               assets=None,
-                               save_item=True,
-                               overwrite=False,
-                               path_template='${collection}/${id}',
-                               absolute_path=False,
-                               **kwargs):
+async def download_item_assets(
+    item,
+    assets=None,
+    save_item=True,
+    overwrite=False,
+    path_template="${collection}/${id}",
+    absolute_path=False,
+    **kwargs,
+):
 
     _assets = item.assets.keys() if assets is None else assets
 
@@ -69,8 +71,8 @@ async def download_item_assets(item,
 
     # save Item metadata alongside saved assets
     if save_item:
-        new_item.remove_links('root')
-        new_item.save_object(dest_href=os.path.join(path, 'item.json'))
+        new_item.remove_links("root")
+        new_item.save_object(dest_href=os.path.join(path, "item.json"))
 
     return new_item
 
@@ -83,13 +85,15 @@ async def download_items_assets(items, max_downloads=3, **kwargs):
     return new_items
 
 
-def upload_item_assets_to_s3(item: Dict,
-                             assets: List[str] = None,
-                             public_assets: List[str] = [],
-                             path_template: str = '${collection}/${id}',
-                             s3_urls: bool = False,
-                             headers: Dict = {},
-                             **kwargs) -> Dict:
+def upload_item_assets_to_s3(
+    item: Dict,
+    assets: List[str] = None,
+    public_assets: List[str] = [],
+    path_template: str = "${collection}/${id}",
+    s3_urls: bool = False,
+    headers: Dict = {},
+    **kwargs,
+) -> Dict:
     """Upload Item assets to s3 bucket
     Args:
         item (Dict): STAC Item
@@ -102,25 +106,25 @@ def upload_item_assets_to_s3(item: Dict,
         Dict: A new STAC Item with uploaded assets pointing to newly uploaded file URLs
     """
     # if assets not provided, upload all assets
-    _assets = assets if assets is not None else item['assets'].keys()
+    _assets = assets if assets is not None else item["assets"].keys()
 
     # determine which assets should be public
-    if type(public_assets) is str and public_assets == 'ALL':
-        public_assets = item['assets'].keys()
+    if type(public_assets) is str and public_assets == "ALL":
+        public_assets = item["assets"].keys()
 
     # deepcopy of item
     _item = deepcopy(item)
 
-    for key in [a for a in _assets if a in item['assets'].keys()]:
-        asset = item['assets'][key]
-        filename = asset['href']
+    for key in [a for a in _assets if a in item["assets"].keys()]:
+        asset = item["assets"][key]
+        filename = asset["href"]
         if not op.exists(filename):
             logger.warning(f"Cannot upload {filename}: does not exist")
             continue
         public = True if key in public_assets else False
         _headers = {}
-        if 'type' in asset:
-            _headers['ContentType'] = asset['type']
+        if "type" in asset:
+            _headers["ContentType"] = asset["type"]
         _headers.update(headers)
         # output URL
         layout = LayoutTemplate(op.join(path_template, op.basename(filename)))
@@ -128,10 +132,8 @@ def upload_item_assets_to_s3(item: Dict,
 
         # upload
         logger.debug(f"Uploading {filename} to {url}")
-        url_out = s3_client.upload(filename,
-                                   url,
-                                   public=public,
-                                   extra=_headers,
-                                   http_url=not s3_urls)
-        _item['assets'][key]['href'] = url_out
+        url_out = s3_client.upload(
+            filename, url, public=public, extra=_headers, http_url=not s3_urls
+        )
+        _item["assets"][key]["href"] = url_out
     return _item
