@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 # import vcr
+import pytest
 
 from stactask import Task
 
@@ -134,6 +135,7 @@ def test_download_assets():
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
+@pytest.mark.slow
 def test_download_large_asset():
     t = NothingTask(get_test_items(),
                     workdir=testpath / 'test-task-download-assets',
