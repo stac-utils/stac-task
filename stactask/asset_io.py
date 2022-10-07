@@ -30,7 +30,8 @@ async def download_item_assets(item,
                                save_item=True,
                                overwrite=False,
                                path_template='${collection}/${id}',
-                               absolute_path=False):
+                               absolute_path=False,
+                               **kwargs):
 
     _assets = item.assets.keys() if assets is None else assets
 
@@ -57,9 +58,9 @@ async def download_item_assets(item,
 
         # save file
         if not os.path.exists(new_href) or overwrite:
-            fs = fsspec.core.url_to_fs(href, asynchronous=True)[0]
-            tasks.append(asyncio.create_task(download_file(fs, href,
-                                                           new_href)))
+            fs = fsspec.core.url_to_fs(href, asynchronous=True, **kwargs)[0]
+            task = asyncio.create_task(download_file(fs, href, new_href))
+            tasks.append(task)
 
         # update
         new_item.assets[a].href = new_href
