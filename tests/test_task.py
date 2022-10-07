@@ -28,7 +28,7 @@ class DerivedItemTask(Task):
         return [self.create_item_from_item(self.items_as_dicts[0])]
 
 
-def get_test_items(name="sentinel2-items"):
+def get_test_items(name="sentinel2-l2a-j2k-items"):
     filename = testpath / "fixtures" / f"{name}.json"
     with open(filename) as f:
         items = json.loads(f.read())

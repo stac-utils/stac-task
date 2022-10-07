@@ -31,7 +31,7 @@ setup(
         "fsspec>=2022.8.2",
         "jsonpath_ng>=1.5.3",
         "requests>=2.28.1",
-        "s3fs>=2022.8.2"
+        "s3fs>=2022.8.2",
     ],
     extras_require={"validation": ["jsonschema>=4.0.1"], "orjson": ["orjson>=3.5"]},
     license="Apache Software License 2.0",
