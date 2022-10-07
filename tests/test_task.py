@@ -15,7 +15,7 @@ class NothingTask(Task):
     description = 'this task does nothing'
 
     def process(self):
-        return self.items
+        return self.items_as_dicts
 
 
 class DerivedItemTask(Task):
@@ -23,7 +23,7 @@ class DerivedItemTask(Task):
     description = 'this task creates a dervied item'
 
     def process(self):
-        return [self.create_item_from_item(self.items[0])]
+        return [self.create_item_from_item(self.items_as_dicts[0])]
 
 
 def get_test_items(name='sentinel2-items'):
