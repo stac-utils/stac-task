@@ -9,7 +9,7 @@ fi
 function usage() {
     echo -n \
         "Usage: $(basename "$0")
-Format code with yapf
+Format code with black and isort
 "
 }
 
@@ -17,6 +17,9 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     if [ "${1:-}" = "--help" ]; then
         usage
     else
-        yapf -ipr stactask tests
+        # Sort imports
+        pre-commit run isort --all-files
+        # Code formatting
+        pre-commit run black --all-files
     fi
 fi
