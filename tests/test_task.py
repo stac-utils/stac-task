@@ -123,15 +123,26 @@ def test_task_handler():
 def test_download_assets():
     t = NothingTask(
         get_test_items(),
-        workdir=testpath / "test-task-download-assets",
-        save_workdir=True,
+        workdir=testpath / "test-task-download-assets"
     )
     item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata"]).to_dict()
     filename = Path(item["assets"]["tileinfo_metadata"]["href"])
     assert filename.is_file() is True
-    # t._save_workdir = False
     del t
-    # assert (filename.is_file() is False)
+    assert filename.is_file() is False
+
+# @vcr.use_cassette(str(cassettepath / 'download_assets'))
+def test_download_multiple_assets():
+    t = NothingTask(
+        get_test_items(),
+        workdir=testpath / "test-task-download-assets",
+        save_workdir=True,
+    )
+    item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata", "granule_metadata"]).to_dict()
+    filename = Path(item["assets"]["tileinfo_metadata"]["href"])
+    assert filename.is_file() is True
+    filename = Path(item["assets"]["granule_metadata"]["href"])
+    assert filename.is_file() is True
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
