@@ -11,21 +11,7 @@ testpath = Path(__file__).parent
 cassettepath = testpath / "fixtures" / "cassettes"
 
 
-class NothingTask(Task):
-    name = "nothing-task"
-    description = "this task does nothing"
-
-    def process(self):
-        return self.items_as_dicts
-
-
-class DerivedItemTask(Task):
-    name = "derived-item-task"
-    description = "this task creates a derived item"
-
-    def process(self, parameter=None):
-        assert parameter == "value"
-        return [self.create_item_from_item(self.items_as_dicts[0])]
+from .tasks import NothingTask, DerivedItemTask
 
 
 def get_test_items(name="sentinel2-l2a-j2k-items"):
@@ -119,48 +105,6 @@ def test_task_handler():
     )
 
 
-# @vcr.use_cassette(str(cassettepath / 'download_assets'))
-def test_download_assets():
-    t = NothingTask(
-        get_test_items(),
-        workdir=testpath / "test-task-download-assets"
-    )
-    item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata"]).to_dict()
-    filename = Path(item["assets"]["tileinfo_metadata"]["href"])
-    assert filename.is_file() is True
-    del t
-    assert filename.is_file() is False
-
-# @vcr.use_cassette(str(cassettepath / 'download_assets'))
-def test_download_multiple_assets():
-    t = NothingTask(
-        get_test_items(),
-        workdir=testpath / "test-task-download-assets",
-        save_workdir=True,
-    )
-    item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata", "granule_metadata"]).to_dict()
-    filename = Path(item["assets"]["tileinfo_metadata"]["href"])
-    assert filename.is_file() is True
-    filename = Path(item["assets"]["granule_metadata"]["href"])
-    assert filename.is_file() is True
-
-
-# @vcr.use_cassette(str(cassettepath / 'download_assets'))
-@pytest.mark.slow
-def test_download_large_asset():
-    t = NothingTask(
-        get_test_items(),
-        workdir=testpath / "test-task-download-assets",
-        save_workdir=True,
-    )
-    item = t.download_item_assets(
-        t.items[0], assets=["red"], requester_pays=True
-    ).to_dict()
-    filename = Path(item["assets"]["red"]["href"])
-    assert filename.is_file() is True
-    # t._save_workdir = False
-    del t
-    # assert (filename.is_file() is False)
 
 
 if __name__ == "__main__":
