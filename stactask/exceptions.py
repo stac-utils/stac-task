@@ -6,3 +6,9 @@ class InvalidInput(Exception):
     """
 
     pass
+
+
+class FailedValidation(Exception):
+    """Exception class thrown when input payload does not validate"""
+
+    pass

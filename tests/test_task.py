@@ -2,7 +2,11 @@
 import json
 from pathlib import Path
 
-from .tasks import DerivedItemTask, NothingTask
+import pytest
+
+from stactask.exceptions import FailedValidation
+
+from .tasks import DerivedItemTask, FailValidateTask, NothingTask
 
 # import vcr
 
@@ -25,6 +29,12 @@ def test_task_init():
     assert len(t.items) == 1
     assert t.logger.name == t.name
     assert t._save_workdir is False
+
+
+def test_failed_validation():
+    item_collection = get_test_items()
+    with pytest.raises(FailedValidation):
+        FailValidateTask(item_collection)
 
 
 def test_edit_items():

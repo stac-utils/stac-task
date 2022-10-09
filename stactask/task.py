@@ -16,6 +16,7 @@ from boto3utils import s3
 from pystac import ItemCollection
 
 from .asset_io import download_item_assets, upload_item_assets_to_s3
+from .exceptions import FailedValidation
 from .utils import stac_jsonpath_match
 
 # types
@@ -60,10 +61,13 @@ class Task(ABC):
         # set up logger
         self.logger = logging.getLogger(self.name)
 
+        # set this to avoid confusion in destructor if called during validation
+        self._save_workdir = True
+
         # validate input payload...or not
         if not skip_validation:
             if not self.validate(item_collection):
-                sys.exit(1)
+                raise FailedValidation()
 
         # set instance variables
         self._save_workdir = save_workdir
