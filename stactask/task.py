@@ -290,8 +290,8 @@ class Task(ABC):
 
 # from https://pythonalgos.com/runtimeerror-event-loop-is-closed-asyncio-fix/
 """fix yelling at me error"""
-from asyncio.proactor_events import _ProactorBasePipeTransport
-from functools import wraps
+from asyncio.proactor_events import _ProactorBasePipeTransport  # noqa
+from functools import wraps  # noqa
 
 
 def silence_event_loop_closed(func):

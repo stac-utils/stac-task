@@ -2,16 +2,13 @@
 import json
 from pathlib import Path
 
-# import vcr
-import pytest
+from .tasks import DerivedItemTask, NothingTask
 
-from stactask import Task
+# import vcr
+
 
 testpath = Path(__file__).parent
 cassettepath = testpath / "fixtures" / "cassettes"
-
-
-from .tasks import DerivedItemTask, NothingTask
 
 
 def get_test_items(name="sentinel2-l2a-j2k-items"):
