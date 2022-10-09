@@ -11,7 +11,7 @@ testpath = Path(__file__).parent
 cassettepath = testpath / "fixtures" / "cassettes"
 
 
-from .tasks import NothingTask, DerivedItemTask
+from .tasks import DerivedItemTask, NothingTask
 
 
 def get_test_items(name="sentinel2-l2a-j2k-items"):
@@ -103,8 +103,6 @@ def test_task_handler():
         "derived-item-task"
         in output_items["features"][0]["properties"]["processing:software"]
     )
-
-
 
 
 if __name__ == "__main__":
