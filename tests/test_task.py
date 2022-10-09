@@ -112,5 +112,21 @@ def test_task_handler():
     )
 
 
+def test_parse_no_args():
+    with pytest.raises(SystemExit):
+        NothingTask.parse_args([])
+
+
+def test_parse_args():
+    args = NothingTask.parse_args("run input --save-workdir".split())
+    assert args["command"] == "run"
+    assert args["logging"] == "INFO"
+    assert args["input"] == "input"
+    assert args["save_workdir"] is True
+    assert args["skip_upload"] is False
+    assert args["skip_validation"] is False
+    assert args["local"] is False
+
+
 if __name__ == "__main__":
     output = NothingTask.cli()

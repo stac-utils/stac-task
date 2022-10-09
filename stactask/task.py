@@ -182,7 +182,7 @@ class Task(ABC):
         # self.download_assets(['key1', 'key2'])
         # do some stuff
         # self.upload_assets(['key1', 'key2'])
-        return self.items
+        pass
 
     @classmethod
     def handler(cls, payload, **kwargs):
@@ -199,8 +199,7 @@ class Task(ABC):
             raise err
 
     @classmethod
-    def get_cli_parser(cls):
-        """Parse CLI arguments"""
+    def parse_args(cls, args):
         dhf = argparse.ArgumentDefaultsHelpFormatter
         parser0 = argparse.ArgumentParser(description=cls.description)
         parser0.add_argument(
@@ -244,14 +243,9 @@ class Task(ABC):
         )
         h = "Run local mode (save-workdir, skip-upload, skip-validation set to True)"
         parser.add_argument("--local", action="store_true", default=False)
-        return parser0
 
-    @classmethod
-    def parse_args(cls, args, parser=None):
-        if parser is None:
-            parser = cls.get_cli_parser()
         # turn Namespace into dictionary
-        pargs = vars(parser.parse_args(args))
+        pargs = vars(parser0.parse_args(args))
         # only keep keys that are not None
         pargs = {k: v for k, v in pargs.items() if v is not None}
 
@@ -267,8 +261,8 @@ class Task(ABC):
         return pargs
 
     @classmethod
-    def cli(cls, parser=None):
-        args = cls.parse_args(sys.argv[1:], parser=parser)
+    def cli(cls):
+        args = cls.parse_args(sys.argv[1:])
         cmd = args.pop("command")
 
         # logging
