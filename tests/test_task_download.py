@@ -68,7 +68,7 @@ def test_download_items_assets():
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
-@pytest.mark.slow
+@pytest.mark.s3_requester_pays
 def test_download_large_asset():
     t = NothingTask(
         get_test_items(),
