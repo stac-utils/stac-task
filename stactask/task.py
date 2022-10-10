@@ -15,7 +15,8 @@ from typing import Dict, List, Optional, Union
 from boto3utils import s3
 from pystac import ItemCollection
 
-from .asset_io import download_item_assets, upload_item_assets_to_s3
+from .asset_io import (download_item_assets, download_items_assets,
+                       upload_item_assets_to_s3)
 from .exceptions import FailedValidation
 from .utils import stac_jsonpath_match
 
@@ -144,8 +145,20 @@ class Task(ABC):
         """
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
-        item = loop.run_until_complete(download_item_assets(item, path_template=outdir, **kwargs))
+        item = loop.run_until_complete(
+            download_item_assets(item, path_template=outdir, **kwargs)
+        )
         return item
+
+    def download_items_assets(
+        self, items: List[Dict], path_template="${collection}/${id}", **kwargs
+    ):
+        outdir = str(self._workdir / path_template)
+        loop = asyncio.get_event_loop()
+        items = loop.run_until_complete(
+            download_items_assets(self.items, path_template=outdir, **kwargs)
+        )
+        return items
 
     def upload_item_assets_to_s3(self, item: Dict, assets: Optional[List[str]] = None):
         if self._skip_upload:

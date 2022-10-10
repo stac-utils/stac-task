@@ -77,11 +77,11 @@ async def download_item_assets(
     return new_item
 
 
-async def download_items_assets(items, max_downloads=3, **kwargs):
+async def download_items_assets(items, **kwargs):
     tasks = []
     for item in items:
         tasks.append(asyncio.create_task(download_item_assets(item, **kwargs)))
-    new_items = await asyncio.wait(tasks)
+    new_items = await asyncio.gather(*tasks)
     return new_items
 
 

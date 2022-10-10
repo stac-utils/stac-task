@@ -25,8 +25,10 @@ def test_download_nosuch_asset():
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
-def test_download_asset():
-    t = NothingTask(get_test_items(), workdir=testpath / "test-task-download-asset")
+def test_download_item_asset():
+    t = NothingTask(
+        get_test_items(), workdir=testpath / "test-task-download-item-asset"
+    )
     item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata"]).to_dict()
     fname = item["assets"]["tileinfo_metadata"]["href"]
     filename = Path(fname)
@@ -36,10 +38,10 @@ def test_download_asset():
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
-def test_download_assets():
+def test_download_item_assets():
     t = NothingTask(
         get_test_items(),
-        workdir=testpath / "test-task-download-assets",
+        workdir=testpath / "test-task-download-item-assets",
         save_workdir=True,
     )
     item = t.download_item_assets(
@@ -48,6 +50,20 @@ def test_download_assets():
     filename = Path(item["assets"]["tileinfo_metadata"]["href"])
     assert filename.is_file() is True
     filename = Path(item["assets"]["granule_metadata"]["href"])
+    assert filename.is_file() is True
+
+
+def test_download_items_assets():
+    asset_key = "tileinfo_metadata"
+    t = NothingTask(
+        get_test_items(),
+        workdir=testpath / "test-task-download-items-assets",
+        save_workdir=True,
+    )
+    items = [i.to_dict() for i in t.download_items_assets(t.items, assets=[asset_key])]
+    filename = Path(items[0]["assets"][asset_key]["href"])
+    assert filename.is_file() is True
+    filename = Path(items[1]["assets"][asset_key]["href"])
     assert filename.is_file() is True
 
 
