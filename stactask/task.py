@@ -15,8 +15,11 @@ from typing import Dict, List, Optional, Union
 from boto3utils import s3
 from pystac import ItemCollection
 
-from .asset_io import (download_item_assets, download_items_assets,
-                       upload_item_assets_to_s3)
+from .asset_io import (
+    download_item_assets,
+    download_items_assets,
+    upload_item_assets_to_s3,
+)
 from .exceptions import FailedValidation
 from .utils import stac_jsonpath_match
 
