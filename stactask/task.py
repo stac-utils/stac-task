@@ -143,7 +143,8 @@ class Task(ABC):
             assets (Optional[List[str]], optional): List of asset keys to download. Defaults to all assets.
         """
         outdir = str(self._workdir / path_template)
-        item = asyncio.run(download_item_assets(item, path_template=outdir, **kwargs))
+        loop = asyncio.get_event_loop()
+        item = loop.run_until_complete(download_item_assets(item, path_template=outdir, **kwargs))
         return item
 
     def upload_item_assets_to_s3(self, item: Dict, assets: Optional[List[str]] = None):
