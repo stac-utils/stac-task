@@ -10,12 +10,34 @@ see [#345](https://github.com/stac-utils/stactools/issues/345). It is based on a
 cirrus-lib](https://github.com/cirrus-geo/cirrus-lib/tree/features/task-class) except
 aims to be more generic.
 
+## Quickstart for Creating New Tasks
 
-## run tasks
 
 ```
-$ docker-compose run task pytest -v -s tests
+from stactask import Task
+
+class MyTask(Task):
+    name = 'my-task'
+    description = 'this task does it all'
+
+    def validate(self):
+        assert len(self.items) == 1
+
+    def process(self):
+        item = self.items[0]
+        
+        # download a datafile
+        item = self.download_item_assets(item, assets=['data'])
+        
+        # operate on the local file to create a new asset
+
+
+        item = self.upload_item_assets_to_s3(item)
+
+        # this task returns a single item
+        return [item]
 ```
+
 
 ## Task Input
 
@@ -92,7 +114,9 @@ would have `param2=value2` passed. If there were a `task-b` to be run it would n
 
 The path_template string is a way to control the output location of uploaded assets from a STAC Item using metadata from the Item itself. The template can contain fixed strings along with variables used for substitution. The following variables can be used in the template.
 
-**Full Example**
+See [https://jsonpath.herokuapp.com/](Jayway JsonPath Evaluator) to experiment with JSONpath and [https://regex101.com/](regex101) to experiment with regex
+
+**Full Payload Example**
 ```
 {
     "description": "My process configuration",
@@ -108,4 +132,13 @@ The path_template string is a way to control the output location of uploaded ass
         }
     }
 }
+```
+
+
+## Development
+
+### run tests
+
+```
+$ pytest -v -s tests
 ```

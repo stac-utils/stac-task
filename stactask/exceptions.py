@@ -4,4 +4,11 @@ class InvalidInput(Exception):
     Args:
         Exception (Exception): Base class
     """
+
+    pass
+
+
+class FailedValidation(Exception):
+    """Exception class thrown when input payload does not validate"""
+
     pass

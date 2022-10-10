@@ -17,14 +17,17 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     if [ "${1:-}" = "--help" ]; then
         usage
     else
-        # Lint
-        flake8 stactask tests
+        ./scripts/lint
+        ./scripts/format
 
-        # Code formatting
-        yapf -dpr stactask tests
+        codespell -I .codespellignore -f \
+            scripts/* \
+            *.py ./**/*.py \
+            *.md \
+            docs/*.rst docs/**/*.rst \
+            docs/*.ipynb docs/**/*.ipynb
 
-        # Test suite with coverage enabled
-        pytest -s --cov stactask --cov-report term-missing
+        pytest --cov=stactools.modis tests
         coverage xml
     fi
 fi

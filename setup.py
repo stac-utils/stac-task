@@ -1,8 +1,8 @@
 import os
-from setuptools import setup, find_packages
 from glob import glob
-
 from os.path import basename, splitext
+
+from setuptools import find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -17,7 +17,7 @@ setup(
     ),
     long_description=readme,
     long_description_content_type="text/markdown",
-    author=u"Matthew Hanson",
+    author="Matthew Hanson",
     author_email="matt.a.hanson@gmail.com",
     url="https://github.com/stac-utils/stactask",
     packages=find_packages(exclude=["tests*"]),
@@ -25,15 +25,15 @@ setup(
     py_modules=[splitext(basename(path))[0] for path in glob("pystac/*.py")],
     python_requires=">=3.8",
     install_requires=[
+        "pystac>=1.6",
         "python-dateutil>=2.7.0",
         "boto3-utils>=0.3.2",
+        "fsspec>=2022.8.2",
         "jsonpath_ng>=1.5.3",
         "requests>=2.28.1",
+        "s3fs>=2022.8.2",
     ],
-    extras_require={
-        "validation": ["jsonschema>=4.0.1"],
-        "orjson": ["orjson>=3.5"]
-    },
+    extras_require={"validation": ["jsonschema>=4.0.1"], "orjson": ["orjson>=3.5"]},
     license="Apache Software License 2.0",
     license_files=["LICENSE"],
     zip_safe=False,
