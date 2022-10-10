@@ -3,10 +3,11 @@ import logging
 import os
 from copy import deepcopy
 from os import path as op
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import fsspec
 from boto3utils import s3
+from pystac import Item
 from pystac.layout import LayoutTemplate
 
 logger = logging.getLogger(__name__)
@@ -26,12 +27,12 @@ async def download_file(fs, src, dest):
 
 
 async def download_item_assets(
-    item,
-    assets=None,
-    save_item=True,
-    overwrite=False,
-    path_template="${collection}/${id}",
-    absolute_path=False,
+    item: Item,
+    assets: Optional[List[str]] = None,
+    save_item: Optional[bool] = True,
+    overwrite: Optional[bool] = False,
+    path_template: Optional[str] = "${collection}/${id}",
+    absolute_path: Optional[bool] = False,
     **kwargs,
 ):
 
