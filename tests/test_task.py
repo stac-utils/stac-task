@@ -125,7 +125,6 @@ def test_parse_args():
     assert args["save_workdir"] is True
     assert args["skip_upload"] is False
     assert args["skip_validation"] is False
-    assert args["local"] is False
 
 
 if __name__ == "__main__":

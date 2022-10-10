@@ -266,7 +266,7 @@ class Task(ABC):
         # only keep keys that are not None
         pargs = {k: v for k, v in pargs.items() if v is not None}
 
-        if pargs.pop("local"):
+        if pargs.pop("local", False):
             # local mode sets all of
             for k in ["save_workdir", "skip_upload", "skip_validation"]:
                 pargs[k] = True
