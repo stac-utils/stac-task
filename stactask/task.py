@@ -258,8 +258,10 @@ class Task(ABC):
             action="store_true",
             default=False,
         )
-        h = "Run local mode (save-workdir, skip-upload, skip-validation set to True)"
-        parser.add_argument("--local", action="store_true", default=False)
+        h = """ Run local mode
+                (save-workdir, skip-upload, skip-validation set to True,
+                workdir set to 'local-output' if not set) """
+        parser.add_argument("--local", help=h, action="store_true", default=False)
 
         # turn Namespace into dictionary
         pargs = vars(parser0.parse_args(args))
@@ -270,6 +272,8 @@ class Task(ABC):
             # local mode sets all of
             for k in ["save_workdir", "skip_upload", "skip_validation"]:
                 pargs[k] = True
+            if pargs["workdir"] is None:
+                pargs["workdir"] = "local-output"
 
         if pargs.get("command", None) is None:
             parser.print_help()
