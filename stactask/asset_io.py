@@ -87,7 +87,7 @@ async def download_items_assets(items, **kwargs):
 
 
 def upload_item_assets_to_s3(
-    item: Dict,
+    item: Item,
     assets: List[str] = None,
     public_assets: List[str] = [],
     path_template: str = "${collection}/${id}",
@@ -106,18 +106,18 @@ def upload_item_assets_to_s3(
     Returns:
         Dict: A new STAC Item with uploaded assets pointing to newly uploaded file URLs
     """
+    # deepcopy of item
+    _item = item.to_dict()
+
     # if assets not provided, upload all assets
-    _assets = assets if assets is not None else item["assets"].keys()
+    _assets = assets if assets is not None else _item["assets"].keys()
 
     # determine which assets should be public
     if type(public_assets) is str and public_assets == "ALL":
-        public_assets = item["assets"].keys()
+        public_assets = _item["assets"].keys()
 
-    # deepcopy of item
-    _item = deepcopy(item)
-
-    for key in [a for a in _assets if a in item["assets"].keys()]:
-        asset = item["assets"][key]
+    for key in [a for a in _assets if a in _item["assets"].keys()]:
+        asset = _item["assets"][key]
         filename = asset["href"]
         if not op.exists(filename):
             logger.warning(f"Cannot upload {filename}: does not exist")
@@ -137,4 +137,4 @@ def upload_item_assets_to_s3(
             filename, url, public=public, extra=_headers, http_url=not s3_urls
         )
         _item["assets"][key]["href"] = url_out
-    return _item
+    return Item.from_dict(_item)
