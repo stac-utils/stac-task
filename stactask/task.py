@@ -12,7 +12,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from typing import Dict, List, Optional, Union
 
-from boto3utils import s3
+import fsspec
 from pystac import ItemCollection
 
 from .asset_io import (
@@ -206,10 +206,13 @@ class Task(ABC):
         task = cls(payload, **kwargs)
         try:
             items = task.process(**task.parameters)
+
+            # this should be included in process
             task._item_collection["features"] = cls.add_software_version(items)
+
+            # Not sure this belongs in handler
             task.assign_collections()
-            with open(task._workdir / "stac.json", "w") as f:
-                f.write(json.dumps(task._item_collection))
+
             return task._item_collection
         except Exception as err:
             task.logger.error(err, exc_info=True)
@@ -241,7 +244,12 @@ class Task(ABC):
         parser.add_argument(
             "input", help="Full path of item collection to process (s3 or local)"
         )
-        h = "Use this as work directory. Will be created but not deleted)"
+
+        h = "Write output payload to this URL"
+        parser.add_argument("--output", help=h, default=None)
+
+        # additional options
+        h = "Use this as work directory. Will be created."
         parser.add_argument("--workdir", help=h, default=None, type=Path)
         h = "Save workdir after completion"
         parser.add_argument(
@@ -272,7 +280,7 @@ class Task(ABC):
             # local mode sets all of
             for k in ["save_workdir", "skip_upload", "skip_validation"]:
                 pargs[k] = True
-            if pargs["workdir"] is None:
+            if pargs.get("workdir") is None:
                 pargs["workdir"] = "local-output"
 
         if pargs.get("command", None) is None:
@@ -291,20 +299,24 @@ class Task(ABC):
         logging.basicConfig(level=loglevel)
 
         # quiet these loud loggers
-        quiet_loggers = ["botocore", "s3transfer", "urllib3"]
-        for ql in quiet_loggers:
+        for ql in ["botocore", "s3transfer", "urllib3"]:
             logging.getLogger(ql).propagate = False
 
         if cmd == "run":
             href = args.pop("input")
-            if href.startswith("s3://"):
-                item_collection = s3().read_json(href)
-            else:
-                # open local item collection
-                with open(href) as f:
-                    item_collection = json.loads(f.read())
+            href_out = args.pop("output", None)
+
+            # read input
+            with fsspec.open(href) as f:
+                item_collection = json.loads(f.read())
+
             # run task handler
-            cls.handler(item_collection, **args)
+            item_collection_out = cls.handler(item_collection, **args)
+
+            # write output
+            if href_out is not None:
+                with fsspec.open(href_out, "w") as f:
+                    f.write(json.dumps(item_collection_out))
 
 
 # from https://pythonalgos.com/runtimeerror-event-loop-is-closed-asyncio-fix/
