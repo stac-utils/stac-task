@@ -113,12 +113,12 @@ class Task(ABC):
         return ItemCollection.from_dict(items_dict, preserve_dict=True)
 
     @classmethod
-    def validate(cls, payload) -> bool:
+    def validate(cls, payload: Dict) -> bool:
         # put validation logic on input Items and process definition here
         return True
 
     @classmethod
-    def add_software_version(cls, items):
+    def add_software_version(cls, items: List[Dict]):
         processing_ext = (
             "https://stac-extensions.github.io/processing/v1.1.0/schema.json"
         )
@@ -138,7 +138,7 @@ class Task(ABC):
                 i["collection"] = coll
 
     def download_item_assets(
-        self, item: Dict, path_template="${collection}/${id}", **kwargs
+        self, item: Dict, path_template: Optional[str] = "${collection}/${id}", **kwargs
     ):
         """Download provided asset keys for all items in payload. Assets are saved in workdir in a
            directory named by the Item ID, and the items are updated with the new asset hrefs.
@@ -154,7 +154,7 @@ class Task(ABC):
         return item
 
     def download_items_assets(
-        self, items: List[Dict], path_template="${collection}/${id}", **kwargs
+        self, items: List[Dict], path_template: Optional[str] = "${collection}/${id}", **kwargs
     ):
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
@@ -202,15 +202,13 @@ class Task(ABC):
         pass
 
     @classmethod
-    def handler(cls, payload, **kwargs):
+    def handler(cls, payload: Dict, **kwargs) -> "Task":
         task = cls(payload, **kwargs)
         try:
             items = task.process(**task.parameters)
 
-            # this should be included in process
+            # should this be included in process ?
             task._item_collection["features"] = cls.add_software_version(items)
-
-            # Not sure this belongs in handler
             task.assign_collections()
 
             return task._item_collection
