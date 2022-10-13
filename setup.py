@@ -11,7 +11,8 @@ with open(os.path.join(here, "README.md")) as readme_file:
 
 
 setup(
-    name="stactask",
+    name="stac-task",
+    version="0.1.0b1"
     description=(
         "STAC Task class provides a class interface for running custom algorithms on STAC Items"
     ),
@@ -19,10 +20,10 @@ setup(
     long_description_content_type="text/markdown",
     author="Matthew Hanson",
     author_email="matt.a.hanson@gmail.com",
-    url="https://github.com/stac-utils/stactask",
+    url="https://github.com/stac-utils/stac-task",
     packages=find_packages(exclude=["tests*"]),
     package_data={"": ["py.typed", "*.jinja2"]},
-    py_modules=[splitext(basename(path))[0] for path in glob("pystac/*.py")],
+    py_modules=[splitext(basename(path))[0] for path in glob("stactask/*.py")],
     python_requires=">=3.8",
     install_requires=[
         "pystac>=1.6",
