@@ -154,7 +154,10 @@ class Task(ABC):
         return item
 
     def download_items_assets(
-        self, items: List[Dict], path_template: Optional[str] = "${collection}/${id}", **kwargs
+        self,
+        items: List[Dict],
+        path_template: Optional[str] = "${collection}/${id}",
+        **kwargs
     ):
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
@@ -203,6 +206,11 @@ class Task(ABC):
 
     @classmethod
     def handler(cls, payload: Dict, **kwargs) -> "Task":
+        if "href" in payload:
+            # read input
+            with fsspec.open(payload["href"]) as f:
+                payload = json.loads(f.read())
+
         task = cls(payload, **kwargs)
         try:
             items = task.process(**task.parameters)
@@ -306,15 +314,15 @@ class Task(ABC):
 
             # read input
             with fsspec.open(href) as f:
-                item_collection = json.loads(f.read())
+                payload = json.loads(f.read())
 
             # run task handler
-            item_collection_out = cls.handler(item_collection, **args)
+            payload_out = cls.handler(payload, **args)
 
             # write output
             if href_out is not None:
                 with fsspec.open(href_out, "w") as f:
-                    f.write(json.dumps(item_collection_out))
+                    f.write(json.dumps(payload_out))
 
 
 # from https://pythonalgos.com/runtimeerror-event-loop-is-closed-asyncio-fix/

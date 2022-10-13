@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-from copy import deepcopy
 from os import path as op
 from typing import Dict, List, Optional
 
