@@ -8,7 +8,7 @@ from .tasks import NothingTask
 testpath = Path(__file__).parent
 
 
-def get_test_items(name="sentinel2-l2a-j2k-items"):
+def get_test_items(name="sentinel2-l2a-j2k-payload"):
     filename = testpath / "fixtures" / f"{name}.json"
     with open(filename) as f:
         items = json.loads(f.read())
