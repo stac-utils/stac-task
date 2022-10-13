@@ -89,20 +89,26 @@ See [Jayway JsonPath Evaluator](https://jsonpath.herokuapp.com/) to experiment w
 
 ### tasks
 
-The tasks field is a dictionary with an optional key for each task. If present, it contains a dictionary 
-that is converted to a set of keywords and passed to the Task's `process` function. 
+The tasks field is a dictionary with an optional key for each task. If present, it contains 
+a dictionary that is converted to a set of keywords and passed to the Task's `process` function.
 The documentation for each task will provide the list of available parameters.
 
 ```
 {
-    "tasks": {
-        "task-a": {
-            "param1": "value1"
+    "tasks": [
+        {
+            "name": "task-a",
+            "parameters": {
+                "param1": "value1"
+            }
         },
-        "task-c": {
-            "param2": "value2":
+        {
+            "name": "task-c",
+            "parameters": {
+                "param2": "value2"
+            }
         }
-    }
+    ]
 }
 ```
 
