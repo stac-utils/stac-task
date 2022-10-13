@@ -57,7 +57,16 @@ ItemCollection.
 | description | string | Optional description of the process configuration |
 | collections   | Map<str, str> | A mapping of output collection name to a JSONPath pattern (for matching Items) |
 | upload_options | UploadOptions | Options used when uploading assets to a remote server |
-| tasks       | Map<string, Dict> | Dictionary of task parameters by task name |
+| tasks       | List[TaskConfig] | Ordered List of task configurations  |
+
+## TaskConfig Object
+
+A Task Configuration contains information for running a specific task.
+
+| Field Name    | Type | Description |
+| ------------- | ---- | ----------- |
+| name          | str  | **REQUIRED** Name of the task |
+| parameters    | Map<str, str> | Dictionary of keyword parameters that will be passed to the Tasks `process` function |
 
 #### collections
 

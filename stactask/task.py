@@ -38,11 +38,14 @@ JSON under the "process" field. An example process definition:
             "landsat-c2l2": ""
         }
     },
-    "tasks": {
-        "task-name": {
-            "param": "value"
+    "tasks": [
+        {
+            "name": "task-name",
+            "parameters": {
+                "param": "value"
+            }
         }
-    }
+    ]
 }
 ```
 """
@@ -97,7 +100,13 @@ class Task(ABC):
 
     @property
     def parameters(self) -> Dict:
-        return self.process_definition.get("tasks", {}).get(self.name, {})
+        task_configs = self.process_definition.get("tasks", [])
+        task_config = [cfg for cfg in task_configs if cfg["name"] == self.name]
+        if len(task_config) == 0:
+            task_config = {}
+        else:
+            task_config = task_config[0]
+        return task_config.get("parameters", {})
 
     @property
     def upload_options(self) -> Dict:
