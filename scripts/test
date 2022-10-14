@@ -27,7 +27,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
             docs/*.rst docs/**/*.rst \
             docs/*.ipynb docs/**/*.ipynb
 
-        pytest --cov=stactools.modis tests
+        pytest --cov=stactask tests
         coverage xml
     fi
 fi
