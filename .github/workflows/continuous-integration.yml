@@ -7,55 +7,104 @@ on:
   pull_request:
 
 jobs:
-  build:
-    name: build
-    runs-on: ${{ matrix.os }}
+  standard:
+    name: Standard
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
-#          - "3.11-dev"
-        os:
-          - ubuntu-latest
-#          - windows-latest
+        python-version: ["3.8", "3.9", "3.10"]
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - uses: ./.github/setup
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: 'setup.py'
-
+      - name: Update
+        run: ./scripts/update
+      - name: Test
+        run: ./scripts/test
+  extra-requires:
+    name: Extra requires
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/setup
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install with extra_requires
+        run: pip install '.[all]'
+      - name: Install development dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Test
+        run: ./scripts/test
+  minimum-versions:
+    name: Minimum versions
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/setup
+        with:
+          python-version: ${{ matrix.python-version }}
+          pip-cache-hash: ${{ hashFiles('requirements-min.txt', 'requirements-dev.txt') }}
+      - name: Install minimum requirements
+        run: pip install -r requirements-min.txt
+      - name: Install the package
+        run: pip install .
+      - name: Install development dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Check minimum requirements
+        run: scripts/check_minimum_requirements
+      - name: Test
+        run: scripts/test
+  pre-release-versions:
+    name: Pre-release versions
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/setup
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Update
+        run: scripts/update
+      - name: Install pre-release versions of rasterio and pystac
+        run: pip install -U --pre pystac rasterio
+      - name: Run tests
+        run: scripts/test
+  codecov:
+    name: Codecov
+    needs:
+      - standard
+      - extra-requires
+      - minimum-versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
       - name: Execute linters and test suites
         run: ./scripts/cibuild
-
-      - name: Upload All coverage to Codecov
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
-          fail_ci_if_error: false 
-
-  pre-release:
-    name: pre-release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-          cache: 'pip'
-          cache-dependency-path: 'setup.py'
-      - name: Install
-        run: pip install .
-      - name: Install any pre-releases of stac-task
-        run: pip install -U --pre stac-task
-      - name: Install dev requirements
-        run: pip install -r requirements-dev.txt
-      - name: Test
-        run: ./scripts/test
+          fail_ci_if_error: false
