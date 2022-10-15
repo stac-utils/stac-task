@@ -100,13 +100,16 @@ class Task(ABC):
 
     @property
     def parameters(self) -> Dict:
-        task_configs = self.process_definition.get("tasks", [])
-        task_config = [cfg for cfg in task_configs if cfg["name"] == self.name]
-        if len(task_config) == 0:
-            task_config = {}
+        task_configs = self.process_definition.get("tasks", {})
+        if isinstance(task_configs, List):
+            task_config = [cfg for cfg in task_configs if cfg["name"] == self.name]
+            if len(task_config) == 0:
+                task_config = {}
+            else:
+                task_config = task_config[0]
+            return task_config.get("parameters", {})
         else:
-            task_config = task_config[0]
-        return task_config.get("parameters", {})
+            return task_configs.get(self.name, {})
 
     @property
     def upload_options(self) -> Dict:
@@ -215,9 +218,9 @@ class Task(ABC):
 
     @classmethod
     def handler(cls, payload: Dict, **kwargs) -> "Task":
-        if "href" in payload:
+        if "href" in payload or "url" in payload:
             # read input
-            with fsspec.open(payload["href"]) as f:
+            with fsspec.open(payload.get("href", payload.get("url"))) as f:
                 payload = json.loads(f.read())
 
         task = cls(payload, **kwargs)
