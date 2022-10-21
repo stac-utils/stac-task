@@ -102,6 +102,7 @@ class Task(ABC):
     def parameters(self) -> Dict:
         task_configs = self.process_definition.get("tasks", {})
         if isinstance(task_configs, List):
+            # tasks is a list
             task_config = [cfg for cfg in task_configs if cfg["name"] == self.name]
             if len(task_config) == 0:
                 task_config = {}
@@ -109,6 +110,7 @@ class Task(ABC):
                 task_config = task_config[0]
             return task_config.get("parameters", {})
         else:
+            # tasks is a dictionary of parameters (undocumented)
             return task_configs.get(self.name, {})
 
     @property
@@ -180,7 +182,7 @@ class Task(ABC):
 
     def upload_item_assets_to_s3(self, item: Dict, assets: Optional[List[str]] = None):
         if self._skip_upload:
-            self.logger.warn("Skipping upload of new and modified assets")
+            self.logger.warning("Skipping upload of new and modified assets")
             return item
         item = upload_item_assets_to_s3(item, assets=assets, **self.upload_options)
         return item
