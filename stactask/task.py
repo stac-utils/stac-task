@@ -321,7 +321,7 @@ class Task(ABC):
         logging.basicConfig(level=loglevel)
 
         # quiet these loud loggers
-        for ql in ["botocore", "s3transfer", "urllib3"]:
+        for ql in ["botocore", "s3transfer", "urllib3", "fsspec", "asyncio", "aiobotocore"]:
             logging.getLogger(ql).propagate = False
 
         if cmd == "run":
