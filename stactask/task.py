@@ -287,8 +287,8 @@ class Task(ABC):
             default=False,
         )
         h = """ Run local mode
-                (save-workdir, skip-upload, skip-validation set to True,
-                workdir set to 'local-output' if not set) """
+                (save-workdir = True, skip-upload = True, skip-validation = True,
+                workdir = 'local-output', output = 'local-output/output-payload.json') """
         parser.add_argument("--local", help=h, action="store_true", default=False)
 
         # turn Namespace into dictionary
@@ -302,6 +302,8 @@ class Task(ABC):
                 pargs[k] = True
             if pargs.get("workdir") is None:
                 pargs["workdir"] = "local-output"
+            if pargs.get("output") is None:
+                pargs["output"] = Path(pargs["workdir"]) / "output-payload.json"
 
         if pargs.get("command", None) is None:
             parser.print_help()
