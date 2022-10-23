@@ -12,7 +12,7 @@ with open(os.path.join(here, "README.md")) as readme_file:
 
 setup(
     name="stactask",
-    version="0.1.0b2",
+    version="0.1.0b3",
     description=(
         "STAC Task class provides a class interface for running custom algorithms on STAC Items"
     ),
