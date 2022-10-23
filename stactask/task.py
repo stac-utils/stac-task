@@ -125,7 +125,7 @@ class Task(ABC):
 
     @property
     def items_as_dicts(self) -> List[Dict]:
-        return self._payload["features"]
+        return self._payload.get("features", [])
 
     @property
     def items(self) -> ItemCollection:
@@ -143,6 +143,8 @@ class Task(ABC):
             "https://stac-extensions.github.io/processing/v1.1.0/schema.json"
         )
         for i in items:
+            if "stac_extensions" not in i:
+                i["stac_extensions"] = []
             i["stac_extensions"].append(processing_ext)
             i["stac_extensions"] = list(set(i["stac_extensions"]))
             i["properties"]["processing:software"] = {cls.name: cls.version}
