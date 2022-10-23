@@ -59,7 +59,7 @@ class Task(ABC):
 
     def __init__(
         self: "Task",
-        item_collection: Dict,
+        payload: Dict,
         workdir: Optional[PathLike] = None,
         save_workdir: Optional[bool] = False,
         skip_upload: Optional[bool] = False,
@@ -73,13 +73,13 @@ class Task(ABC):
 
         # validate input payload...or not
         if not skip_validation:
-            if not self.validate(item_collection):
+            if not self.validate(payload):
                 raise FailedValidation()
 
         # set instance variables
         self._save_workdir = save_workdir
         self._skip_upload = skip_upload
-        self._item_collection = item_collection
+        self._payload = payload
 
         # create temporary work directory if workdir is None
         if workdir is None:
@@ -96,7 +96,7 @@ class Task(ABC):
 
     @property
     def process_definition(self) -> Dict:
-        return self._item_collection.get("process", {})
+        return self._payload.get("process", {})
 
     @property
     def parameters(self) -> Dict:
@@ -119,7 +119,7 @@ class Task(ABC):
 
     @property
     def items_as_dicts(self) -> List[Dict]:
-        return self._item_collection["features"]
+        return self._payload["features"]
 
     @property
     def items(self) -> ItemCollection:
@@ -145,7 +145,7 @@ class Task(ABC):
     def assign_collections(self):
         """Assigns new collection names based on"""
         for i, (coll, expr) in itertools.product(
-            self._item_collection["features"],
+            self._payload["features"],
             self.upload_options.get("collections", dict()).items(),
         ):
             if stac_jsonpath_match(i, expr):
@@ -230,10 +230,10 @@ class Task(ABC):
             items = task.process(**task.parameters)
 
             # should this be included in process ?
-            task._item_collection["features"] = cls.add_software_version(items)
+            task._payload["features"] = cls.add_software_version(items)
             task.assign_collections()
 
-            return task._item_collection
+            return task._payload
         except Exception as err:
             task.logger.error(err, exc_info=True)
             raise err

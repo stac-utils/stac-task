@@ -25,7 +25,7 @@ def get_test_items(name="sentinel2-l2a-j2k-payload"):
 def test_task_init():
     item_collection = get_test_items()
     t = NothingTask(item_collection)
-    assert len(t._item_collection["features"]) == 2
+    assert len(t._payload["features"]) == 2
     assert len(t.items) == 2
     assert t.logger.name == t.name
     assert t._save_workdir is False
@@ -41,13 +41,13 @@ def test_edit_items():
     items = get_test_items()
     t = NothingTask(items)
     t.process_definition["workflow"] = "test-task-workflow"
-    assert t._item_collection["process"]["workflow"] == "test-task-workflow"
+    assert t._payload["process"]["workflow"] == "test-task-workflow"
 
 
 def test_edit_items2():
     items = get_test_items()
     t = NothingTask(items)
-    assert t._item_collection["features"][0]["type"] == "Feature"
+    assert t._payload["features"][0]["type"] == "Feature"
 
 
 def test_tmp_workdir():
