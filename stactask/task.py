@@ -147,6 +147,8 @@ class Task(ABC):
                 i["stac_extensions"] = []
             i["stac_extensions"].append(processing_ext)
             i["stac_extensions"] = list(set(i["stac_extensions"]))
+            if "properties" not in i:
+                i["properties"] = {}
             i["properties"]["processing:software"] = {cls.name: cls.version}
         return items
 
