@@ -4,6 +4,7 @@ import itertools
 import json
 import logging
 import sys
+import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from os import makedirs
@@ -100,7 +101,7 @@ class Task(ABC):
 
     @property
     def parameters(self) -> Dict:
-        task_configs = self.process_definition.get("tasks", {})
+        task_configs = self.process_definition.get("tasks", [])
         if isinstance(task_configs, List):
             # tasks is a list
             task_config = [cfg for cfg in task_configs if cfg["name"] == self.name]
@@ -109,8 +110,13 @@ class Task(ABC):
             else:
                 task_config = task_config[0]
             return task_config.get("parameters", {})
-        else:
-            # tasks is a dictionary of parameters (undocumented)
+        elif isinstance(task_configs, Dict):
+            # tasks is a dictionary of parameters (deprecated)
+            warnings.warn(
+                "task configs is Dictionary (deprecated), convert to List ",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return task_configs.get(self.name, {})
 
     @property
