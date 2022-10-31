@@ -144,11 +144,14 @@ See [https://jsonpath.herokuapp.com/](Jayway JsonPath Evaluator) to experiment w
     "upload_options": {
         "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}"
     },
-    "tasks": {
-        "task-name": {
-            "param": "value"
+    "tasks": [
+        {
+            "name": "task-name"
+            "parameters": {
+                "param": "value"
+            }
         }
-    }
+    ]
 }
 ```
 
@@ -158,5 +161,5 @@ See [https://jsonpath.herokuapp.com/](Jayway JsonPath Evaluator) to experiment w
 ### run tests
 
 ```
-$ pytest -v -s tests
+$ ./scripts/test
 ```
