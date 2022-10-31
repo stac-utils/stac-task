@@ -202,7 +202,9 @@ class Task(ABC):
     def create_item_from_item(item):
         new_item = deepcopy(item)
         # create a derived output item
-        links = [link["href"] for link in item.get("links", []) if link["rel"] == "self"]
+        links = [
+            link["href"] for link in item.get("links", []) if link["rel"] == "self"
+        ]
         if len(links) == 1:
             # add derived from link
             new_item["links"].append(
