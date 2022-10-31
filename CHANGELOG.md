@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 
-## [v0.1.0] - 
+## [v0.1.0] - 2022-10-31
 
 Initial release.
 
-[Unreleased]: <https://github.com/stac-utils/stac-terminal/compare/v0.1.0...main>
-[v0.1.0]: <https://github.com/stac-utils/stac-terminal/tree/v0.1.0>
+[Unreleased]: <https://github.com/stac-utils/stac-task/compare/v0.1.0...main>
+[v0.1.0]: <https://github.com/stac-utils/stac-task/tree/v0.1.0>
