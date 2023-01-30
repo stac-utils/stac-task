@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # global dictionary of sessions per bucket
 s3_client = s3()
 
-SIMULTANEOUS_DOWNLOADS = os.getenv("STAC_SIMULTANEOUS_DOWNLOADS", 3)
+SIMULTANEOUS_DOWNLOADS = int(os.getenv("STAC_SIMULTANEOUS_DOWNLOADS", 3))
 sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
 
 
@@ -28,10 +28,10 @@ async def download_file(fs, src, dest):
 async def download_item_assets(
     item: Item,
     assets: Optional[List[str]] = None,
-    save_item: Optional[bool] = True,
-    overwrite: Optional[bool] = False,
-    path_template: Optional[str] = "${collection}/${id}",
-    absolute_path: Optional[bool] = False,
+    save_item: bool = True,
+    overwrite: bool = False,
+    path_template: str = "${collection}/${id}",
+    absolute_path: bool = False,
     **kwargs,
 ):
 
@@ -87,7 +87,7 @@ async def download_items_assets(items, **kwargs):
 
 def upload_item_assets_to_s3(
     item: Item,
-    assets: List[str] = None,
+    assets: Optional[List[str]] = None,
     public_assets: List[str] = [],
     path_template: str = "${collection}/${id}",
     s3_urls: bool = False,
