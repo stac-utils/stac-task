@@ -1,23 +1,24 @@
 import json
 from pathlib import Path
+from typing import Any, Dict
 
 import pytest
 
 from .tasks import NothingTask
 
-testpath = Path(__file__).parent
 
-
-def get_test_items(name="sentinel2-l2a-j2k-payload"):
-    filename = testpath / "fixtures" / f"{name}.json"
+@pytest.fixture
+def item_collection():
+    name = "sentinel2-l2a-j2k-payload"
+    filename = Path(__file__).parent / "fixtures" / f"{name}.json"
     with open(filename) as f:
         items = json.loads(f.read())
     return items
 
 
-def test_download_nosuch_asset():
+def test_download_nosuch_asset(item_collection: Dict[str, Any]):
     t = NothingTask(
-        get_test_items(),
+        item_collection,
     )
     item = t.download_item_assets(t.items[0], assets=["nosuch_asset"]).to_dict()
     # new item same as old item
@@ -25,10 +26,8 @@ def test_download_nosuch_asset():
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
-def test_download_item_asset():
-    t = NothingTask(
-        get_test_items(), workdir=testpath / "test-task-download-item-asset"
-    )
+def test_download_item_asset(tmp_path: Path, item_collection: Dict[str, Any]):
+    t = NothingTask(item_collection, workdir=tmp_path / "test-task-download-item-asset")
     item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata"]).to_dict()
     fname = item["assets"]["tileinfo_metadata"]["href"]
     filename = Path(fname)
@@ -38,10 +37,10 @@ def test_download_item_asset():
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
-def test_download_item_assets():
+def test_download_item_assets(tmp_path: Path, item_collection: Dict[str, Any]):
     t = NothingTask(
-        get_test_items(),
-        workdir=testpath / "test-task-download-item-assets",
+        item_collection,
+        workdir=tmp_path / "test-task-download-item-assets",
         save_workdir=True,
     )
     item = t.download_item_assets(
@@ -53,11 +52,11 @@ def test_download_item_assets():
     assert filename.is_file() is True
 
 
-def test_download_items_assets():
+def test_download_items_assets(tmp_path: Path, item_collection: Dict[str, Any]):
     asset_key = "tileinfo_metadata"
     t = NothingTask(
-        get_test_items(),
-        workdir=testpath / "test-task-download-items-assets",
+        item_collection,
+        workdir=tmp_path / "test-task-download-items-assets",
         save_workdir=True,
     )
     items = [i.to_dict() for i in t.download_items_assets(t.items, assets=[asset_key])]
@@ -69,10 +68,10 @@ def test_download_items_assets():
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
 @pytest.mark.s3_requester_pays
-def test_download_large_asset():
+def test_download_large_asset(tmp_path: Path, item_collection: Dict[str, Any]):
     t = NothingTask(
-        get_test_items(),
-        workdir=testpath / "test-task-download-assets",
+        item_collection,
+        workdir=tmp_path / "test-task-download-assets",
         save_workdir=True,
     )
     item = t.download_item_assets(
