@@ -11,7 +11,7 @@ from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import fsspec
 from pystac import ItemCollection
@@ -62,9 +62,9 @@ class Task(ABC):
         self: "Task",
         payload: Dict,
         workdir: Optional[PathLike] = None,
-        save_workdir: Optional[bool] = False,
-        skip_upload: Optional[bool] = False,
-        skip_validation: Optional[bool] = False,
+        save_workdir: bool = False,
+        skip_upload: bool = False,
+        skip_validation: bool = False,
     ):
         # set up logger
         self.logger = logging.getLogger(self.name)
@@ -104,12 +104,12 @@ class Task(ABC):
         task_configs = self.process_definition.get("tasks", [])
         if isinstance(task_configs, List):
             # tasks is a list
-            task_config = [cfg for cfg in task_configs if cfg["name"] == self.name]
-            if len(task_config) == 0:
-                task_config = {}
+            task_config_list = [cfg for cfg in task_configs if cfg["name"] == self.name]
+            if len(task_config_list) == 0:
+                return {}
             else:
-                task_config = task_config[0]
-            return task_config.get("parameters", {})
+                task_config: Dict[str, Any] = task_config_list[0]
+                return task_config.get("parameters", {})
         elif isinstance(task_configs, Dict):
             # tasks is a dictionary of parameters (deprecated)
             warnings.warn(
@@ -118,6 +118,8 @@ class Task(ABC):
                 stacklevel=2,
             )
             return task_configs.get(self.name, {})
+        else:
+            raise ValueError(f"unexpected value for 'tasks': {task_configs}")
 
     @property
     def upload_options(self) -> Dict:
@@ -162,7 +164,7 @@ class Task(ABC):
                 i["collection"] = coll
 
     def download_item_assets(
-        self, item: Dict, path_template: Optional[str] = "${collection}/${id}", **kwargs
+        self, item: Dict, path_template: str = "${collection}/${id}", **kwargs
     ):
         """Download provided asset keys for all items in payload. Assets are saved in workdir in a
            directory named by the Item ID, and the items are updated with the new asset hrefs.
@@ -178,10 +180,7 @@ class Task(ABC):
         return item
 
     def download_items_assets(
-        self,
-        items: List[Dict],
-        path_template: Optional[str] = "${collection}/${id}",
-        **kwargs
+        self, items: List[Dict], path_template: str = "${collection}/${id}", **kwargs
     ):
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
@@ -231,7 +230,7 @@ class Task(ABC):
         pass
 
     @classmethod
-    def handler(cls, payload: Dict, **kwargs) -> "Task":
+    def handler(cls, payload: Dict, **kwargs) -> Dict[str, Any]:
         if "href" in payload or "url" in payload:
             # read input
             with fsspec.open(payload.get("href", payload.get("url"))) as f:
@@ -378,7 +377,9 @@ def silence_event_loop_closed(func):
     return wrapper
 
 
-_ProactorBasePipeTransport.__del__ = silence_event_loop_closed(
-    _ProactorBasePipeTransport.__del__
+setattr(
+    _ProactorBasePipeTransport,
+    "__del__",
+    silence_event_loop_closed(_ProactorBasePipeTransport.__del__),
 )
 """fix yelling at me error end"""
