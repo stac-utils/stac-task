@@ -54,5 +54,4 @@ setup(
         "Tracker": "https://github.com/stac-utils/stactask/issues",
     },
     test_suite="tests",
-    entry_points={"console_scripts": ["stac-task = stactask.cli:cli"]},
 )
