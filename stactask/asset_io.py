@@ -34,7 +34,6 @@ async def download_item_assets(
     absolute_path: bool = False,
     **kwargs,
 ):
-
     _assets = item.assets.keys() if assets is None else assets
 
     # determine path from template and item

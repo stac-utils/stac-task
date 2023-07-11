@@ -53,7 +53,6 @@ JSON under the "process" field. An example process definition:
 
 
 class Task(ABC):
-
     name = "task"
     description = "A task for doing things"
     version = "0.1.0"
