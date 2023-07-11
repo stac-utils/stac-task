@@ -1,9 +1,9 @@
-from typing import Dict
+from typing import Any, Dict
 
 from jsonpath_ng.ext import parser
 
 
-def stac_jsonpath_match(item: Dict, expr: str) -> bool:
+def stac_jsonpath_match(item: Dict[str, Any], expr: str) -> bool:
     """Match jsonpath expression against STAC JSON.
        Use https://jsonpath.herokuapp.com/ to experiment with JSONpath
         and https://regex101.com/ to experiment with regex
