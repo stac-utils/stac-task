@@ -10,7 +10,6 @@ class NothingTask(Task):
 
 
 class FailValidateTask(Task):
-
     name = "failvalidation-task"
     description = "this task always fails validation"
 
