@@ -30,4 +30,5 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
+          - pytest
           - types-setuptools == 65.7.0.3

@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from os import path as op
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import fsspec
 from boto3utils import s3
@@ -77,7 +77,7 @@ async def download_item_assets(
     return new_item
 
 
-async def download_items_assets(items: List[Item], **kwargs: Any) -> List[Item]:
+async def download_items_assets(items: Iterable[Item], **kwargs: Any) -> List[Item]:
     tasks = []
     for item in items:
         tasks.append(asyncio.create_task(download_item_assets(item, **kwargs)))
