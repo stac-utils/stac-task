@@ -11,7 +11,7 @@ from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import fsspec
 from pystac import Item, ItemCollection
@@ -186,7 +186,7 @@ class Task(ABC):
 
     def download_items_assets(
         self,
-        items: List[Item],
+        items: Iterable[Item],
         path_template: str = "${collection}/${id}",
         **kwargs: Any,
     ) -> List[Item]:
@@ -195,7 +195,7 @@ class Task(ABC):
         items = loop.run_until_complete(
             download_items_assets(items, path_template=outdir, **kwargs)
         )
-        return items
+        return list(items)
 
     def upload_item_assets_to_s3(
         self, item: Item, assets: Optional[List[str]] = None
