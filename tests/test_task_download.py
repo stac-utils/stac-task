@@ -8,15 +8,16 @@ from .tasks import NothingTask
 
 
 @pytest.fixture
-def item_collection():
+def item_collection() -> Dict[str, Any]:
     name = "sentinel2-l2a-j2k-payload"
     filename = Path(__file__).parent / "fixtures" / f"{name}.json"
     with open(filename) as f:
         items = json.loads(f.read())
+    assert isinstance(items, dict)
     return items
 
 
-def test_download_nosuch_asset(item_collection: Dict[str, Any]):
+def test_download_nosuch_asset(item_collection: Dict[str, Any]) -> None:
     t = NothingTask(
         item_collection,
     )
@@ -26,7 +27,7 @@ def test_download_nosuch_asset(item_collection: Dict[str, Any]):
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
-def test_download_item_asset(tmp_path: Path, item_collection: Dict[str, Any]):
+def test_download_item_asset(tmp_path: Path, item_collection: Dict[str, Any]) -> None:
     t = NothingTask(item_collection, workdir=tmp_path / "test-task-download-item-asset")
     item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata"]).to_dict()
     fname = item["assets"]["tileinfo_metadata"]["href"]
@@ -37,7 +38,7 @@ def test_download_item_asset(tmp_path: Path, item_collection: Dict[str, Any]):
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
-def test_download_item_assets(tmp_path: Path, item_collection: Dict[str, Any]):
+def test_download_item_assets(tmp_path: Path, item_collection: Dict[str, Any]) -> None:
     t = NothingTask(
         item_collection,
         workdir=tmp_path / "test-task-download-item-assets",
@@ -52,7 +53,7 @@ def test_download_item_assets(tmp_path: Path, item_collection: Dict[str, Any]):
     assert filename.is_file() is True
 
 
-def test_download_items_assets(tmp_path: Path, item_collection: Dict[str, Any]):
+def test_download_items_assets(tmp_path: Path, item_collection: Dict[str, Any]) -> None:
     asset_key = "tileinfo_metadata"
     t = NothingTask(
         item_collection,
@@ -68,7 +69,7 @@ def test_download_items_assets(tmp_path: Path, item_collection: Dict[str, Any]):
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
 @pytest.mark.s3_requester_pays
-def test_download_large_asset(tmp_path: Path, item_collection: Dict[str, Any]):
+def test_download_large_asset(tmp_path: Path, item_collection: Dict[str, Any]) -> None:
     t = NothingTask(
         item_collection,
         workdir=tmp_path / "test-task-download-assets",

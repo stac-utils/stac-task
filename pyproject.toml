@@ -1,0 +1,10 @@
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = [
+    "boto3utils",
+    "jsonpath_ng.ext",
+    "fsspec",
+]
+ignore_missing_imports = true

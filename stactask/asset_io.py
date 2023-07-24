@@ -2,10 +2,11 @@ import asyncio
 import logging
 import os
 from os import path as op
-from typing import Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import fsspec
 from boto3utils import s3
+from fsspec import AbstractFileSystem
 from pystac import Item
 from pystac.layout import LayoutTemplate
 
@@ -18,7 +19,7 @@ SIMULTANEOUS_DOWNLOADS = int(os.getenv("STAC_SIMULTANEOUS_DOWNLOADS", 3))
 sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
 
 
-async def download_file(fs, src, dest):
+async def download_file(fs: AbstractFileSystem, src: str, dest: str) -> None:
     async with sem:
         logger.debug(f"{src} start")
         await fs._get_file(src, dest)
@@ -32,7 +33,7 @@ async def download_item_assets(
     overwrite: bool = False,
     path_template: str = "${collection}/${id}",
     absolute_path: bool = False,
-    **kwargs,
+    **kwargs: Any,
 ) -> Item:
     _assets = item.assets.keys() if assets is None else assets
 
@@ -76,43 +77,55 @@ async def download_item_assets(
     return new_item
 
 
-async def download_items_assets(items: List[Item], **kwargs) -> List[Item]:
+async def download_items_assets(items: Iterable[Item], **kwargs: Any) -> List[Item]:
     tasks = []
     for item in items:
         tasks.append(asyncio.create_task(download_item_assets(item, **kwargs)))
-    new_items = await asyncio.gather(*tasks)
+    new_items: List[Item] = await asyncio.gather(*tasks)
     return new_items
 
 
 def upload_item_assets_to_s3(
     item: Item,
     assets: Optional[List[str]] = None,
-    public_assets: List[str] = [],
+    public_assets: Union[None, List[str], str] = None,
     path_template: str = "${collection}/${id}",
     s3_urls: bool = False,
-    headers: Dict = {},
-    **kwargs,
+    headers: Optional[Dict[str, Any]] = None,
+    **kwargs: Any,
 ) -> Item:
     """Upload Item assets to s3 bucket
     Args:
         item (Dict): STAC Item
         assets (List[str], optional): List of asset keys to upload. Defaults to None.
-        public_assets (List[str], optional): List of assets keys that should be public. Defaults to [].
-        path_template (str, optional): Path string template. Defaults to '${collection}/${id}'.
-        s3_urls (bool, optional): Return s3 URLs instead of http URLs. Defaults to False.
-        headers (Dict, optional): Dictionary of headers to set on uploaded assets. Defaults to {},
+        public_assets (List[str], optional): List of assets keys that should be
+            public. Defaults to [].
+        path_template (str, optional): Path string template. Defaults to
+            '${collection}/${id}'.
+        s3_urls (bool, optional): Return s3 URLs instead of http URLs. Defaults
+            to False.
+        headers (Dict, optional): Dictionary of headers to set on uploaded
+            assets. Defaults to {},
     Returns:
         Dict: A new STAC Item with uploaded assets pointing to newly uploaded file URLs
     """
+    if headers is None:
+        headers = {}
+
     # deepcopy of item
     _item = item.to_dict()
 
+    if public_assets is None:
+        public_assets = []
+    # determine which assets should be public
+    elif type(public_assets) is str:
+        if public_assets == "ALL":
+            public_assets = list(_item["assets"].keys())
+        else:
+            raise ValueError(f"unexpected value for `public_assets`: {public_assets}")
+
     # if assets not provided, upload all assets
     _assets = assets if assets is not None else _item["assets"].keys()
-
-    # determine which assets should be public
-    if type(public_assets) is str and public_assets == "ALL":
-        public_assets = _item["assets"].keys()
 
     for key in [a for a in _assets if a in _item["assets"].keys()]:
         asset = _item["assets"][key]

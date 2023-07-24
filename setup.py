@@ -12,7 +12,7 @@ with open(os.path.join(here, "README.md")) as readme_file:
 
 setup(
     name="stactask",
-    version="0.1.0",
+    version="0.1.1",
     description=(
         "STAC Task class provides a class interface for running custom algorithms on STAC Items"
     ),
@@ -54,5 +54,4 @@ setup(
         "Tracker": "https://github.com/stac-utils/stactask/issues",
     },
     test_suite="tests",
-    entry_points={"console_scripts": ["stac-task = stactask.cli:cli"]},
 )

@@ -11,7 +11,7 @@ from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import fsspec
 from pystac import Item, ItemCollection
@@ -27,8 +27,9 @@ from .utils import stac_jsonpath_match
 # types
 PathLike = Union[str, Path]
 """
-Tasks can use parameters provided in a `process` Dictionary that is supplied in the ItemCollection
-JSON under the "process" field. An example process definition:
+Tasks can use parameters provided in a `process` Dictionary that is supplied in
+the ItemCollection JSON under the "process" field. An example process
+definition:
 
 ```
 {
@@ -59,7 +60,7 @@ class Task(ABC):
 
     def __init__(
         self: "Task",
-        payload: Dict,
+        payload: Dict[str, Any],
         workdir: Optional[PathLike] = None,
         save_workdir: bool = False,
         skip_upload: bool = False,
@@ -88,18 +89,18 @@ class Task(ABC):
             self._workdir = Path(workdir)
             makedirs(self._workdir, exist_ok=True)
 
-    def __del__(self):
+    def __del__(self) -> None:
         # remove work directory if not running locally
         if not self._save_workdir:
             self.logger.debug("Removing work directory %s", self._workdir)
             rmtree(self._workdir)
 
     @property
-    def process_definition(self) -> Dict:
+    def process_definition(self) -> Dict[str, Any]:
         return self._payload.get("process", {})
 
     @property
-    def parameters(self) -> Dict:
+    def parameters(self) -> Dict[str, Any]:
         task_configs = self.process_definition.get("tasks", [])
         if isinstance(task_configs, List):
             # tasks is a list
@@ -121,11 +122,11 @@ class Task(ABC):
             raise ValueError(f"unexpected value for 'tasks': {task_configs}")
 
     @property
-    def upload_options(self) -> Dict:
+    def upload_options(self) -> Dict[str, Any]:
         return self.process_definition.get("upload_options", {})
 
     @property
-    def items_as_dicts(self) -> List[Dict]:
+    def items_as_dicts(self) -> List[Dict[str, Any]]:
         return self._payload.get("features", [])
 
     @property
@@ -134,12 +135,12 @@ class Task(ABC):
         return ItemCollection.from_dict(items_dict, preserve_dict=True)
 
     @classmethod
-    def validate(cls, payload: Dict) -> bool:
+    def validate(cls, payload: Dict[str, Any]) -> bool:
         # put validation logic on input Items and process definition here
         return True
 
     @classmethod
-    def add_software_version(cls, items: List[Dict]):
+    def add_software_version(cls, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         processing_ext = (
             "https://stac-extensions.github.io/processing/v1.1.0/schema.json"
         )
@@ -153,7 +154,7 @@ class Task(ABC):
             i["properties"]["processing:software"] = {cls.name: cls.version}
         return items
 
-    def assign_collections(self):
+    def assign_collections(self) -> None:
         """Assigns new collection names based on"""
         for i, (coll, expr) in itertools.product(
             self._payload["features"],
@@ -163,13 +164,18 @@ class Task(ABC):
                 i["collection"] = coll
 
     def download_item_assets(
-        self, item: Item, path_template: str = "${collection}/${id}", **kwargs
+        self,
+        item: Item,
+        path_template: str = "${collection}/${id}",
+        **kwargs: Any,
     ) -> Item:
-        """Download provided asset keys for all items in payload. Assets are saved in workdir in a
-           directory named by the Item ID, and the items are updated with the new asset hrefs.
+        """Download provided asset keys for all items in payload. Assets are
+        saved in workdir in a directory named by the Item ID, and the items are
+        updated with the new asset hrefs.
 
         Args:
-            assets (Optional[List[str]], optional): List of asset keys to download. Defaults to all assets.
+            assets (Optional[List[str]], optional): List of asset keys to
+                download. Defaults to all assets.
         """
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
@@ -179,16 +185,21 @@ class Task(ABC):
         return item
 
     def download_items_assets(
-        self, items: List[Item], path_template: str = "${collection}/${id}", **kwargs
+        self,
+        items: Iterable[Item],
+        path_template: str = "${collection}/${id}",
+        **kwargs: Any,
     ) -> List[Item]:
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
         items = loop.run_until_complete(
-            download_items_assets(self.items, path_template=outdir, **kwargs)
+            download_items_assets(items, path_template=outdir, **kwargs)
         )
-        return items
+        return list(items)
 
-    def upload_item_assets_to_s3(self, item: Dict, assets: Optional[List[str]] = None):
+    def upload_item_assets_to_s3(
+        self, item: Item, assets: Optional[List[str]] = None
+    ) -> Item:
         if self._skip_upload:
             self.logger.warning("Skipping upload of new and modified assets")
             return item
@@ -197,7 +208,7 @@ class Task(ABC):
 
     # this should be in PySTAC
     @staticmethod
-    def create_item_from_item(item):
+    def create_item_from_item(item: Dict[str, Any]) -> Dict[str, Any]:
         new_item = deepcopy(item)
         # create a derived output item
         links = [
@@ -216,7 +227,7 @@ class Task(ABC):
         return new_item
 
     @abstractmethod
-    def process(self, **kwargs) -> List[Dict]:
+    def process(self, **kwargs: Any) -> List[Dict[str, Any]]:
         """Main task logic - virtual
 
         Returns:
@@ -229,7 +240,7 @@ class Task(ABC):
         pass
 
     @classmethod
-    def handler(cls, payload: Dict, **kwargs) -> Dict[str, Any]:
+    def handler(cls, payload: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         if "href" in payload or "url" in payload:
             # read input
             with fsspec.open(payload.get("href", payload.get("url"))) as f:
@@ -249,7 +260,7 @@ class Task(ABC):
             raise err
 
     @classmethod
-    def parse_args(cls, args):
+    def parse_args(cls, args: List[str]) -> Dict[str, Any]:
         dhf = argparse.ArgumentDefaultsHelpFormatter
         parser0 = argparse.ArgumentParser(description=cls.description)
         parser0.add_argument(
@@ -297,8 +308,8 @@ class Task(ABC):
             default=False,
         )
         h = """ Run local mode
-                (save-workdir = True, skip-upload = True, skip-validation = True,
-                workdir = 'local-output', output = 'local-output/output-payload.json') """
+(save-workdir = True, skip-upload = True, skip-validation = True,
+workdir = 'local-output', output = 'local-output/output-payload.json') """
         parser.add_argument("--local", help=h, action="store_true", default=False)
 
         # turn Namespace into dictionary
@@ -322,7 +333,7 @@ class Task(ABC):
         return pargs
 
     @classmethod
-    def cli(cls):
+    def cli(cls) -> None:
         args = cls.parse_args(sys.argv[1:])
         cmd = args.pop("command")
 
@@ -364,9 +375,9 @@ from asyncio.proactor_events import _ProactorBasePipeTransport  # noqa
 from functools import wraps  # noqa
 
 
-def silence_event_loop_closed(func):
+def silence_event_loop_closed(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:  # type: ignore
         try:
             return func(self, *args, **kwargs)
         except RuntimeError as e:
