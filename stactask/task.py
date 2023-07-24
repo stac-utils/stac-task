@@ -14,7 +14,7 @@ from tempfile import mkdtemp
 from typing import Any, Dict, List, Optional, Union
 
 import fsspec
-from pystac import ItemCollection
+from pystac import Item, ItemCollection
 
 from .asset_io import (
     download_item_assets,
@@ -53,7 +53,6 @@ JSON under the "process" field. An example process definition:
 
 
 class Task(ABC):
-
     name = "task"
     description = "A task for doing things"
     version = "0.1.0"
@@ -164,8 +163,8 @@ class Task(ABC):
                 i["collection"] = coll
 
     def download_item_assets(
-        self, item: Dict, path_template: str = "${collection}/${id}", **kwargs
-    ):
+        self, item: Item, path_template: str = "${collection}/${id}", **kwargs
+    ) -> Item:
         """Download provided asset keys for all items in payload. Assets are saved in workdir in a
            directory named by the Item ID, and the items are updated with the new asset hrefs.
 
@@ -180,8 +179,8 @@ class Task(ABC):
         return item
 
     def download_items_assets(
-        self, items: List[Dict], path_template: str = "${collection}/${id}", **kwargs
-    ):
+        self, items: List[Item], path_template: str = "${collection}/${id}", **kwargs
+    ) -> List[Item]:
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
         items = loop.run_until_complete(

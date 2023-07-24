@@ -33,8 +33,7 @@ async def download_item_assets(
     path_template: str = "${collection}/${id}",
     absolute_path: bool = False,
     **kwargs,
-):
-
+) -> Item:
     _assets = item.assets.keys() if assets is None else assets
 
     # determine path from template and item
@@ -77,7 +76,7 @@ async def download_item_assets(
     return new_item
 
 
-async def download_items_assets(items, **kwargs):
+async def download_items_assets(items: List[Item], **kwargs) -> List[Item]:
     tasks = []
     for item in items:
         tasks.append(asyncio.create_task(download_item_assets(item, **kwargs)))
@@ -93,7 +92,7 @@ def upload_item_assets_to_s3(
     s3_urls: bool = False,
     headers: Dict = {},
     **kwargs,
-) -> Dict:
+) -> Item:
     """Upload Item assets to s3 bucket
     Args:
         item (Dict): STAC Item

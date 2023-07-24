@@ -20,6 +20,6 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         # Lint
         pre-commit run flake8 --all-files
         # Type checking
-        # pre-commit run mypy --all-files
+        pre-commit run mypy --all-files
     fi
 fi
