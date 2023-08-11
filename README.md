@@ -143,13 +143,12 @@ Process definitions are sometimes called "Payloads":
 
 ## Development
 
-Clone, install in editable mode, install development requirements, and install the **pre-commit** hooks:
+Clone, install in editable mode with development requirements, and install the **pre-commit** hooks:
 
 ```shell
 git clone https://github.com/stac-utils/stac-task
 cd stac-task
-pip install -e .
-pip install -r requirements-dev.txt
+pip install -e '.[dev]'
 pre-commit install
 ```
 
