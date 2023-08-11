@@ -6,6 +6,7 @@ from typing import Any, Dict
 import pytest
 
 from stactask.exceptions import FailedValidation
+from stactask.task import Task
 
 from .tasks import DerivedItemTask, FailValidateTask, NothingTask
 
@@ -16,54 +17,58 @@ testpath = Path(__file__).parent
 cassettepath = testpath / "fixtures" / "cassettes"
 
 
-def get_test_items(name: str = "sentinel2-l2a-j2k-payload") -> Dict[str, Any]:
-    filename = testpath / "fixtures" / f"{name}.json"
+@pytest.fixture
+def items() -> Dict[str, Any]:
+    filename = testpath / "fixtures" / "sentinel2-l2a-j2k-payload.json"
     with open(filename) as f:
         items = json.loads(f.read())
     assert isinstance(items, dict)
     return items
 
 
-def test_task_init() -> None:
-    item_collection = get_test_items()
-    t = NothingTask(item_collection)
-    assert len(t._payload["features"]) == 2
-    assert len(t.items) == 2
-    assert t.logger.name == t.name
-    assert t._save_workdir is False
+@pytest.fixture
+def nothing_task(items: Dict[str, Any]) -> Task:
+    return NothingTask(items)
 
 
-def test_failed_validation() -> None:
-    item_collection = get_test_items()
+@pytest.fixture
+def derived_item_task(items: Dict[str, Any]) -> Task:
+    return DerivedItemTask(items)
+
+
+def test_task_init(nothing_task: Task) -> None:
+    assert len(nothing_task._payload["features"]) == 2
+    assert len(nothing_task.items) == 2
+    assert nothing_task.logger.name == nothing_task.name
+    assert nothing_task._save_workdir is False
+
+
+def test_failed_validation(items: Dict[str, Any]) -> None:
     with pytest.raises(FailedValidation):
-        FailValidateTask(item_collection)
+        FailValidateTask(items)
 
 
-def test_edit_items() -> None:
-    items = get_test_items()
-    t = NothingTask(items)
-    t.process_definition["workflow"] = "test-task-workflow"
-    assert t._payload["process"]["workflow"] == "test-task-workflow"
+def test_edit_items(nothing_task: Task) -> None:
+    nothing_task.process_definition["workflow"] = "test-task-workflow"
+    assert nothing_task._payload["process"]["workflow"] == "test-task-workflow"
 
 
-def test_edit_items2() -> None:
-    items = get_test_items()
-    t = NothingTask(items)
-    assert t._payload["features"][0]["type"] == "Feature"
+def test_edit_items2(nothing_task: Task) -> None:
+    assert nothing_task._payload["features"][0]["type"] == "Feature"
 
 
-def test_tmp_workdir() -> None:
-    t = NothingTask(get_test_items())
-    assert t._save_workdir is False
-    workdir = t._workdir
+def test_tmp_workdir(items: Dict[str, Any]) -> None:
+    nothing_task = NothingTask(items)
+    assert nothing_task._save_workdir is False
+    workdir = nothing_task._workdir
     assert workdir.parts[-1].startswith("tmp")
     assert workdir.is_dir() is True
-    del t
+    del nothing_task
     assert workdir.is_dir() is False
 
 
-def test_workdir() -> None:
-    t = NothingTask(get_test_items(), workdir=testpath / "test_task", save_workdir=True)
+def test_workdir(items: Dict[str, Any]) -> None:
+    t = NothingTask(items, workdir=testpath / "test_task", save_workdir=True)
     assert t._save_workdir is True
     workdir = t._workdir
     assert workdir.parts[-1] == "test_task"
@@ -74,34 +79,29 @@ def test_workdir() -> None:
     assert workdir.is_dir() is False
 
 
-def test_parameters() -> None:
-    items = get_test_items()
-    t = NothingTask(items)
-    assert t.process_definition["workflow"] == "cog-archive"
+def test_parameters(items: Dict[str, Any]) -> None:
+    nothing_task = NothingTask(items)
+    assert nothing_task.process_definition["workflow"] == "cog-archive"
     assert (
-        t.upload_options["path_template"]
+        nothing_task.upload_options["path_template"]
         == items["process"]["upload_options"]["path_template"]
     )
 
 
-def test_process() -> None:
-    items = get_test_items()
-    t = NothingTask(items)
-    processed_items = t.process()
+def test_process(nothing_task: Task) -> None:
+    processed_items = nothing_task.process()
     assert processed_items[0]["type"] == "Feature"
 
 
-def test_derived_item() -> None:
-    t = DerivedItemTask(get_test_items())
-    items = t.process(**t.parameters)
+def test_derived_item(derived_item_task: Task) -> None:
+    items = derived_item_task.process(**derived_item_task.parameters)
     links = [lk for lk in items[0]["links"] if lk["rel"] == "derived_from"]
     assert len(links) == 1
     self_link = [lk for lk in items[0]["links"] if lk["rel"] == "self"][0]
     assert links[0]["href"] == self_link["href"]
 
 
-def test_task_handler() -> None:
-    items = get_test_items()
+def test_task_handler(items: Dict[str, Any]) -> None:
     self_link = [lk for lk in items["features"][0]["links"] if lk["rel"] == "self"][0]
     output_items = DerivedItemTask.handler(items)
     derived_link = [
