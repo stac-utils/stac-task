@@ -99,14 +99,16 @@ def test_post_process(items: Dict[str, Any]) -> None:
         version = "42"
 
         def post_process_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
-            item = super().post_process_item(item)
             item["properties"]["foo"] = "bar"
-            return item
+            item["stac_extensions"].insert(0, "zzz")
+            return super().post_process_item(item)
 
     payload = PostProcessTask.handler(items)
     for item in payload["features"]:
         assert item["properties"]["foo"] == "bar"
         assert item["properties"]["processing:software"]["post-processing-test"] == "42"
+        stac_extensions = item["stac_extensions"]
+        assert item["stac_extensions"] == sorted(stac_extensions)
 
 
 def test_derived_item(derived_item_task: Task) -> None:

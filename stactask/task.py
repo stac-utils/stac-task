@@ -266,7 +266,9 @@ class Task(ABC):
         E.g. add software version information.
 
         Most tasks should prefer to not override this method, as logic should be
-        kept in :py:meth:`Task.process`.
+        kept in :py:meth:`Task.process`. If you do override this method, make
+        sure to call ``super().post_process_item()`` AFTER doing any custom
+        post-processing, so any regular behavior can take your changes into account.
 
         Args:
             item: An item produced by :py:meth:`Task.process`
@@ -274,7 +276,11 @@ class Task(ABC):
         Returns:
             Dict[str, Any]: The item with any additional attributes applied.
         """
-        return self.add_software_version_to_item(item)
+        item = self.add_software_version_to_item(item)
+        assert "stac_extensions" in item
+        assert isinstance(item["stac_extensions"], list)
+        item["stac_extensions"].sort()
+        return item
 
     @classmethod
     def handler(cls, payload: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
