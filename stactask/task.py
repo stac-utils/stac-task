@@ -26,34 +26,32 @@ from .utils import stac_jsonpath_match
 
 # types
 PathLike = Union[str, Path]
-"""
-Tasks can use parameters provided in a `process` Dictionary that is supplied in
-the ItemCollection JSON under the "process" field. An example process
-definition:
-
-```
-{
-    "description": "My process configuration"
-    "upload_options": {
-        "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}",
-        "collections": {
-            "landsat-c2l2": ""
-        }
-    },
-    "tasks": [
-        {
-            "name": "task-name",
-            "parameters": {
-                "param": "value"
-            }
-        }
-    ]
-}
-```
-"""
 
 
 class Task(ABC):
+    """
+    Tasks can use parameters provided in a `process` Dictionary that is supplied in
+    the ItemCollection JSON under the "process" field. An example process
+    definition:
+
+    ```
+    {
+        "description": "My process configuration"
+        "upload_options": {
+            "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}",
+            "collections": {
+                "landsat-c2l2": ""
+            }
+        },
+        "tasks": {
+            "task-name": {
+                "param": "value"
+            }
+        ]
+    }
+    ```
+    """
+
     name = "task"
     description = "A task for doing things"
     version = "0.1.0"
@@ -103,7 +101,11 @@ class Task(ABC):
     def parameters(self) -> Dict[str, Any]:
         task_configs = self.process_definition.get("tasks", [])
         if isinstance(task_configs, List):
-            # tasks is a list
+            warnings.warn(
+                "task configs is list, use a dictionary instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             task_config_list = [cfg for cfg in task_configs if cfg["name"] == self.name]
             if len(task_config_list) == 0:
                 return {}
@@ -111,12 +113,6 @@ class Task(ABC):
                 task_config: Dict[str, Any] = task_config_list[0]
                 return task_config.get("parameters", {})
         elif isinstance(task_configs, Dict):
-            # tasks is a dictionary of parameters (deprecated)
-            warnings.warn(
-                "task configs is Dictionary (deprecated), convert to List ",
-                DeprecationWarning,
-                stacklevel=2,
-            )
             return task_configs.get(self.name, {})
         else:
             raise ValueError(f"unexpected value for 'tasks': {task_configs}")

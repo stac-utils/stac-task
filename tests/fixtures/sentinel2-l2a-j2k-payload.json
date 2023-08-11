@@ -16,20 +16,14 @@
                 "CacheControl": "public, max-age=31536000, immutable"
             }
         },
-        "tasks": [
-            {   
-                "name": "nothing-task",
-                "parameters": {
-                    "do_nothing": true
-                }
+        "tasks": {
+            "nothing-task": {
+                "do_nothing": true
             },
-            { 
-                "name": "derived-item-task",
-                "parameters": {
-                    "parameter": "value"
-                }
+            "derived-item-task": {
+                "parameter": "value"
             }
-        ]
+        }
     },
     "features": [
         {
