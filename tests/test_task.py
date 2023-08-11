@@ -93,6 +93,22 @@ def test_process(nothing_task: Task) -> None:
     assert processed_items[0]["type"] == "Feature"
 
 
+def test_post_process(items: Dict[str, Any]) -> None:
+    class PostProcessTask(NothingTask):
+        name = "post-processing-test"
+        version = "42"
+
+        def post_process_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
+            item = super().post_process_item(item)
+            item["properties"]["foo"] = "bar"
+            return item
+
+    payload = PostProcessTask.handler(items)
+    for item in payload["features"]:
+        assert item["properties"]["foo"] == "bar"
+        assert item["properties"]["processing:software"]["post-processing-test"] == "42"
+
+
 def test_derived_item(derived_item_task: Task) -> None:
     items = derived_item_task.process(**derived_item_task.parameters)
     links = [lk for lk in items[0]["links"] if lk["rel"] == "derived_from"]

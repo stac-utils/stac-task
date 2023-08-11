@@ -137,18 +137,39 @@ class Task(ABC):
 
     @classmethod
     def add_software_version(cls, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        warnings.warn(
+            "add_software_version is deprecated, "
+            "use add_software_version_to_item instead",
+            DeprecationWarning,
+        )
+        modified_items = list()
+        for item in items:
+            modified_items.append(cls.add_software_version_to_item(item))
+        return modified_items
+
+    @classmethod
+    def add_software_version_to_item(cls, item: Dict[str, Any]) -> Dict[str, Any]:
+        """Adds software version information to a single item.
+
+        Uses the processing extension.
+
+        Args:
+            item: A single STAC item
+
+        Returns:
+            Dict[str, Any]: The same item with processing information applied.
+        """
         processing_ext = (
             "https://stac-extensions.github.io/processing/v1.1.0/schema.json"
         )
-        for i in items:
-            if "stac_extensions" not in i:
-                i["stac_extensions"] = []
-            i["stac_extensions"].append(processing_ext)
-            i["stac_extensions"] = list(set(i["stac_extensions"]))
-            if "properties" not in i:
-                i["properties"] = {}
-            i["properties"]["processing:software"] = {cls.name: cls.version}
-        return items
+        if "stac_extensions" not in item:
+            item["stac_extensions"] = []
+        item["stac_extensions"].append(processing_ext)
+        item["stac_extensions"] = list(set(item["stac_extensions"]))
+        if "properties" not in item:
+            item["properties"] = {}
+        item["properties"]["processing:software"] = {cls.name: cls.version}
+        return item
 
     def assign_collections(self) -> None:
         """Assigns new collection names based on"""
@@ -235,6 +256,22 @@ class Task(ABC):
         # self.upload_assets(['key1', 'key2'])
         pass
 
+    def post_process_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
+        """Perform post-processing operations on an item.
+
+        E.g. add software version information.
+
+        Most tasks should prefer to not override this method, as logic should be
+        kept in :py:meth:`Task.process`.
+
+        Args:
+            item: An item produced by :py:meth:`Task.process`
+
+        Returns:
+            Dict[str, Any]: The item with any additional attributes applied.
+        """
+        return self.add_software_version_to_item(item)
+
     @classmethod
     def handler(cls, payload: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         if "href" in payload or "url" in payload:
@@ -244,10 +281,11 @@ class Task(ABC):
 
         task = cls(payload, **kwargs)
         try:
-            items = task.process(**task.parameters)
+            items = list()
+            for item in task.process(**task.parameters):
+                items.append(task.post_process_item(item))
 
-            # should this be included in process ?
-            task._payload["features"] = cls.add_software_version(items)
+            task._payload["features"] = items
             task.assign_collections()
 
             return task._payload
