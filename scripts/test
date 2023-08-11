@@ -17,8 +17,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     if [ "${1:-}" = "--help" ]; then
         usage
     else
-        ./scripts/lint
-        ./scripts/format
+        ./scripts/check
 
         codespell -I .codespellignore -f \
             scripts/* \
