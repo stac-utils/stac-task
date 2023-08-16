@@ -38,7 +38,7 @@ dev = [
     "pre-commit~=3.3.3",
     "pytest~=7.4.0",
     "pytest-cov~=4.1.0",
-    "types-setuptools~=68.0.0",
+    "types-setuptools~=68.1.0",
 ]
 
 [project.urls]
