@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+#
+# Run this from the root directory of the repo.
+
+set -e
+
+stac-task -f examples/rio_stac_task.py run examples/payload.json 

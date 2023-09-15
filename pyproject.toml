@@ -1,14 +1,17 @@
 [project]
-name = "stactask"
-version = "0.1.1"
-authors = [{ name = "Matthew Hanson", email = "matt.a.hanson@gmail.com" }]
-description = "Class interface for running custom algorithms and workflows on STAC Items"
+name = "stac-task"
+version = "0.2.0"
+authors = [
+    { name = "Matthew Hanson", email = "matt.a.hanson@gmail.com" },
+    { name = "Pete Gadomski", email = "pete.gadomski@gmail.com" },
+]
+description = "Class interface for running custom algorithms and workflows on STAC items"
 readme = "README.md"
 requires-python = ">=3.8"
 keywords = ["pystac", "imagery", "raster", "catalog", "STAC"]
 license = { text = "Apache-2.0" }
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Natural Language :: English",
@@ -18,37 +21,29 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
-dependencies = [
-    "pystac>=1.6",
-    "python-dateutil>=2.7.0",
-    "boto3-utils>=0.3.2",
-    "fsspec>=2022.8.2",
-    "jsonpath_ng>=1.5.3",
-    "requests>=2.28.1",
-    "s3fs>=2022.8.2",
-]
+dependencies = ["pystac>=1.8", "pydantic>=2", "stac-asset>=0.2.2"]
 
 [project.optional-dependencies]
+cli = ["click~=8.1"]
 dev = [
-    "black~=23.9.1",
-    "codespell~=2.2.5",
-    "flake8~=6.1.0",
-    "isort~=5.12.0",
-    "mypy~=1.5.0",
-    "pre-commit~=3.4.0",
-    "pytest~=7.4.0",
-    "pytest-cov~=4.1.0",
-    "types-setuptools~=68.2.0",
+    "black~=23.9",
+    "codespell~=2.2",
+    "ruff==0.0.289",
+    "mypy~=1.5",
+    "pre-commit~=3.4",
+    "pytest~=7.4",
+    "pytest-cov~=4.1",
+    "types-setuptools~=68.2",
 ]
+example = ["rio-stac~=0.8.0"]
+
+[project.scripts]
+stac-task = "stac_task._cli:cli"
 
 [project.urls]
-Issues = "https://github.com/stac-utils/stactask/issues"
+Issues = "https://github.com/stac-utils/stac-task/issues"
 Github = "https://github.com/stac-utils/stac-task"
 Changelog = "https://github.com/stac-utils/stac-task/blob/main/CHANGELOG.md"
 
 [tool.mypy]
 strict = true
-
-[[tool.mypy.overrides]]
-module = ["boto3utils", "jsonpath_ng.ext", "fsspec"]
-ignore_missing_imports = true

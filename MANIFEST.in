@@ -1,1 +1,1 @@
-include stactask/py.typed
+include src/stac_task/py.typed

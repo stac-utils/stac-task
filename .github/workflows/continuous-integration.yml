@@ -7,37 +7,35 @@ on:
   pull_request:
 
 jobs:
-  standard:
-    name: Standard
+  test:
+    name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-    defaults:
-      run:
-        shell: bash -l {0}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up pip cache
-        uses: actions/cache@v3.3.2
+      - uses: actions/setup-python@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py', '**/requirements-dev.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: pip install .[dev]
+      - name: Pre-commit
+        run: pre-commit run --all-files
       - name: Test
-        run: ./scripts/cibuild
-  codecov:
-    name: Codecov
-    needs:
-      - standard
+        run: pytest
+  example:
+    name: Example
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Execute linters and test suites
-        run: ./scripts/cibuild
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      - uses: actions/setup-python@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-          fail_ci_if_error: false
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: pip install .[example]
+      - name: Run example
+        run: scripts/run-example
+

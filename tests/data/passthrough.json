@@ -1,0 +1,9 @@
+{
+    "type": "FeatureCollection",
+    "features": [],
+    "process": {
+        "tasks": {
+            "passthrough": {}
+        }
+    }
+}

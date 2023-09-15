@@ -2,29 +2,25 @@
 # Please run `pre-commit run --all-files` when adding or changing entries.
 
 repos:
-  - repo: https://github.com/psf/black
-    rev: 23.7.0
-    hooks:
-      - id: black
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.5
     hooks:
       - id: codespell
         args: [--ignore-words=.codespellignore]
         types_or: [jupyter, markdown, python, shell]
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+  - repo: https://github.com/psf/black
+    rev: 23.9.1
     hooks:
-      - id: flake8
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        args: ["--profile", "black"]
+      - id: black
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.0
+    rev: v1.5.1
     hooks:
       - id: mypy
         additional_dependencies:
+          - click
+          - pydantic
           - pytest
-          - types-setuptools == 65.7.0.3
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.289
+    hooks:
+      - id: ruff

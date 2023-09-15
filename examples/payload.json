@@ -1,0 +1,13 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "href": "./dataset_geo.tif"
+        }
+    ],
+    "process": {
+        "tasks": {
+            "rio-stac": {}
+        }
+    }
+}
