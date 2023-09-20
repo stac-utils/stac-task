@@ -154,15 +154,36 @@ class OneToOneTask(Task[Input, Output], ABC):
         ...
 
 
-class ItemTask(OneToOneTask[Item, Item], ABC):
+class ToItemTask(OneToOneTask[Input, Item], ABC):
+    """A anything in, STAC out task where each item can be processed independent
+    of each other."""
+
+    output = Item
+
+    def process_one_to_one(self, input: Input) -> Item:
+        return Item.from_pystac(self.process_to_item(input))
+
+    @abstractmethod
+    def process_to_item(self, input: Input) -> pystac.Item:
+        """Process to a single pystac Item.
+
+        Args:
+            input: The input
+
+        Result:
+            pystac.Item: The output item
+        """
+        ...
+
+
+class ItemTask(ToItemTask[Item], ABC):
     """A STAC in, STAC out task where each item can be processed independent of
     each other."""
 
     input = Item
-    output = Item
 
-    def process_one_to_one(self, input: Item) -> Item:
-        return Item.from_pystac(self.process_item(input.to_pystac()))
+    def process_to_item(self, input: Item) -> pystac.Item:
+        return self.process_item(input.to_pystac())
 
     @abstractmethod
     def process_item(self, item: pystac.Item) -> pystac.Item:
@@ -177,21 +198,20 @@ class ItemTask(OneToOneTask[Item, Item], ABC):
         ...
 
 
-class HrefTask(OneToOneTask[Href, Item], ABC):
+class HrefTask(ToItemTask[Href], ABC):
     """A href in, pystac item out task where each href can be processed
     independent of each other."""
 
     input = Href
-    output = Item
 
-    def process_one_to_one(self, input: Href) -> Item:
+    def process_to_item(self, input: Href) -> pystac.Item:
         if self.payload_href:
             href = pystac.utils.make_absolute_href(
                 input.href, self.payload_href, start_is_dir=False
             )
         else:
             href = input.href
-        return Item.from_pystac(self.process_href(href))
+        return self.process_href(href)
 
     @abstractmethod
     def process_href(self, href: str) -> pystac.Item:
