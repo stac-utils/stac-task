@@ -5,7 +5,7 @@ If models are more complicated, they should go in their own module (aka file).
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional
 
 import pystac
 import pystac.utils
@@ -28,9 +28,6 @@ class UploadOptions(BaseModel):
     https://pystac.readthedocs.io/en/stable/api/layout.html#pystac.layout.LayoutTemplate
     for the available fields.
     """
-
-    public_assets: Optional[Union[Literal["ALL"], List[str]]] = None
-    """A list of asset keys that should be marked as public when uploaded"""
 
     headers: Optional[Dict[str, str]] = None
     """A set of key, value headers to send when uploading data to s3"""
