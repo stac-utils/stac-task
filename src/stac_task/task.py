@@ -111,7 +111,7 @@ class StacInStacOutTask(StacOutTask[Item], ABC):
 
     input = Item
 
-    def process_to_items(self, input: List[Item]) -> List[Item]:
+    def process_to_items(self, input: List[Item]) -> List[pystac.Item]:
         return self.process_items([item.to_pystac() for item in input])
 
     @abstractmethod
