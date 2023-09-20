@@ -77,8 +77,6 @@ class Payload(BaseModel):
     ) -> Payload:
         """Executes a task on this payload, returning the updated payload.
 
-        The task must be registered via `stac_task.register_task("name", TaskClass)`.
-
         Args:
             name: The name of the task to execute
             task_class: The task class to insatiate and execute. If not
