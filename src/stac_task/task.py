@@ -85,7 +85,24 @@ class PassthroughTask(Task[Anything, Anything]):
         return input
 
 
-class StacInStacOutTask(Task[Item, Item]):
+class StacOutTask(Task[Input, Item], ABC):
+    """STAC output task.
+
+    This task expects a list of anything, and produces a list of STAC items.
+    """
+
+    output = Item
+
+    def process(self, input: List[Input]) -> List[Item]:
+        return [Item.from_pystac(item) for item in self.process_to_items(input)]
+
+    @abstractmethod
+    def process_to_items(self, input: List[Input]) -> List[pystac.Item]:
+        """Process a list of pystac items and returns another list."""
+        ...
+
+
+class StacInStacOutTask(StacOutTask[Item], ABC):
     """STAC input, STAC output task.
 
     This task expects a list of STAC items as its input, and produces a list of
@@ -93,7 +110,14 @@ class StacInStacOutTask(Task[Item, Item]):
     """
 
     input = Item
-    output = Item
+
+    def process_to_items(self, input: List[Item]) -> List[Item]:
+        return self.process_items([item.to_pystac() for item in input])
+
+    @abstractmethod
+    def process_items(self, input: List[pystac.Item]) -> List[pystac.Item]:
+        """Process a list of pystac items and returns another list."""
+        ...
 
 
 class OneToManyTask(Task[Input, Output], ABC):
