@@ -4,10 +4,18 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Type
 
-from .errors import ExecutionError, StacTaskError
 from .models import Process
 from .payload import Payload
-from .task import HrefTask, Input, ItemTask, Output, PassthroughTask, Task
+from .task import (
+    HrefTask,
+    Input,
+    ItemTask,
+    OneToManyTask,
+    OneToOneTask,
+    Output,
+    PassthroughTask,
+    Task,
+)
 from .types import PathLikeObject
 
 _TASKS: Dict[str, Type[Task[Any, Any]]] = {"passthrough": PassthroughTask}
@@ -20,6 +28,22 @@ def get_tasks() -> Dict[str, Type[Task[Input, Input]]]:
         Dict: All registered tasks
     """
     return copy.deepcopy(_TASKS)
+
+
+def get_task(task: str) -> Type[Task[Any, Any]]:
+    """Returns a task by name.
+
+    Raises a `ValueError` if the task is not registered.
+
+    Returns:
+        Type[Task[Any, Any]]: The task
+    """
+    if task not in _TASKS:
+        raise ValueError(
+            f"task not found: {task} (available tasks: {', '.join(_TASKS.keys())})"
+        )
+    else:
+        return _TASKS[task]
 
 
 def register_task(name: str, task_class: Type[Task[Input, Output]]) -> None:
@@ -62,11 +86,12 @@ def load_file(path: PathLikeObject) -> None:
 
 
 __all__ = [
-    "ExecutionError",
     "HrefTask",
     "ItemTask",
     "Payload",
     "Process",
-    "StacTaskError",
+    "PassthroughTask",
+    "OneToOneTask",
+    "OneToManyTask",
     "Task",
 ]

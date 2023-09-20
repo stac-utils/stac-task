@@ -4,4 +4,4 @@
 
 set -e
 
-stac-task -f examples/rio_stac_task.py run examples/payload.json 
+stac-task -f examples/rio_stac_task.py run examples/payload.json rio-stac

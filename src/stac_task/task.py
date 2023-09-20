@@ -3,7 +3,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, ClassVar, Dict, Generic, List, Optional, Type, TypeVar
 
-import pystac
 import pystac.utils
 import stac_asset.blocking
 from pydantic import BaseModel, Field
@@ -32,34 +31,32 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
     """The directory to save any downloaded files."""
 
     @abstractmethod
-    def process(self, input: Input) -> List[Output]:
-        """Processes an item with this task.
+    def process(self, input: List[Input]) -> List[Output]:
+        """Processes a list of items.
 
         Args:
-            item: The input item. It could be anything.
+            List[Input]: The input items. They could be anything.
 
         Result:
-            List[Output]: The output items. They could be anything. A list is
-                supported to allow a single input to generate multiple outputs
-                (fanout).
+            Output: The output items. They could be anything.
         """
         ...
 
-    def process_dict(self, input: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Processes a dictionary.
+    def process_dicts(self, input: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Processes a list of dictionaries.
 
         This method handles the model validation. In general, subclasses should
         prefer to override `process`.
 
         Args:
-            item: The input dictionary
+            input: The input dictionaries
 
         Result:
-            List: A list of output dictionaries
+            List[Dict[str, Any]]: A list of output dictionaries
         """
         return [
             output.model_dump()
-            for output in self.process(self.input.model_validate(input))
+            for output in self.process([self.input.model_validate(d) for d in input])
         ]
 
     def download_href(self, href: str) -> str:
@@ -84,65 +81,102 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
 class PassthroughTask(Task[Anything, Anything]):
     """A simple task that doesn't modify the items at all."""
 
-    def process(self, input: Anything) -> List[Anything]:
-        return [input]
+    def process(self, input: List[Anything]) -> List[Anything]:
+        return input
 
 
-class StacOutputTask(Task[Input, Item], ABC):
-    """Anything in, STAC out task."""
+class StacInStacOutTask(Task[Item, Item]):
+    """STAC input, STAC output task.
 
-    output = Item
-
-
-class ItemTask(StacOutputTask[Item], ABC):
-    """STAC In, STAC Out task.
-
-    A abstract task that has STAC Items as the input and the output.
+    This task expects a list of STAC items as its input, and produces a list of
+    STAC items.
     """
 
     input = Item
+    output = Item
+
+
+class OneToManyTask(Task[Input, Output], ABC):
+    """A task that can operate on each input item independently, producing an
+    arbitrary number of outputs."""
+
+    def process(self, input: List[Input]) -> List[Output]:
+        # TODO parallelize? allow some to error? etc...
+        output = list()
+        for value in input:
+            output.extend(self.process_one_to_many(value))
+        return output
 
     @abstractmethod
-    def process_item(self, input: pystac.Item) -> pystac.Item:
-        """Takes a :py:class:`pystac.Item` as input, and returns the same.
+    def process_one_to_many(self, input: Input) -> List[Output]:
+        """Process one input item, producing an arbitrary number of outputs."""
+        ...
+
+
+class OneToOneTask(Task[Input, Output], ABC):
+    """A task that can operate on each input item independently, producing one
+    output per input."""
+
+    def process(self, input: List[Input]) -> List[Output]:
+        # TODO parallelize? allow some to error? etc...
+        output = list()
+        for value in input:
+            output.append(self.process_one_to_one(value))
+        return output
+
+    @abstractmethod
+    def process_one_to_one(self, input: Input) -> Output:
+        """Process one input item, producing one output item."""
+        ...
+
+
+class ItemTask(OneToOneTask[Item, Item], ABC):
+    """A STAC in, STAC out task where each item can be processed independent of
+    each other."""
+
+    input = Item
+    output = Item
+
+    def process_one_to_one(self, input: Item) -> Item:
+        return Item.from_pystac(self.process_item(input.to_pystac()))
+
+    @abstractmethod
+    def process_item(self, item: pystac.Item) -> pystac.Item:
+        """Process a single pystac Item.
 
         Args:
             item: The input pystac item
 
-        Returns:
-            pystac.Item: A pystac item
-        """
-        ...
-
-    def process(self, input: Item) -> List[Item]:
-        return [Item.from_pystac(self.process_item(input.to_pystac()))]
-
-
-class HrefTask(StacOutputTask[Href], ABC):
-    """Href in, STAC Out task.
-
-    A abstract task that takes a single href as input, and returns a pystac Item.
-    """
-
-    input = Href
-
-    @abstractmethod
-    def process_href(self, href: str) -> pystac.Item:
-        """Takes an href as input, and returns a single pystac Item.
-
-        Args:
-            href: An input href
-
-        Returns:
+        Result:
             pystac.Item: The output item
         """
         ...
 
-    def process(self, input: Href) -> List[Item]:
+
+class HrefTask(OneToOneTask[Href, Item], ABC):
+    """A href in, pystac item out task where each href can be processed
+    independent of each other."""
+
+    input = Href
+    output = Item
+
+    def process_one_to_one(self, input: Href) -> Item:
         if self.payload_href:
             href = pystac.utils.make_absolute_href(
                 input.href, self.payload_href, start_is_dir=False
             )
         else:
             href = input.href
-        return [Item.from_pystac(self.process_href(href))]
+        return Item.from_pystac(self.process_href(href))
+
+    @abstractmethod
+    def process_href(self, href: str) -> pystac.Item:
+        """Process a single href.
+
+        Args:
+            href: The input href
+
+        Result:
+            pystac.Item: The output item
+        """
+        ...

@@ -24,11 +24,12 @@ def cli(file: Optional[str]) -> None:
 
 @cli.command()
 @click.argument("INPUT")
+@click.argument("TASK")
 @click.argument("OUTPUT", required=False)
-def run(input: str, output: Optional[str]) -> None:
+def run(input: str, task: str, output: Optional[str]) -> None:
     """Runs a payload."""
     payload = Payload.from_href(input)
-    result = payload.execute(stac_task.get_tasks())
+    result = payload.execute(task)
     if output is None:
         print(result.model_dump_json(indent=2))
     else:

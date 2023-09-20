@@ -1,9 +1,9 @@
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
 import pytest
 from pydantic import BaseModel, ConfigDict
-from stac_task import ExecutionError, Payload, Process, Task
+from stac_task import OneToOneTask, PassthroughTask, Payload, Process
 
 
 class Input(BaseModel):
@@ -16,16 +16,16 @@ class Output(BaseModel):
     the_meaning: int
 
 
-class TheMeaning(Task[Input, Output]):
+class TheMeaning(OneToOneTask[Input, Output]):
     input = Input
 
     foo: Optional[bool] = None
 
-    def process(self, item: Input) -> List[Output]:
+    def process_one_to_one(self, item: Input) -> Output:
         fields: Dict[str, Any] = {"the_meaning": 42}
         if self.foo:
             fields["foo"] = "bar"
-        return [Output(**fields)]
+        return Output(**fields)
 
 
 def test_from_path(data_path: Callable[[str], Path]) -> None:
@@ -39,25 +39,30 @@ def test_from_path_indirect(data_path: Callable[[str], Path]) -> None:
 
 
 def test_empty() -> None:
-    with pytest.raises(ExecutionError):
-        assert Payload().execute({}) == Payload()
+    with pytest.raises(ValueError):
+        Payload().execute("not-a-task")
+
+
+def test_no_config() -> None:
+    with pytest.raises(ValueError):
+        Payload().execute("passthrough-task", PassthroughTask)
+
+
+def test_passthrough() -> None:
+    payload = Payload(process=Process(tasks={"passthrough-task": {}}))
+    output = payload.execute("passthrough-task", PassthroughTask)
+    assert payload == output
 
 
 def test_add_attribute() -> None:
     payload = Payload(features=[{}], process=Process(tasks={"the-meaning": {}}))
-    result = payload.execute({"the-meaning": TheMeaning})
+    result = payload.execute("the-meaning", task_class=TheMeaning)
     assert result.features == [{"the_meaning": 42}]
-
-
-def test_error_without_tasks() -> None:
-    payload = Payload(features=[{}], process=Process(tasks={"the-meaning": {}}))
-    with pytest.raises(ExecutionError):
-        payload.execute({})
 
 
 def test_config() -> None:
     payload = Payload(
         features=[{}], process=Process(tasks={"the-meaning": {"foo": True}})
     )
-    result = payload.execute({"the-meaning": TheMeaning})
+    result = payload.execute("the-meaning", TheMeaning)
     assert result.features == [{"the_meaning": 42, "foo": "bar"}]

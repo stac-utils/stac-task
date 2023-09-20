@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Mapping, Optional, Type
+from typing import Any, Dict, List, Literal, Optional, Type
 
 import pystac.utils
 import stac_asset.blocking
 from pydantic import BaseModel, Field
 
-from .errors import ExecutionError
+import stac_task
+
 from .models import Process
 from .task import Input, Output, Task
 from .types import PathLikeObject
@@ -71,40 +72,39 @@ class Payload(BaseModel):
             payload.self_href = href
             return payload
 
-    def execute(self, tasks: Mapping[str, Type[Task[Input, Output]]]) -> Payload:
-        """Executes this payload, returning the updated payload.
+    def execute(
+        self, name: str, task_class: Optional[Type[Task[Input, Output]]] = None
+    ) -> Payload:
+        """Executes a task on this payload, returning the updated payload.
+
+        The task must be registered via `stac_task.register_task("name", TaskClass)`.
 
         Args:
-            tasks: The tasks to use for processing.
+            name: The name of the task to execute
+            task_class: The task class to insatiate and execute. If not
+                provided, the class will be looked up in the registry.
 
         Returns:
-            Payload: A new payload, with updated items.
+            Payload: A new payload, with the output items
         """
-        matches = set(key for key in tasks.keys() if key in self.process.tasks)
-        if len(matches) == 0:
-            raise ExecutionError("no tasks to execute")
-        elif len(matches) == 1:
-            key = matches.pop()
-            task_class = tasks[key]
-            task = task_class(**self.process.tasks[key])
-            task.payload_href = self.self_href
-            items = list()
-            # TODO async / thread pool
-            for item in self.features:
-                items.extend(task.process_dict(item))
-            return Payload(
-                features=items, process=self.process.model_copy(), self_href=None
-            )
-        else:
-            raise ValueError(
-                "multiple task execution not supported at this time: "
-                + ",".join(sorted(matches))
-            )
+        if name not in self.process.tasks:
+            raise ValueError(f"task is not configured in payload: {name}")
+        config = self.process.tasks[name]
+        if not isinstance(config, dict):
+            raise ValueError(f"task config is not a dict: {name} is a {type(config)}")
+        if not task_class:
+            task_class = stac_task.get_task(name)
+        task = task_class(**config)
+        task.payload_href = self.self_href
+        features = task.process_dicts(self.features)
+        payload = self.model_copy(deep=True, update={"features": features})
+        return payload
 
     def to_path(self, path: PathLikeObject) -> None:
         """Writes a payload a path.
 
         Args:
             path: The path to write the payload to.
+            Payload: A new payload, with the output items
         """
         Path(path).write_text(self.model_dump_json())
