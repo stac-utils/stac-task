@@ -86,13 +86,18 @@ def get_task(name: str) -> Type[Task[Input, Output]]:
 
 
 def get_tasks() -> Dict[str, Type[Task[Input, Output]]]:
+    """Returns all tasks.
+
+    Returns:
+        Dict[str, Type[Task[Input, Output]]]: The tasks
+    """
     return _REGISTRY.get_tasks()
 
 
 def register_task(
     name: str, task_class: Type[Task[Input, Output]]
 ) -> RegistryContextManager:
-    """Registers a new task with this package.
+    """Registers a new task.
 
     Can be used as a context manager, in which case the task will be
     de-registered at the end of the block.

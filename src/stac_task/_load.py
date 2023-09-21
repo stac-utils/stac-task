@@ -1,22 +1,21 @@
 import importlib.util
 import sys
-from pathlib import Path
 
 from .types import PathLikeObject
 
 
-def file(path: PathLikeObject) -> None:
-    """Loads a new Python module into the `stac_tas.plugins` namespace.
+def file(path: PathLikeObject, name: str) -> None:
+    """Loads a new Python module into the `stac_task.plugins` namespace.
 
     This can be used to load modules with tasks.
 
     Args:
         path: The string or Path that will be loaded
+        name: The name of the module (will be prefixed with
+            "stac_task.plugins.")
     """
     # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
-    module_name = (
-        "stac_task.plugins." + Path(path).stem
-    )  # FIXME this feels a little fragile
+    module_name = "stac_task.plugins." + name
     if module_name in sys.modules:
         raise ValueError(f"module name is already imported: {module_name}")
     spec = importlib.util.spec_from_file_location(module_name, str(path))
@@ -32,6 +31,7 @@ def file(path: PathLikeObject) -> None:
 
 
 def plugins() -> None:
+    """Load all plugins."""
     # https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/#using-package-metadata
     if sys.version_info < (3, 10):
         from importlib_metadata import entry_points

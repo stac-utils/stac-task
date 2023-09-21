@@ -5,28 +5,44 @@ from typing import Optional
 
 import click
 
-import stac_task
-from stac_task import Payload
+from . import _load, _registry
+from ._payload import Payload
 
 
 @click.group()
 @click.option(
     "-f",
     "--file",
-    help="A Python file to load as a module, hopefully with a top-level "
+    help="A Python file to load as a module. Should include a top-level "
     "`stac_task.register_task()` call.",
+)
+@click.option(
+    "-n",
+    "--module-name",
+    help=(
+        "The module name to use for the file. If not "
+        "provided, the file's stem will be used."
+    ),
 )
 @click.option(
     "--load-plugins/--no-load-plugins",
     default=True,
     help="Whether to load any plugin modules",
+    show_default=True,
 )
-def cli(file: Optional[str], load_plugins: bool) -> None:
-    """Runs stac-task commands."""
+def cli(
+    file: Optional[str],
+    module_name: Optional[str],
+    load_plugins: bool,
+) -> None:
+    """Execute payloads, list tasks, or print their jsonschemas."""
     if file:
-        stac_task.load_file(Path(file).absolute())
+        file_as_path = Path(file)
+        if not module_name:
+            module_name = file_as_path.stem
+        _load.file(file_as_path.absolute(), module_name)
     if load_plugins:
-        stac_task.load_plugins()
+        _load.plugins()
 
 
 @cli.command()
@@ -34,10 +50,20 @@ def cli(file: Optional[str], load_plugins: bool) -> None:
 @click.argument("TASK", required=False)
 @click.argument("OUTPUT", required=False)
 def run(input: str, task: Optional[str], output: Optional[str]) -> None:
-    """Runs a payload."""
+    """Executes a payload.
+
+    If TASK is not provided, stac-task will match all registered tasks against
+    the payload's task configurations. If there is one (and only one) match,
+    that task will be executed. This makes it easy to run a task file:
+
+        stac-task -f my_task.py run payload.json
+
+    If OUTPUT is not provided, the output payload will be printed to standard
+    output.
+    """
     payload = Payload.from_href(input)
     if task is None:
-        task_names = list(stac_task.get_tasks().keys())
+        task_names = list(_registry.get_tasks().keys())
         matching_tasks = set(
             name for name in payload.process.tasks.keys() if name in task_names
         )
@@ -75,7 +101,7 @@ def run(input: str, task: Optional[str], output: Optional[str]) -> None:
 @cli.command(name="list")
 def list_command() -> None:
     """Lists all available tasks."""
-    for key, value in stac_task.get_tasks().items():  # type: ignore
+    for key, value in _registry.get_tasks().items():  # type: ignore
         if value.__doc__:
             description = value.__doc__.split("\n")[0]
             print(f"{key}: {description}")
@@ -84,19 +110,32 @@ def list_command() -> None:
 
 
 @cli.command()
-@click.argument("TASK")
-@click.argument("MODEL")
-def jsonschema(task: str, model: str) -> None:
+@click.argument("TASK", required=False)
+@click.argument("MODEL", required=False, default="input")
+def jsonschema(task: Optional[str], model: str) -> None:
     """Returns the jsonschema for a task and its model.
 
-    MODEL should be one of "input", "output", or "config".
+    If TASK is not provided, and there is one (and only one) registered task,
+    that task will be used. This makes it easy to print the jsonschema for a
+    task defined and registered in a file:
+
+        stac-task -f my_task.py jsonschema
+
+    MODEL should be one of "input", "output", or "config". If it is not
+    provided, it defaults to "input".
     """
-    tasks = stac_task.get_tasks()  # type: ignore
-    if task not in tasks:
-        print(f"Invalid task: {task}", file=sys.stderr)
-        print("Run `stac-task --list` to see available tasks", file=sys.stderr)
-        sys.exit(1)
-    task_class = tasks[task]
+    if not task:
+        tasks = _registry.get_tasks()  # type: ignore
+        if len(tasks) == 1:
+            task = next(iter(tasks.keys()))
+        else:
+            print(
+                "ERROR: TASK argument can only be omitted if there is one, and only "
+                "one, registered task",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    task_class = _registry.get_task(task)  # type: ignore
     if model.lower() == "input":
         output = task_class.input.model_json_schema()
     elif model.lower() == "output":

@@ -91,7 +91,14 @@ class StacOutTask(Task[Input, Item], ABC):
 
     @abstractmethod
     def process_to_items(self, input: List[Input]) -> List[pystac.Item]:
-        """Process a list of pystac items and returns another list."""
+        """Process a list of pystac items and returns another list.
+
+        Args:
+            input: The list of inputs
+
+        Returns:
+            List[pystac.Item]: A list of pystac items
+        """
         ...
 
 
@@ -109,12 +116,23 @@ class StacInStacOutTask(StacOutTask[Item], ABC):
 
     @abstractmethod
     def process_items(self, input: List[pystac.Item]) -> List[pystac.Item]:
-        """Process a list of pystac items and returns another list."""
+        """Process a list of pystac items and returns another list.
+
+        Args:
+            input: A list of pystac items
+
+        Returns:
+            List[pystac.Item]: A list of pystac items
+        """
         ...
 
 
 class OneToManyTask(Task[Input, Output], ABC):
-    """Produce many outputs from one input."""
+    """Produce many outputs from one input.
+
+    For now, if one call to `process_one_to_many` fails, the exception will be
+    propagated. This may change in the future (e.g. to allow some failures).
+    """
 
     def process(self, input: List[Input]) -> List[Output]:
         # TODO parallelize? allow some to error? etc...
@@ -125,12 +143,23 @@ class OneToManyTask(Task[Input, Output], ABC):
 
     @abstractmethod
     def process_one_to_many(self, input: Input) -> List[Output]:
-        """Process one input item, producing an arbitrary number of outputs."""
+        """Process one input item, producing an arbitrary number of outputs.
+
+        Args:
+            input: A single input
+
+        Returns:
+            List[Output]: A list of outputs
+        """
         ...
 
 
 class OneToOneTask(Task[Input, Output], ABC):
-    """A task that can operate on each input item independently output per input."""
+    """A task that can operate on each input item independently output per input.
+
+    For now, if one call to `process_one_to_one` fails, the exception will be
+    propagated. This may change in the future (e.g. to allow some failures).
+    """
 
     def process(self, input: List[Input]) -> List[Output]:
         # TODO parallelize? allow some to error? etc...
@@ -141,7 +170,14 @@ class OneToOneTask(Task[Input, Output], ABC):
 
     @abstractmethod
     def process_one_to_one(self, input: Input) -> Output:
-        """Process one input item, producing one output item."""
+        """Process one input item, producing one output item.
+
+        Args:
+            input: An input
+
+        Returns:
+            Output: The output
+        """
         ...
 
 

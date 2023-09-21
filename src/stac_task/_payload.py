@@ -31,7 +31,7 @@ class Payload(BaseModel):
 
     # TODO do we need to support `url` as well?
     href: Optional[str] = None
-    """An optional href parameter, used in indirect payloads.
+    """An optional href parameter, used for indirect payloads.
     
     Indirect payloads contain an href to a large payload living on s3.
     """
@@ -46,9 +46,9 @@ class Payload(BaseModel):
     def from_href(cls, href: str, allow_indirections: bool = True) -> Payload:
         """Loads a payload from an href.
 
-        If the payload has an `href` attribute set, that href will be fetched.
-        This is used for "indirect" payloads that point to large payloads that
-        need to be stored on s3.
+        If the payload has an `href` attribute set and there are no features,
+        the href will be fetched.  This is used for "indirect" payloads that
+        point to large payloads that need to be stored on s3.
 
         Args:
             href: The href to load the payload from.

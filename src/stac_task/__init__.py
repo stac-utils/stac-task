@@ -1,4 +1,4 @@
-"""Framework for defining operations that create STAC items."""
+"""Framework for writing tasks that create STAC items."""
 
 from ._load import file as load_file
 from ._load import plugins as load_plugins
