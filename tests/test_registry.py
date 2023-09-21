@@ -1,7 +1,7 @@
 import pytest
 import stac_task
 
-from .tasks import PassthroughTask
+from .test_task import PassthroughTask
 
 
 def test_context_manager() -> None:

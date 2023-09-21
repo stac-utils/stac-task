@@ -4,7 +4,7 @@ from typing import Callable
 import pytest
 from stac_task import Payload, Process
 
-from .tasks import PassthroughTask, TheMeaningTask
+from .test_task import PassthroughTask, TheMeaningTask
 
 
 def test_from_path(data_path: Callable[[str], Path]) -> None:

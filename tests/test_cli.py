@@ -5,7 +5,7 @@ import stac_task
 from click.testing import CliRunner
 from stac_task._cli import cli
 
-from .tasks import PassthroughTask
+from .test_task import PassthroughTask
 
 
 def test_run_passthrough_no_output(data_path: Callable[[str], Path]) -> None:

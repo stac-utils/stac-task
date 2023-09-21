@@ -10,7 +10,10 @@ from .task import (
     ItemTask,
     OneToManyTask,
     OneToOneTask,
+    StacInStacOutTask,
+    StacOutTask,
     Task,
+    ToItemTask,
 )
 from .types import PathLikeObject
 
@@ -50,7 +53,10 @@ __all__ = [
     "OneToOneTask",
     "Payload",
     "Process",
+    "StacInStacOutTask",
+    "StacOutTask",
     "Task",
+    "ToItemTask",
     "load_file",
     "get_task",
     "register_task",
