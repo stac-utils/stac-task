@@ -96,6 +96,23 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
         working_directory = self._get_working_directory()
         return stac_asset.blocking.download_item(item, working_directory)
 
+    def download_item_collection(
+        self, item_collection: pystac.ItemCollection
+    ) -> pystac.ItemCollection:
+        """Downloads an item collection to this task's working directory.
+
+        Args:
+            item_collection: The pystac item collection
+
+        Returns:
+            pystac.ItemCollection: The pystac item collection, with updated
+                hrefs to the downloaded assets.
+        """
+        working_directory = self._get_working_directory()
+        return stac_asset.blocking.download_item_collection(
+            item_collection, working_directory
+        )
+
     def upload_item(
         self, item: pystac.Item, destination: str, include_item: bool = True
     ) -> pystac.Item:

@@ -2,8 +2,9 @@ import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import pytest
 from pydantic import BaseModel, ConfigDict
-from pystac import Item
+from pystac import Item, ItemCollection
 from stac_task import (
     Anything,
     HrefTask,
@@ -110,6 +111,11 @@ class CopyTask(ItemTask):
         self.upload_item(item, str(self.destination))
 
 
+@pytest.fixture
+def task() -> PassthroughTask:
+    return PassthroughTask()
+
+
 def test_item_task() -> None:
     item = Item(
         id="an-id",
@@ -192,7 +198,23 @@ def test_to_item_test(data_path: Path) -> None:
     )
 
 
-def test_copy_item(data_path: Path, tmp_path: Path, item: Item) -> None:
-    CopyTask(
-        working_directory=data_path / "working-directory", destination=tmp_path
-    ).process_item(item)
+def test_download_item(data_path: Path, item: Item, task: PassthroughTask) -> None:
+    task.working_directory = data_path / "working-directory"
+    del item.assets["visual"]  # it's pretty heavy
+    task.download_item(item)
+    item = Item.from_file(str(task.working_directory / "20201211_223832_CS2.json"))
+    item.make_asset_hrefs_absolute()
+    assert Path(item.assets["thumbnail"].href).exists()
+
+
+def test_download_item_collection(
+    data_path: Path, item: Item, task: PassthroughTask
+) -> None:
+    task.working_directory = data_path / "working-directory"
+    del item.assets["visual"]  # it's pretty heavy
+    item_collection = ItemCollection([item])
+    task.download_item_collection(item_collection)
+    item_collection = ItemCollection.from_file(
+        str(task.working_directory / "item-collection.json")
+    )
+    assert Path(item_collection[0].assets["thumbnail"].href).exists()
