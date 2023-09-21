@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     path = sys.argv[1]
     print(
-        Payload.from_href(path, allow_indrections=False)
+        Payload.from_href(path, allow_indirections=False)
         .execute("rio-stac")
         .model_dump_json()
     )
