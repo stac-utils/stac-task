@@ -21,7 +21,12 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
-dependencies = ["pystac>=1.8", "pydantic>=2", "stac-asset>=0.2.2"]
+dependencies = [
+    "importlib_metadata>=4.4; python_version<'3.10'",
+    "pydantic>=2",
+    "pystac>=1.8",
+    "stac-asset>=0.2.2",
+]
 
 [project.optional-dependencies]
 cli = ["click~=8.1"]
