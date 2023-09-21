@@ -124,7 +124,7 @@ Again, see [the `examples/` directory](examples/rio_stac_task/pyproject.toml) fo
 ## Developing
 
 ```shell
-pip install '.[dev]'
+pip install '.[dev,docs]'
 pre-commit install
 ```
 
@@ -133,4 +133,10 @@ Future runs should skip the downloads.
 
 ```shell
 pytest
+```
+
+To build the documentation:
+
+```shell
+make -C build html
 ```

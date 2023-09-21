@@ -102,12 +102,12 @@ def register_task(
     Can be used as a context manager, in which case the task will be
     de-registered at the end of the block.
 
-    ```python
-    with stac_task.register_task("my-task", MyTask):
-        assert stac_task.get_task("my-task")  # <- OK
+    .. code-block:: python
 
-    stac_task.get_task("my-task")  # <- Raises a ValueError
-    ```
+        with stac_task.register_task("my-task", MyTask):
+            assert stac_task.get_task("my-task")  # <- OK
+
+        stac_task.get_task("my-task")  # <- Raises a ValueError
 
     Args:
         name: The name of the task, as it will be used in a payload
