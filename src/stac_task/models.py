@@ -18,6 +18,12 @@ class Anything(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class Nothing(BaseModel):
+    """A model for an empty dictionary."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class UploadOptions(BaseModel):
     """Options for uploading items and assets after payload execution."""
 

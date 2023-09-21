@@ -78,13 +78,6 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
         return str(path)
 
 
-class PassthroughTask(Task[Anything, Anything]):
-    """A simple task that doesn't modify the items at all."""
-
-    def process(self, input: List[Anything]) -> List[Anything]:
-        return input
-
-
 class StacOutTask(Task[Input, Item], ABC):
     """STAC output task.
 

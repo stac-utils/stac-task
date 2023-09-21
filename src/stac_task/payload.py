@@ -7,20 +7,21 @@ import pystac.utils
 import stac_asset.blocking
 from pydantic import BaseModel, Field
 
-import stac_task
-
+from . import _registry
 from .models import Process
 from .task import Input, Output, Task
 from .types import PathLikeObject
 
 
 class Payload(BaseModel):
-    """A payload describing the items and the tasks to be executed
-
-    Pretty specific to [cirrus](https://github.com/cirrus-geo/)."""
+    """A payload describing the items and the tasks to be executed."""
 
     type: Literal["FeatureCollection"] = "FeatureCollection"
-    """Must be FeatureCollection."""
+    """Must be FeatureCollection.
+    
+    TODO should we remove this, or make this optional, since inputs (in
+    particular) aren't always features?
+    """
 
     features: List[Dict[str, Any]] = []
     """A list of STAC items, or things sort of like STAC items."""
@@ -91,7 +92,7 @@ class Payload(BaseModel):
         if not isinstance(config, dict):
             raise ValueError(f"task config is not a dict: {name} is a {type(config)}")
         if not task_class:
-            task_class = stac_task.get_task(name)
+            task_class = _registry.get_task(name)
         task = task_class(**config)
         task.payload_href = self.self_href
         features = task.process_dicts(self.features)
@@ -103,6 +104,5 @@ class Payload(BaseModel):
 
         Args:
             path: The path to write the payload to.
-            Payload: A new payload, with the output items
         """
         Path(path).write_text(self.model_dump_json())

@@ -1,62 +1,18 @@
-import copy
 import importlib.util
 import sys
 from pathlib import Path
-from typing import Any, Dict, Type
 
-from .models import Process
+from ._registry import get_task, register_task
+from .models import Anything, Nothing, Process
 from .payload import Payload
 from .task import (
     HrefTask,
-    Input,
     ItemTask,
     OneToManyTask,
     OneToOneTask,
-    Output,
-    PassthroughTask,
     Task,
 )
 from .types import PathLikeObject
-
-_TASKS: Dict[str, Type[Task[Any, Any]]] = {"passthrough": PassthroughTask}
-
-
-def get_tasks() -> Dict[str, Type[Task[Input, Input]]]:
-    """Returns all tasks.
-
-    Returns:
-        Dict: All registered tasks
-    """
-    return copy.deepcopy(_TASKS)
-
-
-def get_task(task: str) -> Type[Task[Any, Any]]:
-    """Returns a task by name.
-
-    Raises a `ValueError` if the task is not registered.
-
-    Returns:
-        Type[Task[Any, Any]]: The task
-    """
-    if task not in _TASKS:
-        raise ValueError(
-            f"task not found: {task} (available tasks: {', '.join(_TASKS.keys())})"
-        )
-    else:
-        return _TASKS[task]
-
-
-def register_task(name: str, task_class: Type[Task[Input, Output]]) -> None:
-    """Registers a new task with this package.
-
-    Args:
-        name: The name of the task, as it will be used in a payload
-        task_class: The class of task that will be run
-    """
-    if name in _TASKS:
-        raise ValueError(f"task is already registered: {name}")
-    else:
-        _TASKS[name] = task_class
 
 
 def load_file(path: PathLikeObject) -> None:
@@ -86,12 +42,16 @@ def load_file(path: PathLikeObject) -> None:
 
 
 __all__ = [
+    "Anything",
     "HrefTask",
     "ItemTask",
+    "Nothing",
+    "OneToManyTask",
+    "OneToOneTask",
     "Payload",
     "Process",
-    "PassthroughTask",
-    "OneToOneTask",
-    "OneToManyTask",
     "Task",
+    "load_file",
+    "get_task",
+    "register_task",
 ]

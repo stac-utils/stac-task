@@ -1,31 +1,10 @@
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Callable
 
 import pytest
-from pydantic import BaseModel, ConfigDict
-from stac_task import OneToOneTask, PassthroughTask, Payload, Process
+from stac_task import Payload, Process
 
-
-class Input(BaseModel):
-    pass
-
-
-class Output(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
-    the_meaning: int
-
-
-class TheMeaning(OneToOneTask[Input, Output]):
-    input = Input
-
-    foo: Optional[bool] = None
-
-    def process_one_to_one(self, item: Input) -> Output:
-        fields: Dict[str, Any] = {"the_meaning": 42}
-        if self.foo:
-            fields["foo"] = "bar"
-        return Output(**fields)
+from .tasks import PassthroughTask, TheMeaningTask
 
 
 def test_from_path(data_path: Callable[[str], Path]) -> None:
@@ -56,7 +35,7 @@ def test_passthrough() -> None:
 
 def test_add_attribute() -> None:
     payload = Payload(features=[{}], process=Process(tasks={"the-meaning": {}}))
-    result = payload.execute("the-meaning", task_class=TheMeaning)
+    result = payload.execute("the-meaning", task_class=TheMeaningTask)
     assert result.features == [{"the_meaning": 42}]
 
 
@@ -64,5 +43,5 @@ def test_config() -> None:
     payload = Payload(
         features=[{}], process=Process(tasks={"the-meaning": {"foo": True}})
     )
-    result = payload.execute("the-meaning", TheMeaning)
+    result = payload.execute("the-meaning", TheMeaningTask)
     assert result.features == [{"the_meaning": 42, "foo": "bar"}]
