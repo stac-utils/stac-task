@@ -1,0 +1,7 @@
+[project]
+name = "rio-stac-task"
+version = "0.0.0"
+dependencies = ["stac-task", "rio-stac"]
+
+[project.entry-points.'stac_task.plugins']
+rio_stac = "rio_stac_task"

@@ -16,10 +16,17 @@ from stac_task import Payload
     help="A Python file to load as a module, hopefully with a top-level "
     "`stac_task.register_task()` call.",
 )
-def cli(file: Optional[str]) -> None:
+@click.option(
+    "--load-plugins/--no-load-plugins",
+    default=True,
+    help="Whether to load any plugin modules",
+)
+def cli(file: Optional[str], load_plugins: bool) -> None:
     """Runs stac-task commands."""
     if file:
         stac_task.load_file(Path(file).absolute())
+    if load_plugins:
+        stac_task.load_plugins()
 
 
 @cli.command()

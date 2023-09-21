@@ -35,7 +35,7 @@ dev = [
     "pytest-cov~=4.1",
     "types-setuptools~=68.2",
 ]
-example = ["rio-stac~=0.8.0"]
+examples = ["rio-stac~=0.8.0"]
 
 [project.scripts]
 stac-task = "stac_task._cli:cli"

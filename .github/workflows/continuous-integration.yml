@@ -25,8 +25,8 @@ jobs:
         run: pre-commit run --all-files
       - name: Test
         run: pytest
-  example:
-    name: Example
+  examples:
+    name: Examples
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install
-        run: pip install .[example]
-      - name: Run example
-        run: scripts/run-example
+        run: pip install .[examples]
+      - name: Run examples
+        run: scripts/run-examples
 

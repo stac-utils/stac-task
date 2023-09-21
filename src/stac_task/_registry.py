@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from threading import Lock
 from types import TracebackType
 from typing import Any, Dict, Optional, Type
@@ -24,6 +25,10 @@ class Registry:
                 )
             else:
                 return self.tasks[name]
+
+    def get_tasks(self) -> Dict[str, Type[Task[Input, Output]]]:
+        with self.lock:
+            return copy.deepcopy(self.tasks)
 
     def register_task(self, name: str, task_class: Type[Task[Any, Any]]) -> None:
         with self.lock:
@@ -78,6 +83,10 @@ def get_task(name: str) -> Type[Task[Input, Output]]:
         Type[Task[Any, Any]]: The task
     """
     return _REGISTRY.get_task(name)
+
+
+def get_tasks() -> Dict[str, Type[Task[Input, Output]]]:
+    return _REGISTRY.get_tasks()
 
 
 def register_task(

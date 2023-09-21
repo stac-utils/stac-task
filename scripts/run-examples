@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+#
+# This exercises all the ways you might want to run a task, including:
+#
+#   1. Executing a file directly
+#   2. Loading a file via the CLI
+#   3. Loading a package via the plugin interface
+
+set -e
+
+scripts=$(dirname "$0")
+root=$(dirname "$scripts")
+
+# Execute a file directly (`if __name__ == "__main__"`)
+python "$root"/examples/rio_stac_task_standalone.py "$root"/examples/payload.json 
+
+# Load the file into the CLI
+#
+# We specify `--no-load-plugins` in case we've installed the plugin already
+stac-task --no-load-plugins \
+    -f "$root"/examples/rio_stac_task_standalone.py \
+    run "$root"/examples/payload.json rio-stac
+
+# Install a plugin package
+python -m venv .venv-examples
+.venv-examples/bin/python -m pip install '.[cli]' examples/rio_stac_task
+.venv-examples/bin/stac-task run "$root"/examples/payload.json rio-stac
+rm -rf .venv-examples

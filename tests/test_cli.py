@@ -34,3 +34,9 @@ def test_run_passthrough_output(
         )
     assert result.exit_code == 0, result.stdout
     assert (tmp_path / "item-collection.json").exists()
+
+
+def test_list() -> None:
+    runner = CliRunner()
+    result = runner.invoke(cli, ["list"])
+    assert result.exit_code == 0, result.stdout
