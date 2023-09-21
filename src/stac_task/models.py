@@ -1,7 +1,4 @@
-"""Basic models, with little to no logic.
-
-If models are more complicated, they should go in their own module (aka file).
-"""
+"""Pydantic models."""
 
 from __future__ import annotations
 
@@ -46,7 +43,7 @@ class UploadOptions(BaseModel):
 
 
 class Process(BaseModel):
-    """A process definition"""
+    """A process definition."""
 
     description: Optional[str] = None
     """Description of the process configuration"""
@@ -110,10 +107,13 @@ class Link(BaseModel):
 
 
 class Asset(BaseModel):
-    """An Asset is an object that contains a URI to data associated with the
+    """A STAC Asset.
+
+    An Asset is an object that contains a URI to data associated with the
     Item that can be downloaded or streamed.
 
-    It is allowed to add additional fields."""
+    It is allowed to add additional fields.
+    """
 
     model_config = ConfigDict(extra="allow")
 

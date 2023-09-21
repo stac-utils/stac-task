@@ -8,8 +8,8 @@ import stac_asset.blocking
 from pydantic import BaseModel, Field
 
 from . import _registry
+from ._task import Input, Output, Task
 from .models import Process
-from .task import Input, Output, Task
 from .types import PathLikeObject
 
 
@@ -43,7 +43,7 @@ class Payload(BaseModel):
     """
 
     @classmethod
-    def from_href(cls, href: str, allow_indrections: bool = True) -> Payload:
+    def from_href(cls, href: str, allow_indirections: bool = True) -> Payload:
         """Loads a payload from an href.
 
         If the payload has an `href` attribute set, that href will be fetched.
@@ -62,11 +62,11 @@ class Payload(BaseModel):
         # TODO we could go async with these
         payload = cls.model_validate_json(stac_asset.blocking.read_href(href))
         if payload.href and not payload.features:
-            if allow_indrections:
+            if allow_indirections:
                 href = pystac.utils.make_absolute_href(
                     payload.href, href, start_is_dir=False
                 )
-                return cls.from_href(href, allow_indrections=False)
+                return cls.from_href(href, allow_indirections=False)
             else:
                 raise ValueError("Multiple indirections are not supported")
         else:

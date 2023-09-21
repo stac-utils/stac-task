@@ -35,7 +35,7 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
         """Processes a list of items.
 
         Args:
-            List[Input]: The input items. They could be anything.
+            input: The input items. They could be anything.
 
         Result:
             Output: The output items. They could be anything.
@@ -114,8 +114,7 @@ class StacInStacOutTask(StacOutTask[Item], ABC):
 
 
 class OneToManyTask(Task[Input, Output], ABC):
-    """A task that can operate on each input item independently, producing an
-    arbitrary number of outputs."""
+    """Produce many outputs from one input."""
 
     def process(self, input: List[Input]) -> List[Output]:
         # TODO parallelize? allow some to error? etc...
@@ -131,8 +130,7 @@ class OneToManyTask(Task[Input, Output], ABC):
 
 
 class OneToOneTask(Task[Input, Output], ABC):
-    """A task that can operate on each input item independently, producing one
-    output per input."""
+    """A task that can operate on each input item independently output per input."""
 
     def process(self, input: List[Input]) -> List[Output]:
         # TODO parallelize? allow some to error? etc...
@@ -148,8 +146,7 @@ class OneToOneTask(Task[Input, Output], ABC):
 
 
 class ToItemTask(OneToOneTask[Input, Item], ABC):
-    """A anything in, STAC out task where each item can be processed independent
-    of each other."""
+    """An anything in, STAC out task."""
 
     output = Item
 
@@ -170,8 +167,7 @@ class ToItemTask(OneToOneTask[Input, Item], ABC):
 
 
 class ItemTask(ToItemTask[Item], ABC):
-    """A STAC in, STAC out task where each item can be processed independent of
-    each other."""
+    """A STAC in, STAC out task."""
 
     input = Item
 
@@ -192,8 +188,7 @@ class ItemTask(ToItemTask[Item], ABC):
 
 
 class HrefTask(ToItemTask[Href], ABC):
-    """A href in, pystac item out task where each href can be processed
-    independent of each other."""
+    """A href in, STAC out task."""
 
     input = Href
 

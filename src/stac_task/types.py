@@ -1,3 +1,5 @@
+"""Type definitions for this package."""
+
 from os import PathLike
 from typing import TYPE_CHECKING, Union
 

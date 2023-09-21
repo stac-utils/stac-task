@@ -5,7 +5,7 @@ from threading import Lock
 from types import TracebackType
 from typing import Any, Dict, Optional, Type
 
-from .task import Input, Output, Task
+from ._task import Input, Output, Task
 
 
 class Registry:
