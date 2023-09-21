@@ -120,3 +120,17 @@ my_task = "my_task"
 ```
 
 Again, see [the `examples/` directory](examples/rio_stac_task/pyproject.toml) for an example.
+
+## Developing
+
+```shell
+pip install '.[dev]'
+pre-commit install
+```
+
+Some of the tests download assets into `tests/data/working-directory`, so the first time through the tests may run slowly.
+Future runs should skip the downloads.
+
+```shell
+pytest
+```

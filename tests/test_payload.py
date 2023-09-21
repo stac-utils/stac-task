@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Callable
 
 import pytest
 from stac_task import Payload, Process
@@ -7,13 +6,13 @@ from stac_task import Payload, Process
 from .test_task import PassthroughTask, TheMeaningTask
 
 
-def test_from_path(data_path: Callable[[str], Path]) -> None:
-    payload = Payload.from_href(str(data_path("sentinel2-l2a-j2k-payload.json")))
+def test_from_path(data_path: Path) -> None:
+    payload = Payload.from_href(str(data_path / "sentinel2-l2a-j2k-payload.json"))
     assert len(payload.features) == 2
 
 
-def test_from_path_indirect(data_path: Callable[[str], Path]) -> None:
-    payload = Payload.from_href(str(data_path("indirect.json")))
+def test_from_path_indirect(data_path: Path) -> None:
+    payload = Payload.from_href(str(data_path / "indirect.json"))
     assert len(payload.features) == 2
 
 

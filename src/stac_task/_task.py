@@ -1,11 +1,12 @@
+import shutil
+import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any, ClassVar, Dict, Generic, List, Optional, Type, TypeVar
 
 import pystac.utils
 import stac_asset.blocking
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .models import Anything, Href, Item
 
@@ -27,8 +28,12 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
     payload_href: Optional[str] = None
     """The href of the payload that was used to execute this task."""
 
-    working_directory: str = Field(default_factory=TemporaryDirectory)
-    """The directory to save any downloaded files."""
+    working_directory: Optional[Path] = None
+    """The directory to save any downloaded files.
+    
+    If it's none, and a download needs to happen, a new temporary directory will
+    be created.
+    """
 
     @abstractmethod
     def process(self, input: List[Input]) -> List[Output]:
@@ -71,11 +76,54 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
         Returns:
             str: The downloaded href
         """
-        path = Path(self.working_directory) / Path(href).name
+        working_directory = self._get_working_directory()
+        path = working_directory / Path(href).name
         with open(path, "wb") as f:
             # TODO async, or at least go chunk by chunk?
             f.write(stac_asset.blocking.read_href(href))
         return str(path)
+
+    def download_item(self, item: pystac.Item) -> pystac.Item:
+        """Downloads an item to this task's working directory.
+
+        Args:
+            item: The pystac item
+
+        Returns:
+            pystac.Item: The pystac item, with updated hrefs to the downloaded
+                assets.
+        """
+        working_directory = self._get_working_directory()
+        return stac_asset.blocking.download_item(item, working_directory)
+
+    def upload_item(
+        self, item: pystac.Item, destination: str, include_item: bool = True
+    ) -> pystac.Item:
+        """Uploads an item's assets to a destination.
+
+        Args:
+            item: The pystac item
+            destination: The destination folder to write the assets (and item if
+                `include_item` is True)
+            include_item: Whether to write the item JSON as well
+
+        Returns:
+            pystac.Item: The pystac item, with updated hrefs to the uploaded
+                assets.
+        """
+        return stac_asset.blocking.upload_item(item, destination, include_item)
+
+    def _get_working_directory(self) -> Path:
+        if self.working_directory:
+            return self.working_directory
+        else:
+            self.working_directory = Path(tempfile.mkdtemp())
+            return self.working_directory
+
+    def cleanup(self) -> None:
+        """Remove this task's working directory."""
+        if self.working_directory:
+            shutil.rmtree(self.working_directory, ignore_errors=True)
 
 
 class StacOutTask(Task[Input, Item], ABC):

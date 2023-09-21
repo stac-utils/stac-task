@@ -1,12 +1,14 @@
 from pathlib import Path
-from typing import Callable
 
 import pytest
+from pystac import Item
 
 
 @pytest.fixture
-def data_path() -> Callable[[str], Path]:
-    def f(file_name: str) -> Path:
-        return Path(__file__).parent / "data" / file_name
+def data_path() -> Path:
+    return Path(__file__).parent / "data"
 
-    return f
+
+@pytest.fixture
+def item(data_path: Path) -> Item:
+    return Item.from_file(str(data_path / "simple-item.json"))
