@@ -47,6 +47,9 @@ class TheMeaningTask(OneToOneTask[Nothing, TheMeaningOutput]):
 class TestTask(Task[Anything, Anything]):
     __test__ = False
 
+    input = Anything
+    output = Anything
+
     def process(self, input: List[Anything]) -> List[Anything]:
         input.append(Anything.model_validate({"extra": "item"}))
         return input
@@ -54,6 +57,9 @@ class TestTask(Task[Anything, Anything]):
 
 class TestOneToManyTask(OneToManyTask[Anything, Anything]):
     __test__ = False
+
+    input = Anything
+    output = Anything
 
     def process_one_to_many(self, input: Anything) -> List[Anything]:
         return [input, input]
@@ -72,12 +78,16 @@ class TestStacInStacOutTask(StacInStacOutTask):
 class TestStacOutTask(StacOutTask[Href]):
     __test__ = False
 
+    input = Href
+
     def process_to_items(self, input: List[Href]) -> List[Item]:
         return [Item.from_file(href.href) for href in input]
 
 
 class TestToItemTask(ToItemTask[Href]):
     __test__ = False
+
+    input = Href
 
     def process_to_item(self, input: Href) -> Item:
         return Item.from_file(input.href)
