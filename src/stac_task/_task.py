@@ -7,8 +7,9 @@ from typing import Any, ClassVar, Dict, Generic, List, Optional, Type, TypeVar
 import pystac.utils
 import stac_asset.blocking
 from pydantic import BaseModel
+from stac_asset import Config
 
-from .models import Anything, Href, Item
+from .models import Href, Item
 
 Input = TypeVar("Input", bound=BaseModel)
 Output = TypeVar("Output", bound=BaseModel)
@@ -19,10 +20,10 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
 
     # Go away mypy, you can't handle this (it's not your fault,
     # https://github.com/python/mypy/issues/5144)
-    input: ClassVar[Type[Input]] = Anything  # type: ignore
+    input: ClassVar[Type[Input]]  # type: ignore
     """The input model."""
 
-    output: ClassVar[Type[Output]] = Anything  # type: ignore
+    output: ClassVar[Type[Output]]  # type: ignore
     """The output model."""
 
     payload_href: Optional[str] = None
@@ -83,26 +84,34 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
             f.write(stac_asset.blocking.read_href(href))
         return str(path)
 
-    def download_item(self, item: pystac.Item) -> pystac.Item:
+    def download_item(
+        self, item: pystac.Item, include: Optional[List[str]] = None
+    ) -> pystac.Item:
         """Downloads an item to this task's working directory.
 
         Args:
             item: The pystac item
+            include: Assets to include. If not provided, all assets are downloaded.
 
         Returns:
             pystac.Item: The pystac item, with updated hrefs to the downloaded
                 assets.
         """
         working_directory = self._get_working_directory()
-        return stac_asset.blocking.download_item(item, working_directory)
+        return stac_asset.blocking.download_item(
+            item, working_directory, config=Config(include=include or [])
+        )
 
     def download_item_collection(
-        self, item_collection: pystac.ItemCollection
+        self,
+        item_collection: pystac.ItemCollection,
+        include: Optional[List[str]] = None,
     ) -> pystac.ItemCollection:
         """Downloads an item collection to this task's working directory.
 
         Args:
             item_collection: The pystac item collection
+            include: Assets to include. If not provided, all assets are downloaded.
 
         Returns:
             pystac.ItemCollection: The pystac item collection, with updated
@@ -110,7 +119,7 @@ class Task(BaseModel, ABC, Generic[Input, Output]):
         """
         working_directory = self._get_working_directory()
         return stac_asset.blocking.download_item_collection(
-            item_collection, working_directory
+            item_collection, working_directory, config=Config(include=include or [])
         )
 
     def upload_item(

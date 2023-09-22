@@ -1,4 +1,7 @@
 import importlib.metadata
+import os
+
+os.environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
 
 project = "stac-task"
 copyright = "2023 Element 84"

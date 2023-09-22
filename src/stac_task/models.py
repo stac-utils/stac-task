@@ -21,38 +21,17 @@ class Nothing(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class UploadOptions(BaseModel):
-    """Options for uploading items and assets after payload execution."""
-
-    path_template: str = r"${collection}"
-    """A string template for specifying the location of uploaded assets.
-    
-    See
-    https://pystac.readthedocs.io/en/stable/api/layout.html#pystac.layout.LayoutTemplate
-    for the available fields.
-    """
-
-    headers: Optional[Dict[str, str]] = None
-    """A set of key, value headers to send when uploading data to s3"""
-
-    collections: Optional[Dict[str, str]] = None
-    """A mapping of output collection name to a JSONPath pattern (for matching Items)"""
-
-    s3_urls: bool = False
-    """Controls if the final published URLs should be an s3 or https URL"""
-
-
 class Process(BaseModel):
     """A process definition."""
 
     description: Optional[str] = None
     """Description of the process configuration"""
 
-    upload_options: UploadOptions = UploadOptions()
-    """Options used when uploading assets to a remote server"""
-
     tasks: Dict[str, Dict[str, Any]] = {}
     """Dictionary of task configurations"""
+
+    config: Dict[str, Any] = {}
+    """Configuration that applies to all tasks"""
 
 
 class Href(BaseModel):

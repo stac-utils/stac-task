@@ -88,15 +88,26 @@ class Payload(BaseModel):
         """
         if name not in self.process.tasks:
             raise ValueError(f"task is not configured in payload: {name}")
-        config = self.process.tasks[name]
-        if not isinstance(config, dict):
-            raise ValueError(f"task config is not a dict: {name} is a {type(config)}")
+        task_config = self.process.tasks[name]
+        if not isinstance(task_config, dict):
+            raise ValueError(
+                f"task config is not a dict: {name} is a {type(task_config)}"
+            )
+        config = self.process.config
+        config.update(**task_config)
         if not task_class:
             task_class = _registry.get_task(name)
         task = task_class(**config)
         task.payload_href = self.self_href
         features = task.process_dicts(self.features)
         payload = self.model_copy(deep=True, update={"features": features})
+        return payload
+
+    def execute_workflow(self, tasks: List[str]) -> Payload:
+        # TODO test, doc
+        payload = self
+        for task in tasks:
+            payload = payload.execute(task)
         return payload
 
     def to_path(self, path: PathLikeObject) -> None:
