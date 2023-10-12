@@ -118,7 +118,7 @@ def upload_item_assets_to_s3(
     if public_assets is None:
         public_assets = []
     # determine which assets should be public
-    elif type(public_assets) is str:
+    elif isinstance(public_assets, str):
         if public_assets == "ALL":
             public_assets = list(_item["assets"].keys())
         else:

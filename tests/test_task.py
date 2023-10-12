@@ -10,9 +10,6 @@ from stactask.task import Task
 
 from .tasks import DerivedItemTask, FailValidateTask, NothingTask
 
-# import vcr
-
-
 testpath = Path(__file__).parent
 cassettepath = testpath / "fixtures" / "cassettes"
 
@@ -115,16 +112,16 @@ def test_derived_item(derived_item_task: Task) -> None:
     items = derived_item_task.process(**derived_item_task.parameters)
     links = [lk for lk in items[0]["links"] if lk["rel"] == "derived_from"]
     assert len(links) == 1
-    self_link = [lk for lk in items[0]["links"] if lk["rel"] == "self"][0]
+    self_link = next(lk for lk in items[0]["links"] if lk["rel"] == "self")
     assert links[0]["href"] == self_link["href"]
 
 
 def test_task_handler(items: Dict[str, Any]) -> None:
-    self_link = [lk for lk in items["features"][0]["links"] if lk["rel"] == "self"][0]
+    self_link = next(lk for lk in items["features"][0]["links"] if lk["rel"] == "self")
     output_items = DerivedItemTask.handler(items)
-    derived_link = [
+    derived_link = next(
         lk for lk in output_items["features"][0]["links"] if lk["rel"] == "derived_from"
-    ][0]
+    )
     assert derived_link["href"] == self_link["href"]
     assert (
         "derived-item-task"

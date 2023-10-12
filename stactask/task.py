@@ -95,7 +95,11 @@ class Task(ABC):
 
     @property
     def process_definition(self) -> Dict[str, Any]:
-        return self._payload.get("process", {})
+        process = self._payload.get("process", {})
+        if isinstance(process, dict):
+            return process
+        else:
+            raise ValueError(f"process is not a dict: {type(process)}")
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -111,19 +115,37 @@ class Task(ABC):
                 return {}
             else:
                 task_config: Dict[str, Any] = task_config_list[0]
-                return task_config.get("parameters", {})
+                parameters = task_config.get("parameters", {})
+                if isinstance(parameters, dict):
+                    return parameters
+                else:
+                    raise ValueError(f"parameters is not a dict: {type(parameters)}")
         elif isinstance(task_configs, Dict):
-            return task_configs.get(self.name, {})
+            config = task_configs.get(self.name, {})
+            if isinstance(config, dict):
+                return config
+            else:
+                raise ValueError(
+                    f"task config for {self.name} is not a dict: {type(config)}"
+                )
         else:
             raise ValueError(f"unexpected value for 'tasks': {task_configs}")
 
     @property
     def upload_options(self) -> Dict[str, Any]:
-        return self.process_definition.get("upload_options", {})
+        upload_options = self.process_definition.get("upload_options", {})
+        if isinstance(upload_options, dict):
+            return upload_options
+        else:
+            raise ValueError(f"upload_options is not a dict: {type(upload_options)}")
 
     @property
     def items_as_dicts(self) -> List[Dict[str, Any]]:
-        return self._payload.get("features", [])
+        features = self._payload.get("features", [])
+        if isinstance(features, list):
+            return features
+        else:
+            raise ValueError(f"features is not a list: {type(features)}")
 
     @property
     def items(self) -> ItemCollection:
@@ -251,9 +273,7 @@ class Task(ABC):
             [type]: [description]
         """
         # download assets of interest, this will update self.items
-        # self.download_assets(['key1', 'key2'])
         # do some stuff
-        # self.upload_assets(['key1', 'key2'])
         pass
 
     def post_process_item(self, item: Dict[str, Any]) -> Dict[str, Any]:

@@ -80,6 +80,4 @@ def test_download_large_asset(tmp_path: Path, item_collection: Dict[str, Any]) -
     ).to_dict()
     filename = Path(item["assets"]["red"]["href"])
     assert filename.is_file() is True
-    # t._save_workdir = False
     del t
-    # assert (filename.is_file() is False)
