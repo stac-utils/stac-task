@@ -1,8 +1,8 @@
-comment: off
+comment: false
 
 coverage:
     status:
         project:
             default:
                 target: auto
-                threshold: 5
+                threshold: "5"
