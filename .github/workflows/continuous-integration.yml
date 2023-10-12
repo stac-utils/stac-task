@@ -8,24 +8,23 @@ on:
 
 jobs:
   standard:
-    name: Standard
+    name: Lint and test
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-    defaults:
-      run:
-        shell: bash -l {0}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up pip cache
-        uses: actions/cache@v3.3.2
+      - uses: actions/setup-python@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py', '**/requirements-dev.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: pip install '.[dev]'
+      - name: Lint
+        run: pre-commit run --all-files
       - name: Test
-        run: ./scripts/cibuild
+        run: pytest
   codecov:
     name: Codecov
     needs:
@@ -33,8 +32,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Execute linters and test suites
-        run: ./scripts/cibuild
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: pip install '.[dev]'
+      - name: Test
+        run: pytest --cov=stactask
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

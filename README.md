@@ -152,16 +152,16 @@ pip install -e '.[dev]'
 pre-commit install
 ```
 
-To run the complete test and linting suite:
-
-```shell
-./scripts/test
-```
-
-To just run the tests:
+To run the tests:
 
 ```shell
 pytest
+```
+
+To lint all the files:
+
+```shell
+pre-commit run --all-files
 ```
 
 ## Contributing
