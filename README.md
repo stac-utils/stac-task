@@ -22,10 +22,10 @@ class MyTask(Task):
 
     def process(self, **kwargs: Any) -> List[Dict[str, Any]]:
         item = self.items[0]
-        
+
         # download a datafile
         item = self.download_item_assets(item, assets=['data'])
-        
+
         # operate on the local file to create a new asset
         item = self.upload_item_assets_to_s3(item)
 
