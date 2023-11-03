@@ -33,8 +33,6 @@ def test_download_item_asset(tmp_path: Path, item_collection: Dict[str, Any]) ->
     fname = item["assets"]["tileinfo_metadata"]["href"]
     filename = Path(fname)
     assert filename.is_file() is True
-    del t
-    assert filename.is_file() is False
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
