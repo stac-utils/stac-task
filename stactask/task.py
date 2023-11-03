@@ -60,7 +60,7 @@ class Task(ABC):
         self: "Task",
         payload: Dict[str, Any],
         workdir: Optional[PathLike] = None,
-        save_workdir: bool = False,
+        save_workdir: Optional[bool] = None,
         skip_upload: bool = False,
         skip_validation: bool = False,
     ):
@@ -76,16 +76,19 @@ class Task(ABC):
                 raise FailedValidation()
 
         # set instance variables
-        self._save_workdir = save_workdir
         self._skip_upload = skip_upload
         self._payload = payload
 
         # create temporary work directory if workdir is None
         if workdir is None:
             self._workdir = Path(mkdtemp())
+            # if we are using a temp workdir we want to rm by default
+            self._save_workdir = save_workdir if save_workdir is not None else False
         else:
             self._workdir = Path(workdir)
             makedirs(self._workdir, exist_ok=True)
+            # if a workdir was specified we don't want to rm by default
+            self._save_workdir = save_workdir if save_workdir is not None else True
 
     def __del__(self) -> None:
         # remove work directory if not running locally
