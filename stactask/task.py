@@ -85,7 +85,7 @@ class Task(ABC):
             # if we are using a temp workdir we want to rm by default
             self._save_workdir = save_workdir if save_workdir is not None else False
         else:
-            self._workdir = Path(workdir)
+            self._workdir = Path(workdir).absolute()
             makedirs(self._workdir, exist_ok=True)
             # if a workdir was specified we don't want to rm by default
             self._save_workdir = save_workdir if save_workdir is not None else True

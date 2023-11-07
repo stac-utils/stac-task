@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Ensure `workdir` is an absolute path
+  ([#54](https://github.com/stac-utils/stac-task/pull/51)).
 - When a `workdir` is set for a `Task` the `workdir` will no longer be removed
-  by default [#51](https://github.com/stac-utils/stac-task/pull/51)). That is,
+  by default ([#51](https://github.com/stac-utils/stac-task/pull/51)). That is,
   the `save_workdir` argument to `Task` constructor now defaults to `None`, and
   if left as `None` the default behavior is now conditional on whether or not a
       `workdir` is specified.

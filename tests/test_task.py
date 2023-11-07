@@ -61,6 +61,7 @@ def test_tmp_workdir(items: Dict[str, Any], save_workdir: Optional[bool]) -> Non
     assert nothing_task._save_workdir is expected
     workdir = nothing_task._workdir
     assert workdir.parts[-1].startswith("tmp")
+    assert workdir.is_absolute() is True
     assert workdir.is_dir() is True
     del nothing_task
     assert workdir.is_dir() is expected
@@ -77,6 +78,7 @@ def test_workdir(
     assert t._save_workdir is expected
     workdir = t._workdir
     assert workdir.parts[-1] == "test_task"
+    assert workdir.is_absolute() is True
     assert workdir.is_dir() is True
     del t
     assert workdir.is_dir() is expected
