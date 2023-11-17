@@ -157,6 +157,8 @@ class Task(ABC):
 
     @classmethod
     def validate(cls, payload: Dict[str, Any]) -> bool:
+        """Validates the payload and returns True if valid. If invalid, raises
+        ``stactask.exceptions.FailedValidation`` or returns False."""
         # put validation logic on input Items and process definition here
         return True
 

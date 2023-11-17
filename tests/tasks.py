@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 from stactask import Task
+from stactask.exceptions import FailedValidation
 
 
 class NothingTask(Task):
@@ -17,7 +18,9 @@ class FailValidateTask(Task):
 
     @classmethod
     def validate(self, payload: Dict[str, Any]) -> bool:
-        return False
+        if payload:
+            raise FailedValidation("Extra context about what went wrong")
+        return True
 
     def process(self, **kwargs: Any) -> List[Dict[str, Any]]:
         return self.items_as_dicts
