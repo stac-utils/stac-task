@@ -1,8 +1,12 @@
 # flake8: noqa
 
-import pkg_resources
+from importlib.metadata import PackageNotFoundError, version
 
-__version__ = pkg_resources.get_distribution(__package__).version
+try:
+    __version__ = version("stactask")
+except PackageNotFoundError:
+    # package is not installed
+    pass
 
 from .task import Task
 
