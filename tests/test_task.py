@@ -41,7 +41,7 @@ def test_task_init(nothing_task: Task) -> None:
 
 
 def test_failed_validation(items: Dict[str, Any]) -> None:
-    with pytest.raises(FailedValidation):
+    with pytest.raises(FailedValidation, match="Extra context"):
         FailValidateTask(items)
 
 
