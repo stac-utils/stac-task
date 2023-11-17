@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from importlib.metadata import PackageNotFoundError, version
 
 try:
