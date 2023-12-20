@@ -65,13 +65,9 @@ class Task(ABC):
         skip_upload: bool = False,
         skip_validation: bool = False,
     ):
-        # define these to avoid undefined in destructor if init fails
-        self._save_workdir = True
-
-        # set up logger
         self.logger = logging.getLogger(self.name)
 
-        # validate input payload...or not
+        # validate input payload... or not
         if not skip_validation:
             if not self.validate(payload):
                 raise FailedValidation()
