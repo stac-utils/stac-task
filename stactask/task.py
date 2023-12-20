@@ -3,6 +3,7 @@ import asyncio
 import itertools
 import json
 import logging
+import os
 import sys
 import warnings
 from abc import ABC, abstractmethod
@@ -64,11 +65,12 @@ class Task(ABC):
         skip_upload: bool = False,
         skip_validation: bool = False,
     ):
+        # define these to avoid undefined in destructor if init fails
+        self._save_workdir = True
+        self._workdir = Path()
+
         # set up logger
         self.logger = logging.getLogger(self.name)
-
-        # set this to avoid confusion in destructor if called during validation
-        self._save_workdir = True
 
         # validate input payload...or not
         if not skip_validation:
@@ -91,10 +93,10 @@ class Task(ABC):
             self._save_workdir = save_workdir if save_workdir is not None else True
 
     def __del__(self) -> None:
-        # remove work directory if not running locally
-        if not self._save_workdir:
-            self.logger.debug("Removing work directory %s", self._workdir)
-            rmtree(self._workdir)
+        try:
+            self.cleanup_workdir()
+        except:  # noqa: E722
+            pass
 
     @property
     def process_definition(self) -> Dict[str, Any]:
@@ -197,6 +199,17 @@ class Task(ABC):
             item["properties"] = {}
         item["properties"]["processing:software"] = {cls.name: cls.version}
         return item
+
+    def cleanup_workdir(self) -> None:
+        # remove work directory if not configured to save it
+        if not self._save_workdir and self._workdir and os.path.exists(self._workdir):
+            self.logger.debug("Removing work directory %s", self._workdir)
+            try:
+                rmtree(self._workdir)
+            except Exception as e:
+                self.logger.warning(
+                    "Failed removing work directory %s: %s", self._workdir, e
+                )
 
     def assign_collections(self) -> None:
         """Assigns new collection names based on"""
@@ -305,24 +318,27 @@ class Task(ABC):
 
     @classmethod
     def handler(cls, payload: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
-        if "href" in payload or "url" in payload:
-            # read input
-            with fsspec.open(payload.get("href", payload.get("url"))) as f:
-                payload = json.loads(f.read())
-
-        task = cls(payload, **kwargs)
         try:
-            items = list()
-            for item in task.process(**task.parameters):
-                items.append(task.post_process_item(item))
+            if "href" in payload or "url" in payload:
+                # read input
+                with fsspec.open(payload.get("href", payload.get("url"))) as f:
+                    payload = json.loads(f.read())
 
-            task._payload["features"] = items
-            task.assign_collections()
+            task = cls(payload, **kwargs)
+            try:
+                items = list()
+                for item in task.process(**task.parameters):
+                    items.append(task.post_process_item(item))
 
-            return task._payload
-        except Exception as err:
-            task.logger.error(err, exc_info=True)
-            raise err
+                task._payload["features"] = items
+                task.assign_collections()
+
+                return task._payload
+            except Exception as err:
+                task.logger.error(err, exc_info=True)
+                raise err
+        finally:
+            task.cleanup_workdir()
 
     @classmethod
     def parse_args(cls, args: List[str]) -> Dict[str, Any]:
