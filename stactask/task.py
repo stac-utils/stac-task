@@ -67,7 +67,6 @@ class Task(ABC):
     ):
         # define these to avoid undefined in destructor if init fails
         self._save_workdir = True
-        self._workdir = Path()
 
         # set up logger
         self.logger = logging.getLogger(self.name)
@@ -91,12 +90,6 @@ class Task(ABC):
             makedirs(self._workdir, exist_ok=True)
             # if a workdir was specified we don't want to rm by default
             self._save_workdir = save_workdir if save_workdir is not None else True
-
-    def __del__(self) -> None:
-        try:
-            self.cleanup_workdir()
-        except:  # noqa: E722
-            pass
 
     @property
     def process_definition(self) -> Dict[str, Any]:
@@ -201,15 +194,19 @@ class Task(ABC):
         return item
 
     def cleanup_workdir(self) -> None:
-        # remove work directory if not configured to save it
-        if not self._save_workdir and self._workdir and os.path.exists(self._workdir):
-            self.logger.debug("Removing work directory %s", self._workdir)
-            try:
+        """Remove work directory if configured not to save it"""
+        try:
+            if (
+                not self._save_workdir
+                and self._workdir
+                and os.path.exists(self._workdir)
+            ):
+                self.logger.debug("Removing work directory %s", self._workdir)
                 rmtree(self._workdir)
-            except Exception as e:
-                self.logger.warning(
-                    "Failed removing work directory %s: %s", self._workdir, e
-                )
+        except Exception as e:
+            self.logger.warning(
+                "Failed removing work directory %s: %s", self._workdir, e
+            )
 
     def assign_collections(self) -> None:
         """Assigns new collection names based on"""
