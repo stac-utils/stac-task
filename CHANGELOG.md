@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Given that `_get_file` is part of the `AsyncFileSystem` spec,
-  this adds the synchronous `get_file` as a way to retrieve files if
-  `_get_file` is not found.
+- ([#72]) Given that `_get_file` is part of the `AsyncFileSystem` spec, this
+  adds the synchronous `get_file` as a way to retrieve files if `_get_file` is
+  not found.
 
 ## [v0.3.0] - 2023-12-20
 
