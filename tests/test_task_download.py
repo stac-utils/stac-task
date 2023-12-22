@@ -36,6 +36,24 @@ def test_download_item_asset(tmp_path: Path, item_collection: Dict[str, Any]) ->
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
+def test_download_item_asset_local(
+    tmp_path: Path, item_collection: Dict[str, Any]
+) -> None:
+    t = NothingTask(item_collection, workdir=tmp_path / "test-task-download-item-asset")
+    item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata"])
+    fname = item.assets["tileinfo_metadata"].href
+    filename = Path(fname)
+    assert filename.is_file() is True
+    item = t.download_item_assets(
+        item, assets=["tileinfo_metadata"], path_template="again/${collection}/${id}"
+    )
+    fname = item.assets["tileinfo_metadata"].href
+    assert "again" in fname
+    filename = Path(fname)
+    assert filename.is_file() is True
+
+
+# @vcr.use_cassette(str(cassettepath / 'download_assets'))
 def test_download_item_assets(tmp_path: Path, item_collection: Dict[str, Any]) -> None:
     t = NothingTask(
         item_collection,
