@@ -35,7 +35,6 @@ def test_download_item_asset(tmp_path: Path, item_collection: Dict[str, Any]) ->
     assert filename.is_file() is True
 
 
-# @vcr.use_cassette(str(cassettepath / 'download_assets'))
 def test_download_item_asset_local(
     tmp_path: Path, item_collection: Dict[str, Any]
 ) -> None:
