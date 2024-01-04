@@ -22,7 +22,15 @@ sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
 async def download_file(fs: AbstractFileSystem, src: str, dest: str) -> None:
     async with sem:
         logger.debug(f"{src} start")
-        await fs._get_file(src, dest)
+        if hasattr(fs, "_get_file"):
+            await fs._get_file(src, dest)
+        elif hasattr(fs, "get_file"):
+            fs.get_file(src, dest)
+        else:
+            raise NotImplementedError(
+                "stactask only supports filesystems providing"
+                " `get_file` or `_get_file` interface"
+            )
         logger.debug(f"{src} completed")
 
 
