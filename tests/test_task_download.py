@@ -48,9 +48,9 @@ def test_download_item_asset_local(
     item = t.download_item_assets(
         item, assets=["tileinfo_metadata"], path_template="again/${collection}/${id}"
     )
-    fname = item.assets["tileinfo_metadata"].href
-    assert "again" in fname
-    filename = Path(fname)
+    href = item.assets["tileinfo_metadata"].href
+    assert "again" in href
+    filename = Path(href)
     assert filename.is_file() is True
 
 
