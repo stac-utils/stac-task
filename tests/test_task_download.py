@@ -43,6 +43,8 @@ def test_download_item_asset_local(
     fname = item.assets["tileinfo_metadata"].href
     filename = Path(fname)
     assert filename.is_file() is True
+    # Downloaded to local, as in prev test.
+    # With the asset hrefs updated by the prev download, we "download" again to subdir
     item = t.download_item_assets(
         item, assets=["tileinfo_metadata"], path_template="again/${collection}/${id}"
     )
