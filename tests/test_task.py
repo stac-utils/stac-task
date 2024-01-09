@@ -56,15 +56,15 @@ def test_edit_items2(nothing_task: Task) -> None:
 
 @pytest.mark.parametrize("save_workdir", [False, True, None])
 def test_tmp_workdir(items: Dict[str, Any], save_workdir: Optional[bool]) -> None:
-    nothing_task = NothingTask(items, save_workdir=save_workdir)
+    t = NothingTask(items, save_workdir=save_workdir)
     expected = save_workdir if save_workdir is not None else False
-    assert nothing_task._save_workdir is expected
-    workdir = nothing_task._workdir
+    assert t._save_workdir is expected
+    workdir = t._workdir
     assert workdir.parts[-1].startswith("tmp")
     assert workdir.is_absolute() is True
     assert workdir.is_dir() is True
-    del nothing_task
-    assert workdir.is_dir() is expected
+    t.cleanup_workdir()
+    assert workdir.exists() is expected
 
 
 @pytest.mark.parametrize("save_workdir", [False, True, None])
@@ -80,8 +80,8 @@ def test_workdir(
     assert workdir.parts[-1] == "test_task"
     assert workdir.is_absolute() is True
     assert workdir.is_dir() is True
-    del t
-    assert workdir.is_dir() is expected
+    t.cleanup_workdir()
+    assert workdir.exists() is expected
 
 
 def test_parameters(items: Dict[str, Any]) -> None:
