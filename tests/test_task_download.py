@@ -35,6 +35,20 @@ def test_download_item_asset(tmp_path: Path, item_collection: Dict[str, Any]) ->
     assert filename.is_file() is True
 
 
+def test_download_keep_original_filenames(
+    tmp_path: Path, item_collection: Dict[str, Any]
+) -> None:
+    t = NothingTask(
+        item_collection,
+        keep_original_filenames=True,
+        workdir=tmp_path / "test-task-download-item-asset",
+    )
+    item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata"]).to_dict()
+    fname = item["assets"]["tileinfo_metadata"]["href"]
+    filename = Path(fname)
+    assert filename.name == "tileInfo.json"
+
+
 def test_download_item_asset_local(
     tmp_path: Path, item_collection: Dict[str, Any]
 ) -> None:

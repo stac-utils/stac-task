@@ -143,13 +143,16 @@ def test_parse_no_args() -> None:
 
 
 def test_parse_args() -> None:
-    args = NothingTask.parse_args("run input --save-workdir".split())
+    args = NothingTask.parse_args(
+        "run input --keep-original-filenames --save-workdir".split()
+    )
     assert args["command"] == "run"
     assert args["logging"] == "INFO"
     assert args["input"] == "input"
     assert args["save_workdir"] is True
     assert args["skip_upload"] is False
     assert args["skip_validation"] is False
+    assert args["keep_original_filenames"] is True
 
 
 if __name__ == "__main__":
