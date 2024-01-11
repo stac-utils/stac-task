@@ -64,7 +64,6 @@ class Task(ABC):
         save_workdir: Optional[bool] = None,
         skip_upload: bool = False,
         skip_validation: bool = False,
-        keep_original_filenames: bool = False,
     ):
         self.logger = logging.getLogger(self.name)
 
@@ -76,7 +75,6 @@ class Task(ABC):
         # set instance variables
         self._skip_upload = skip_upload
         self._payload = payload
-        self._keep_original_filenames = keep_original_filenames
 
         # create temporary work directory if workdir is None
         if workdir is None:
@@ -219,15 +217,21 @@ class Task(ABC):
         self,
         item: Item,
         path_template: str = "${collection}/${id}",
+        keep_original_filenames: bool = False,
         **kwargs: Any,
     ) -> Item:
-        """Download provided asset keys for all items in payload. Assets are
-        saved in workdir in a directory named by the Item ID, and the items are
-        updated with the new asset hrefs.
+        """Download provided asset keys for the given item. Assets are
+        saved in workdir in a directory (as specified by path_template), and
+        the items are updated with the new asset hrefs.
 
         Args:
-            assets (Optional[List[str]], optional): List of asset keys to
-                download. Defaults to all assets.
+            item (pystac.Item): STAC Item for which assets need be downloaded.
+            assets (Optional[List[str]]): List of asset keys to download.
+                Defaults to all assets.
+            path_template (Optional[str]): String to be interpolated to specify
+                where to store downloaded files.
+            keep_original_filenames (Optional[bool]): Controls whether original
+                file names should be used, or asset key + extension.
         """
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
@@ -235,7 +239,7 @@ class Task(ABC):
             download_item_assets(
                 item,
                 path_template=outdir,
-                keep_original_filenames=self._keep_original_filenames,
+                keep_original_filenames=keep_original_filenames,
                 **kwargs,
             )
         )
@@ -245,15 +249,30 @@ class Task(ABC):
         self,
         items: Iterable[Item],
         path_template: str = "${collection}/${id}",
+        keep_original_filenames: bool = False,
         **kwargs: Any,
     ) -> List[Item]:
+        """Download provided asset keys for the given items. Assets are
+        saved in workdir in a directory (as specified by path_template), and
+        the items are updated with the new asset hrefs.
+
+        Args:
+            items (List[pystac.Item]): List of STAC Items for which assets need
+                be downloaded.
+            assets (Optional[List[str]]): List of asset keys to download.
+                Defaults to all assets.
+            path_template (Optional[str]): String to be interpolated to specify
+                where to store downloaded files.
+            keep_original_filenames (Optional[bool]): Controls whether original
+                file names should be used, or asset key + extension.
+        """
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
         items = loop.run_until_complete(
             download_items_assets(
                 items,
                 path_template=outdir,
-                keep_original_filenames=self._keep_original_filenames,
+                keep_original_filenames=keep_original_filenames,
                 **kwargs,
             )
         )
@@ -381,10 +400,6 @@ class Task(ABC):
         h = "Save workdir after completion"
         parser.add_argument(
             "--save-workdir", dest="save_workdir", action="store_true", default=False
-        )
-        h = "Keep original asset filenames"
-        parser.add_argument(
-            "--keep-original-filenames", action="store_true", default=False
         )
         h = "Skip uploading of any generated assets and resulting STAC Items"
         parser.add_argument(

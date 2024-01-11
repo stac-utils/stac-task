@@ -40,10 +40,11 @@ def test_download_keep_original_filenames(
 ) -> None:
     t = NothingTask(
         item_collection,
-        keep_original_filenames=True,
         workdir=tmp_path / "test-task-download-item-asset",
     )
-    item = t.download_item_assets(t.items[0], assets=["tileinfo_metadata"]).to_dict()
+    item = t.download_item_assets(
+        t.items[0], assets=["tileinfo_metadata"], keep_original_filenames=True
+    ).to_dict()
     fname = item["assets"]["tileinfo_metadata"]["href"]
     filename = Path(fname)
     assert filename.name == "tileInfo.json"
