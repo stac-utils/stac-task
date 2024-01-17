@@ -41,6 +41,7 @@ async def download_item_assets(
     overwrite: bool = False,
     path_template: str = "${collection}/${id}",
     absolute_path: bool = False,
+    keep_original_filenames: bool = False,
     **kwargs: Any,
 ) -> Item:
     _assets = item.assets.keys() if assets is None else assets
@@ -61,8 +62,11 @@ async def download_item_assets(
         href = item.assets[a].href
 
         # local filename
-        ext = os.path.splitext(href)[-1]
-        new_href = os.path.join(path, a + ext)
+        if keep_original_filenames:
+            basename = os.path.basename(href)
+        else:
+            basename = a + os.path.splitext(href)[1]
+        new_href = os.path.join(path, basename)
         if absolute_path:
             new_href = os.path.abspath(new_href)
 
