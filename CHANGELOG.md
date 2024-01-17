@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ([#72]) Given that `_get_file` is part of the `AsyncFileSystem` spec, this
   adds the synchronous `get_file` as a way to retrieve files if `_get_file` is
   not found.
-- ([#77]) Added option `keep_original_filenames` to download routines to
+- ([#77](https://github.com/stac-utils/stac-task/pull/77)) Added option `keep_original_filenames` to download routines to
   support legacy applications dependent on filename specifics.
 
 ## [v0.3.0] - 2023-12-20
