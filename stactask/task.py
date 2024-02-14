@@ -342,6 +342,7 @@ class Task(ABC):
 
     @classmethod
     def handler(cls, payload: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+        task = None
         try:
             if "href" in payload or "url" in payload:
                 # read input
@@ -362,7 +363,8 @@ class Task(ABC):
                 task.logger.error(err, exc_info=True)
                 raise err
         finally:
-            task.cleanup_workdir()
+            if task:
+                task.cleanup_workdir()
 
     @classmethod
     def parse_args(cls, args: List[str]) -> Dict[str, Any]:
