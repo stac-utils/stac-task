@@ -342,6 +342,7 @@ class Task(ABC):
 
     @classmethod
     def handler(cls, payload: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+        task = None
         try:
             if "href" in payload or "url" in payload:
                 # read input
