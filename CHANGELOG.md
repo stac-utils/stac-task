@@ -5,11 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.4.0] - 2024-02-14
+
+### Fixed
+
+- ([#72](https://github.com/stac-utils/stac-task/pull/72)) Guard cleanup of workdir to ensure task was actually created.
 
 ### Added
 
-- ([#72]) Given that `_get_file` is part of the `AsyncFileSystem` spec, this
+- ([#72](https://github.com/stac-utils/stac-task/pull/72)) Given that `_get_file` is part of the `AsyncFileSystem` spec, this
   adds the synchronous `get_file` as a way to retrieve files if `_get_file` is
   not found.
 - ([#77](https://github.com/stac-utils/stac-task/pull/77)) Added option `keep_original_filenames` to download routines to
@@ -54,6 +58,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Initial release.
 
 <!-- [Unreleased]: <https://github.com/stac-utils/stac-task/compare/v0.1.1...main> -->
+[v0.4.0]: <https://github.com/stac-utils/stac-task/compare/v0.3.0...v0.4.0>
 [v0.3.0]: <https://github.com/stac-utils/stac-task/compare/v0.2.0...v0.3.0>
 [v0.2.0]: <https://github.com/stac-utils/stac-task/compare/v0.1.1...v0.2.0>
 [v0.1.1]: <https://github.com/stac-utils/stac-task/compare/v0.1.0...v0.1.1>

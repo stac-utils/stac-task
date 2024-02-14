@@ -362,7 +362,8 @@ class Task(ABC):
                 task.logger.error(err, exc_info=True)
                 raise err
         finally:
-            task.cleanup_workdir()
+            if task:
+                task.cleanup_workdir()
 
     @classmethod
     def parse_args(cls, args: List[str]) -> Dict[str, Any]:
