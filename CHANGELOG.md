@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- ([#72](https://github.com/stac-utils/stac-task/pull/72)) Guard cleanup of workdir to ensure task was actually created.
+- ([#86](https://github.com/stac-utils/stac-task/pull/86)) Guard cleanup of workdir to ensure task was actually created.
 
 ### Added
 
