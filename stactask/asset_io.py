@@ -125,7 +125,7 @@ def upload_item_assets_to_s3(
         headers = {}
 
     # deepcopy of item
-    _item = item.to_dict()
+    _item = item.to_dict(transform_hrefs=False)
 
     if public_assets is None:
         public_assets = []
