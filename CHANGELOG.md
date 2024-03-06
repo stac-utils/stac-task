@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- ([#90](https://github.com/stac-utils/stac-task/pull/90)) block asset_io
+- ([#90](https://github.com/stac-utils/stac-task/pull/90)) Block asset_io
   module from reaching out to upstream stac APIs (especially on NASA Wednesdays
   `transform_hrefs=False`)
 
