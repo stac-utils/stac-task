@@ -53,5 +53,5 @@ strict = true
 module = ["boto3utils", "jsonpath_ng.ext", "fsspec"]
 ignore_missing_imports = true
 
-[tool.ruff]
+[tool.ruff.lint]
 select = ["F", "E", "W", "I", "ERA", "RUF"]

@@ -13,7 +13,7 @@ from pystac.layout import LayoutTemplate
 logger = logging.getLogger(__name__)
 
 # global dictionary of sessions per bucket
-s3_client = s3()
+global_s3_client = s3()
 
 SIMULTANEOUS_DOWNLOADS = int(os.getenv("STAC_SIMULTANEOUS_DOWNLOADS", 3))
 sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
@@ -104,6 +104,7 @@ def upload_item_assets_to_s3(
     path_template: str = "${collection}/${id}",
     s3_urls: bool = False,
     headers: Optional[Dict[str, Any]] = None,
+    s3_client: Optional[s3] = None,
     **kwargs: Any,
 ) -> Item:
     """Upload Item assets to s3 bucket
@@ -117,10 +118,16 @@ def upload_item_assets_to_s3(
         s3_urls (bool, optional): Return s3 URLs instead of http URLs. Defaults
             to False.
         headers (Dict, optional): Dictionary of headers to set on uploaded
-            assets. Defaults to {},
+            assets. Defaults to {}.
+        s3_client (boto3utils.s3, optional): Use this s3 object instead of the default
+            global one. Defaults to None.
     Returns:
         Dict: A new STAC Item with uploaded assets pointing to newly uploaded file URLs
     """
+
+    if s3_client is None:
+        s3_client = global_s3_client
+
     if headers is None:
         headers = {}
 
@@ -160,4 +167,5 @@ def upload_item_assets_to_s3(
             filename, url, public=public, extra=_headers, http_url=not s3_urls
         )
         _item["assets"][key]["href"] = url_out
+
     return Item.from_dict(_item)
