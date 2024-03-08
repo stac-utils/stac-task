@@ -15,6 +15,7 @@ from tempfile import mkdtemp
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import fsspec
+from boto3utils import s3
 from pystac import Item, ItemCollection
 
 from .asset_io import (
@@ -279,12 +280,17 @@ class Task(ABC):
         return list(items)
 
     def upload_item_assets_to_s3(
-        self, item: Item, assets: Optional[List[str]] = None
+        self,
+        item: Item,
+        assets: Optional[List[str]] = None,
+        s3_client: Optional[s3] = None,
     ) -> Item:
         if self._skip_upload:
             self.logger.warning("Skipping upload of new and modified assets")
             return item
-        item = upload_item_assets_to_s3(item, assets=assets, **self.upload_options)
+        item = upload_item_assets_to_s3(
+            item=item, assets=assets, s3_client=s3_client, **self.upload_options
+        )
         return item
 
     # this should be in PySTAC
