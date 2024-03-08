@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - TBD
+## [unreleased] - TBD
 
 ### Added
 
-- ([#xx](https://github.com/stac-utils/stac-task/pull/xx)) Task.upload_item_assets_to_s3 and asset_io.upload_item_assets_to_s3 support explicitly specifying the boto3utils3.s3 object.
+- ([#92](https://github.com/stac-utils/stac-task/pull/92)) Task.upload_item_assets_to_s3 and asset_io.upload_item_assets_to_s3 support explicitly specifying the boto3utils3.s3 object.
 
 ## [v0.4.1] - 2024-03-06
 
@@ -71,7 +71,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 Initial release.
 
-<!-- [unreleased]: <https://github.com/stac-utils/stac-task/compare/v0.4.1...main>-->
+[unreleased]: <https://github.com/stac-utils/stac-task/compare/v0.4.1...main>
 [v0.4.1]: <https://github.com/stac-utils/stac-task/compare/v0.4.0...v0.4.1>
 [v0.4.0]: <https://github.com/stac-utils/stac-task/compare/v0.3.0...v0.4.0>
 [v0.3.0]: <https://github.com/stac-utils/stac-task/compare/v0.2.0...v0.3.0>
