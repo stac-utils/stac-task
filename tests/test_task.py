@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pytest
 
@@ -41,7 +41,7 @@ def test_task_init(nothing_task: Task) -> None:
 
 
 def test_failed_validation(items: Dict[str, Any]) -> None:
-    with pytest.raises(FailedValidation):
+    with pytest.raises(FailedValidation, match="Extra context"):
         FailValidateTask(items)
 
 
@@ -54,26 +54,34 @@ def test_edit_items2(nothing_task: Task) -> None:
     assert nothing_task._payload["features"][0]["type"] == "Feature"
 
 
-def test_tmp_workdir(items: Dict[str, Any]) -> None:
-    nothing_task = NothingTask(items)
-    assert nothing_task._save_workdir is False
-    workdir = nothing_task._workdir
+@pytest.mark.parametrize("save_workdir", [False, True, None])
+def test_tmp_workdir(items: Dict[str, Any], save_workdir: Optional[bool]) -> None:
+    t = NothingTask(items, save_workdir=save_workdir)
+    expected = save_workdir if save_workdir is not None else False
+    assert t._save_workdir is expected
+    workdir = t._workdir
     assert workdir.parts[-1].startswith("tmp")
+    assert workdir.is_absolute() is True
     assert workdir.is_dir() is True
-    del nothing_task
-    assert workdir.is_dir() is False
+    t.cleanup_workdir()
+    assert workdir.exists() is expected
 
 
-def test_workdir(items: Dict[str, Any]) -> None:
-    t = NothingTask(items, workdir=testpath / "test_task", save_workdir=True)
-    assert t._save_workdir is True
+@pytest.mark.parametrize("save_workdir", [False, True, None])
+def test_workdir(
+    items: Dict[str, Any],
+    tmp_path: Path,
+    save_workdir: Optional[bool],
+) -> None:
+    t = NothingTask(items, workdir=tmp_path / "test_task", save_workdir=save_workdir)
+    expected = save_workdir if save_workdir is not None else True
+    assert t._save_workdir is expected
     workdir = t._workdir
     assert workdir.parts[-1] == "test_task"
+    assert workdir.is_absolute() is True
     assert workdir.is_dir() is True
-    del t
-    assert workdir.is_dir() is True
-    workdir.rmdir()
-    assert workdir.is_dir() is False
+    t.cleanup_workdir()
+    assert workdir.exists() is expected
 
 
 def test_parameters(items: Dict[str, Any]) -> None:

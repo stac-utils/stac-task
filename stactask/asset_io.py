@@ -13,7 +13,7 @@ from pystac.layout import LayoutTemplate
 logger = logging.getLogger(__name__)
 
 # global dictionary of sessions per bucket
-s3_client = s3()
+global_s3_client = s3()
 
 SIMULTANEOUS_DOWNLOADS = int(os.getenv("STAC_SIMULTANEOUS_DOWNLOADS", 3))
 sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
@@ -22,7 +22,15 @@ sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
 async def download_file(fs: AbstractFileSystem, src: str, dest: str) -> None:
     async with sem:
         logger.debug(f"{src} start")
-        await fs._get_file(src, dest)
+        if hasattr(fs, "_get_file"):
+            await fs._get_file(src, dest)
+        elif hasattr(fs, "get_file"):
+            fs.get_file(src, dest)
+        else:
+            raise NotImplementedError(
+                "stactask only supports filesystems providing"
+                " `get_file` or `_get_file` interface"
+            )
         logger.debug(f"{src} completed")
 
 
@@ -33,6 +41,7 @@ async def download_item_assets(
     overwrite: bool = False,
     path_template: str = "${collection}/${id}",
     absolute_path: bool = False,
+    keep_original_filenames: bool = False,
     **kwargs: Any,
 ) -> Item:
     _assets = item.assets.keys() if assets is None else assets
@@ -53,8 +62,11 @@ async def download_item_assets(
         href = item.assets[a].href
 
         # local filename
-        ext = os.path.splitext(href)[-1]
-        new_href = os.path.join(path, a + ext)
+        if keep_original_filenames:
+            basename = os.path.basename(href)
+        else:
+            basename = a + os.path.splitext(href)[1]
+        new_href = os.path.join(path, basename)
         if absolute_path:
             new_href = os.path.abspath(new_href)
 
@@ -92,6 +104,7 @@ def upload_item_assets_to_s3(
     path_template: str = "${collection}/${id}",
     s3_urls: bool = False,
     headers: Optional[Dict[str, Any]] = None,
+    s3_client: Optional[s3] = None,
     **kwargs: Any,
 ) -> Item:
     """Upload Item assets to s3 bucket
@@ -105,15 +118,21 @@ def upload_item_assets_to_s3(
         s3_urls (bool, optional): Return s3 URLs instead of http URLs. Defaults
             to False.
         headers (Dict, optional): Dictionary of headers to set on uploaded
-            assets. Defaults to {},
+            assets. Defaults to {}.
+        s3_client (boto3utils.s3, optional): Use this s3 object instead of the default
+            global one. Defaults to None.
     Returns:
         Dict: A new STAC Item with uploaded assets pointing to newly uploaded file URLs
     """
+
+    if s3_client is None:
+        s3_client = global_s3_client
+
     if headers is None:
         headers = {}
 
     # deepcopy of item
-    _item = item.to_dict()
+    _item = item.to_dict(transform_hrefs=False)
 
     if public_assets is None:
         public_assets = []
@@ -148,4 +167,5 @@ def upload_item_assets_to_s3(
             filename, url, public=public, extra=_headers, http_url=not s3_urls
         )
         _item["assets"][key]["href"] = url_out
+
     return Item.from_dict(_item)

@@ -3,6 +3,7 @@ import asyncio
 import itertools
 import json
 import logging
+import os
 import sys
 import warnings
 from abc import ABC, abstractmethod
@@ -14,6 +15,7 @@ from tempfile import mkdtemp
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import fsspec
+from boto3utils import s3
 from pystac import Item, ItemCollection
 
 from .asset_io import (
@@ -60,38 +62,31 @@ class Task(ABC):
         self: "Task",
         payload: Dict[str, Any],
         workdir: Optional[PathLike] = None,
-        save_workdir: bool = False,
+        save_workdir: Optional[bool] = None,
         skip_upload: bool = False,
         skip_validation: bool = False,
     ):
-        # set up logger
         self.logger = logging.getLogger(self.name)
 
-        # set this to avoid confusion in destructor if called during validation
-        self._save_workdir = True
-
-        # validate input payload...or not
+        # validate input payload... or not
         if not skip_validation:
             if not self.validate(payload):
                 raise FailedValidation()
 
         # set instance variables
-        self._save_workdir = save_workdir
         self._skip_upload = skip_upload
         self._payload = payload
 
         # create temporary work directory if workdir is None
         if workdir is None:
             self._workdir = Path(mkdtemp())
+            # if we are using a temp workdir we want to rm by default
+            self._save_workdir = save_workdir if save_workdir is not None else False
         else:
-            self._workdir = Path(workdir)
+            self._workdir = Path(workdir).absolute()
             makedirs(self._workdir, exist_ok=True)
-
-    def __del__(self) -> None:
-        # remove work directory if not running locally
-        if not self._save_workdir:
-            self.logger.debug("Removing work directory %s", self._workdir)
-            rmtree(self._workdir)
+            # if a workdir was specified we don't want to rm by default
+            self._save_workdir = save_workdir if save_workdir is not None else True
 
     @property
     def process_definition(self) -> Dict[str, Any]:
@@ -154,6 +149,8 @@ class Task(ABC):
 
     @classmethod
     def validate(cls, payload: Dict[str, Any]) -> bool:
+        """Validates the payload and returns True if valid. If invalid, raises
+        ``stactask.exceptions.FailedValidation`` or returns False."""
         # put validation logic on input Items and process definition here
         return True
 
@@ -193,6 +190,21 @@ class Task(ABC):
         item["properties"]["processing:software"] = {cls.name: cls.version}
         return item
 
+    def cleanup_workdir(self) -> None:
+        """Remove work directory if configured not to save it"""
+        try:
+            if (
+                not self._save_workdir
+                and self._workdir
+                and os.path.exists(self._workdir)
+            ):
+                self.logger.debug("Removing work directory %s", self._workdir)
+                rmtree(self._workdir)
+        except Exception as e:
+            self.logger.warning(
+                "Failed removing work directory %s: %s", self._workdir, e
+            )
+
     def assign_collections(self) -> None:
         """Assigns new collection names based on"""
         for i, (coll, expr) in itertools.product(
@@ -206,20 +218,31 @@ class Task(ABC):
         self,
         item: Item,
         path_template: str = "${collection}/${id}",
+        keep_original_filenames: bool = False,
         **kwargs: Any,
     ) -> Item:
-        """Download provided asset keys for all items in payload. Assets are
-        saved in workdir in a directory named by the Item ID, and the items are
-        updated with the new asset hrefs.
+        """Download provided asset keys for the given item. Assets are
+        saved in workdir in a directory (as specified by path_template), and
+        the items are updated with the new asset hrefs.
 
         Args:
-            assets (Optional[List[str]], optional): List of asset keys to
-                download. Defaults to all assets.
+            item (pystac.Item): STAC Item for which assets need be downloaded.
+            assets (Optional[List[str]]): List of asset keys to download.
+                Defaults to all assets.
+            path_template (Optional[str]): String to be interpolated to specify
+                where to store downloaded files.
+            keep_original_filenames (Optional[bool]): Controls whether original
+                file names should be used, or asset key + extension.
         """
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
         item = loop.run_until_complete(
-            download_item_assets(item, path_template=outdir, **kwargs)
+            download_item_assets(
+                item,
+                path_template=outdir,
+                keep_original_filenames=keep_original_filenames,
+                **kwargs,
+            )
         )
         return item
 
@@ -227,22 +250,47 @@ class Task(ABC):
         self,
         items: Iterable[Item],
         path_template: str = "${collection}/${id}",
+        keep_original_filenames: bool = False,
         **kwargs: Any,
     ) -> List[Item]:
+        """Download provided asset keys for the given items. Assets are
+        saved in workdir in a directory (as specified by path_template), and
+        the items are updated with the new asset hrefs.
+
+        Args:
+            items (List[pystac.Item]): List of STAC Items for which assets need
+                be downloaded.
+            assets (Optional[List[str]]): List of asset keys to download.
+                Defaults to all assets.
+            path_template (Optional[str]): String to be interpolated to specify
+                where to store downloaded files.
+            keep_original_filenames (Optional[bool]): Controls whether original
+                file names should be used, or asset key + extension.
+        """
         outdir = str(self._workdir / path_template)
         loop = asyncio.get_event_loop()
         items = loop.run_until_complete(
-            download_items_assets(items, path_template=outdir, **kwargs)
+            download_items_assets(
+                items,
+                path_template=outdir,
+                keep_original_filenames=keep_original_filenames,
+                **kwargs,
+            )
         )
         return list(items)
 
     def upload_item_assets_to_s3(
-        self, item: Item, assets: Optional[List[str]] = None
+        self,
+        item: Item,
+        assets: Optional[List[str]] = None,
+        s3_client: Optional[s3] = None,
     ) -> Item:
         if self._skip_upload:
             self.logger.warning("Skipping upload of new and modified assets")
             return item
-        item = upload_item_assets_to_s3(item, assets=assets, **self.upload_options)
+        item = upload_item_assets_to_s3(
+            item=item, assets=assets, s3_client=s3_client, **self.upload_options
+        )
         return item
 
     # this should be in PySTAC
@@ -300,24 +348,29 @@ class Task(ABC):
 
     @classmethod
     def handler(cls, payload: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
-        if "href" in payload or "url" in payload:
-            # read input
-            with fsspec.open(payload.get("href", payload.get("url"))) as f:
-                payload = json.loads(f.read())
-
-        task = cls(payload, **kwargs)
+        task = None
         try:
-            items = list()
-            for item in task.process(**task.parameters):
-                items.append(task.post_process_item(item))
+            if "href" in payload or "url" in payload:
+                # read input
+                with fsspec.open(payload.get("href", payload.get("url"))) as f:
+                    payload = json.loads(f.read())
 
-            task._payload["features"] = items
-            task.assign_collections()
+            task = cls(payload, **kwargs)
+            try:
+                items = list()
+                for item in task.process(**task.parameters):
+                    items.append(task.post_process_item(item))
 
-            return task._payload
-        except Exception as err:
-            task.logger.error(err, exc_info=True)
-            raise err
+                task._payload["features"] = items
+                task.assign_collections()
+
+                return task._payload
+            except Exception as err:
+                task.logger.error(err, exc_info=True)
+                raise err
+        finally:
+            if task:
+                task.cleanup_workdir()
 
     @classmethod
     def parse_args(cls, args: List[str]) -> Dict[str, Any]:
