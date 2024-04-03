@@ -94,7 +94,7 @@ For example:
 
 In this example, the task will set any STAC Items that have an ID beginning with "LC08" to the `landsat-c2l2` collection.
 
-See [Jayway JsonPath Evaluator](https://jsonpath.herokuapp.com/) to experiment with JSONpath and [regex101](https://regex101.com/) to experiment with regex.
+See [JSONPath Online Evaluator](https://jsonpath.com) to experiment with JSONPath and [regex101](https://regex101.com) to experiment with regex.
 
 #### tasks
 
