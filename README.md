@@ -1,5 +1,14 @@
 # STAC Task (stactask)
 
+[![Build Status](https://github.com/stac-utils/stac-task/workflows/CI/badge.svg?branch=main)](https://github.com/stac-utils/stac-task/actions/workflows/continuous-integration.yml)
+[![PyPI version](https://badge.fury.io/py/stac-task.svg)](https://badge.fury.io/py/stac-task)
+[![Documentation Status](https://readthedocs.org/projects/stac-task/badge/?version=latest)](https://stac-task.readthedocs.io/en/latest/?badge=latest)
+[![codecov](https://codecov.io/gh/stac-utils/stac-task/branch/main/graph/badge.svg)](https://codecov.io/gh/stac-utils/stac-task)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+
+
+
 This Python library consists of the Task class, which is used to create custom tasks based
 on a "STAC In, STAC Out" approach. The Task class acts as wrapper around custom code and provides
 several convenience methods for modifying STAC Items, creating derived Items, and providing a CLI.
