@@ -1,0 +1,4 @@
+﻿stactask
+========
+
+.. automodule:: stactask

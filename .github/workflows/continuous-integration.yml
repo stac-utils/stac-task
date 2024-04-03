@@ -46,3 +46,18 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
           fail_ci_if_error: false
+  docs:
+    name: Docs
+    needs:
+      - standard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: pip install '.[dev]' -r docs/requirements.txt
+      - name: Make docs
+        run: cd docs && make html
