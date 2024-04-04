@@ -340,7 +340,6 @@ class Task(ABC):
         Returns:
             Dict[str, Any]: The item with any additional attributes applied.
         """
-        item = self.add_software_version_to_item(item)
         assert "stac_extensions" in item
         assert isinstance(item["stac_extensions"], list)
         item["stac_extensions"].sort()

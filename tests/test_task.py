@@ -111,7 +111,6 @@ def test_post_process(items: Dict[str, Any]) -> None:
     payload = PostProcessTask.handler(items)
     for item in payload["features"]:
         assert item["properties"]["foo"] == "bar"
-        assert item["properties"]["processing:software"]["post-processing-test"] == "42"
         stac_extensions = item["stac_extensions"]
         assert item["stac_extensions"] == sorted(stac_extensions)
 
@@ -131,10 +130,6 @@ def test_task_handler(items: Dict[str, Any]) -> None:
         lk for lk in output_items["features"][0]["links"] if lk["rel"] == "derived_from"
     )
     assert derived_link["href"] == self_link["href"]
-    assert (
-        "derived-item-task"
-        in output_items["features"][0]["properties"]["processing:software"]
-    )
 
 
 def test_parse_no_args() -> None:
