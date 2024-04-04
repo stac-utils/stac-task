@@ -455,16 +455,28 @@ class Task(ABC):
         parser.add_argument(
             "--upload",
             dest="upload",
-            action=argparse.BooleanOptionalAction,
+            action="store_true",
             default=True,
             help="Upload generated assets and resulting STAC Items",
         )
         parser.add_argument(
+            "--no-upload",
+            dest="upload",
+            action="store_false",
+            help="Don't upload generated assets and resulting STAC Items",
+        )
+        parser.add_argument(
             "--validate",
             dest="validate",
-            action=argparse.BooleanOptionalAction,
+            action="store_true",
             default=True,
             help="Validate input payload",
+        )
+        parser.add_argument(
+            "--no-validate",
+            dest="validate",
+            action="store_false",
+            help="Don't validate input payload",
         )
 
         parser.add_argument(
