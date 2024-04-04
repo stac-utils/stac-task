@@ -19,7 +19,7 @@ To use STAC Task, first install it using pip:
 A simple task definition
 ------------------------
 
-The intended use of stactask is for a developer to extend the `stactask.Task` class. An trivial
+The intended use of stac-task is for a developer to extend the `stactask.Task` class. An trivial
 example class that does is shown below, which accepts a payload containing a field `item_id` and
 generates a STAC Item with this id.
 
@@ -159,7 +159,7 @@ To run a Task as a CLI application, add a main definition to the class inheritin
    if __name__ == "__main__":
       MyTask.cli()
 
-This provides a CLI that supports several useful flags for using stactask. Invoking it
+This provides a CLI that supports several useful flags for using stac-task. Invoking it
 without any arguments will print usage.
 
 A common way of invoking the task is:
