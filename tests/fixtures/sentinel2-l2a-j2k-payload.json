@@ -61,9 +61,6 @@
                 "sentinel2:processing_baseline": "04.00",
                 "datetime": "2022-10-07T01:16:42.073000Z",
                 "sentinel2:id": "S2A_OPER_MSI_L2A_TL_ATOS_20221007T034556_A038080_T52HGH",
-                "processing:software": {
-                    "sentinel2-to-stac": "0.1.0"
-                },
                 "created": "2022-10-07T05:12:48.954Z",
                 "updated": "2022-10-07T05:12:48.954Z"
             },
@@ -849,9 +846,6 @@
                 "sentinel2:processing_baseline": "04.00",
                 "datetime": "2022-10-09T16:27:07.934000Z",
                 "sentinel2:id": "S2B_OPER_MSI_L2A_TL_2BPS_20221009T203656_A029209_T05CNL",
-                "processing:software": {
-                    "sentinel2-to-stac": "0.1.0"
-                },
                 "created": "2022-10-09T22:36:20.098Z",
                 "updated": "2022-10-09T22:36:20.098Z"
             },
