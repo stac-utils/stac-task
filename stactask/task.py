@@ -30,6 +30,12 @@ from .utils import stac_jsonpath_match
 PathLike = Union[str, Path]
 
 
+class DeprecatedStoreTrueAction(argparse._StoreTrueAction):
+    def __call__(self, parser, namespace, values, option_string=None) -> None:  # type: ignore
+        warnings.warn("Argument %s is deprecated." % self.option_strings)
+        super().__call__(parser, namespace, values, option_string)
+
+
 class Task(ABC):
     """
     Tasks can use parameters provided in a `process` Dictionary that is supplied in
@@ -63,18 +69,24 @@ class Task(ABC):
         payload: Dict[str, Any],
         workdir: Optional[PathLike] = None,
         save_workdir: Optional[bool] = None,
-        skip_upload: bool = False,
-        skip_validation: bool = False,
+        skip_upload: bool = False,  # deprecated
+        skip_validation: bool = False,  # deprecated
+        upload: bool = True,
+        validate: bool = True,
     ):
         self.logger = logging.getLogger(self.name)
 
-        # validate input payload... or not
-        if not skip_validation:
+        if not skip_validation and validate:
             if not self.validate(payload):
                 raise FailedValidation()
 
         # set instance variables
-        self._skip_upload = skip_upload
+        if skip_upload:
+            self._upload = False
+        else:
+            self._upload = upload
+
+        self._skip_upload = not upload  # deprecated
         self._payload = payload
 
         # create temporary work directory if workdir is None
@@ -285,12 +297,13 @@ class Task(ABC):
         assets: Optional[List[str]] = None,
         s3_client: Optional[s3] = None,
     ) -> Item:
-        if self._skip_upload:
+        if self._upload:
+            item = upload_item_assets_to_s3(
+                item=item, assets=assets, s3_client=s3_client, **self.upload_options
+            )
+        else:
             self.logger.warning("Skipping upload of new and modified assets")
-            return item
-        item = upload_item_assets_to_s3(
-            item=item, assets=assets, s3_client=s3_client, **self.upload_options
-        )
+
         return item
 
     # this should be in PySTAC
@@ -390,49 +403,103 @@ class Task(ABC):
         subparsers = parser0.add_subparsers(dest="command")
 
         # run
-        h = "Process STAC Item Collection"
         parser = subparsers.add_parser(
-            "run", parents=[pparser], help=h, formatter_class=dhf
+            "run",
+            parents=[pparser],
+            formatter_class=dhf,
+            help="Process STAC Item Collection",
         )
         parser.add_argument(
             "input", help="Full path of item collection to process (s3 or local)"
         )
 
-        h = "Write output payload to this URL"
-        parser.add_argument("--output", help=h, default=None)
+        parser.add_argument(
+            "--output",
+            default=None,
+            help="Write output payload to this URL",
+        )
 
         # additional options
-        h = "Use this as work directory. Will be created."
-        parser.add_argument("--workdir", help=h, default=None, type=Path)
-        h = "Save workdir after completion"
         parser.add_argument(
-            "--save-workdir", dest="save_workdir", action="store_true", default=False
+            "--workdir",
+            default=None,
+            type=Path,
+            help="Use this as work directory. Will be created.",
         )
-        h = "Skip uploading of any generated assets and resulting STAC Items"
+
         parser.add_argument(
-            "--skip-upload", dest="skip_upload", action="store_true", default=False
+            "--save-workdir",
+            dest="save_workdir",
+            action="store_true",
+            default=False,
+            help="Save workdir after completion",
         )
-        h = "Skip validation of input payload"
+
+        # skips are deprecated in favor of boolean optionals
+        parser.add_argument(
+            "--skip-upload",
+            dest="skip_upload",
+            action=DeprecatedStoreTrueAction,
+            default=False,
+            help="DEPRECATED: Skip uploading of generated assets and STAC Items",
+        )
         parser.add_argument(
             "--skip-validation",
             dest="skip_validation",
+            action=DeprecatedStoreTrueAction,
+            default=False,
+            help="DEPRECATED: Skip validation of input payload",
+        )
+
+        parser.add_argument(
+            "--upload",
+            dest="upload",
+            action="store_true",
+            default=True,
+            help="Upload generated assets and resulting STAC Items",
+        )
+        parser.add_argument(
+            "--no-upload",
+            dest="upload",
+            action="store_false",
+            help="Don't upload generated assets and resulting STAC Items",
+        )
+        parser.add_argument(
+            "--validate",
+            dest="validate",
+            action="store_true",
+            default=True,
+            help="Validate input payload",
+        )
+        parser.add_argument(
+            "--no-validate",
+            dest="validate",
+            action="store_false",
+            help="Don't validate input payload",
+        )
+
+        parser.add_argument(
+            "--local",
             action="store_true",
             default=False,
+            help=""" Run local mode
+(save-workdir = True, upload = False,
+workdir = 'local-output', output = 'local-output/output-payload.json') """,
         )
-        h = """ Run local mode
-(save-workdir = True, skip-upload = True, skip-validation = True,
-workdir = 'local-output', output = 'local-output/output-payload.json') """
-        parser.add_argument("--local", help=h, action="store_true", default=False)
 
         # turn Namespace into dictionary
         pargs = vars(parser0.parse_args(args))
         # only keep keys that are not None
         pargs = {k: v for k, v in pargs.items() if v is not None}
 
+        if pargs.pop("skip_validation", False):
+            pargs["validate"] = False
+        if pargs.pop("skip_upload", False):
+            pargs["upload"] = False
+
         if pargs.pop("local", False):
-            # local mode sets all of
-            for k in ["save_workdir", "skip_upload", "skip_validation"]:
-                pargs[k] = True
+            pargs["save_workdir"] = True
+            pargs["upload"] = False
             if pargs.get("workdir") is None:
                 pargs["workdir"] = "local-output"
             if pargs.get("output") is None:

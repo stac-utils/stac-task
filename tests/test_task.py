@@ -143,8 +143,38 @@ def test_parse_args() -> None:
     assert args["logging"] == "INFO"
     assert args["input"] == "input"
     assert args["save_workdir"] is True
-    assert args["skip_upload"] is False
-    assert args["skip_validation"] is False
+    assert args["upload"] is True
+    assert args["validate"] is True
+
+
+def test_parse_args_deprecated_skip() -> None:
+    args = NothingTask.parse_args("run input --skip-upload --skip-validation".split())
+    assert args["upload"] is False
+    assert args["validate"] is False
+
+
+def test_parse_args_no_upload_and_no_validation() -> None:
+    args = NothingTask.parse_args("run input --no-upload --no-validate".split())
+    assert args["upload"] is False
+    assert args["validate"] is False
+
+
+def test_parse_args_no_upload_and_validation() -> None:
+    args = NothingTask.parse_args("run input --no-upload --validate".split())
+    assert args["upload"] is False
+    assert args["validate"] is True
+
+
+def test_parse_args_upload_and_no_validation() -> None:
+    args = NothingTask.parse_args("run input --upload --no-validate".split())
+    assert args["upload"] is True
+    assert args["validate"] is False
+
+
+def test_parse_args_upload_and_validation() -> None:
+    args = NothingTask.parse_args("run input --upload --validate".split())
+    assert args["upload"] is True
+    assert args["validate"] is True
 
 
 if __name__ == "__main__":

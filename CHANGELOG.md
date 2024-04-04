@@ -5,14 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [unreleased] - TBD
+## [unreleased]
 
-### Changed
+## Fixed
 
+- Several CLI arguments were missing `help` descriptions
+
+## Changed
+
+- `--local` flag no longer turns off validation
 - The `processing:software` field is no longer added to Items by default. This is
   because the intention of the STAC Processing Extension is to add metadata about the
   processing of the data, whereas stactask is frequently used only for processing
   metadata. Users wishing to retain this field can call the method `Task.add_software_version_to_item(item)` on the resulting item to add it.
+
+## Deprecated
+
+- CLI flags `--skip-upload` and `--skip-validation` deprecated in favor of `--upload/--no-upload` and `--validate/no-validate`
+- Task constructor arguments `skip_upload` and `skip_validation` deprecated in favor of `upload` and `validate`
 
 ## [v0.4.2] - 2024-03-08
 
