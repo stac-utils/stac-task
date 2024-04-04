@@ -1,5 +1,12 @@
 # Configuration file for the Sphinx documentation builder.
 
+import os
+import sys
+
+sys.path.insert(
+    0, os.path.abspath("../../src")
+)  # Source code dir relative to this file
+
 # -- Project information
 
 project = "STAC Task"
@@ -23,6 +30,8 @@ intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
 }
 intersphinx_disabled_domains = ["std"]
+
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
 templates_path = ["_templates"]
 

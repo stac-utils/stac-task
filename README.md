@@ -1,4 +1,4 @@
-# STAC Task (stactask)
+# STAC Task (stac-task)
 
 [![Build Status](https://github.com/stac-utils/stac-task/workflows/CI/badge.svg?branch=main)](https://github.com/stac-utils/stac-task/actions/workflows/continuous-integration.yml)
 [![PyPI version](https://badge.fury.io/py/stac-task.svg)](https://badge.fury.io/py/stac-task)

@@ -28,7 +28,7 @@ async def download_file(fs: AbstractFileSystem, src: str, dest: str) -> None:
             fs.get_file(src, dest)
         else:
             raise NotImplementedError(
-                "stactask only supports filesystems providing"
+                "stac-task only supports filesystems providing"
                 " `get_file` or `_get_file` interface"
             )
         logger.debug(f"{src} completed")

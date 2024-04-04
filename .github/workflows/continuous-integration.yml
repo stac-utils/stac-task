@@ -63,6 +63,6 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install
-        run: pip install -r docs/requirements.txt
+        run: pip install . -r docs/requirements.txt
       - name: Make docs
         run: cd docs && make html
