@@ -3,6 +3,7 @@ import logging
 import os
 from os import path as op
 from typing import Any, Dict, Iterable, List, Optional, Union
+from urllib.parse import urlparse
 
 import fsspec
 from boto3utils import s3
@@ -62,10 +63,11 @@ async def download_item_assets(
         href = item.assets[a].href
 
         # local filename
+        url_path = urlparse(href).path
         if keep_original_filenames:
-            basename = os.path.basename(href)
+            basename = os.path.basename(url_path)
         else:
-            basename = a + os.path.splitext(href)[1]
+            basename = a + os.path.splitext(url_path)[1]
         new_href = os.path.join(path, basename)
         if absolute_path:
             new_href = os.path.abspath(new_href)
