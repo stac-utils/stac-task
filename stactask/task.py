@@ -410,7 +410,9 @@ class Task(ABC):
             help="Process STAC Item Collection",
         )
         parser.add_argument(
-            "input", help="Full path of item collection to process (s3 or local)"
+            "input",
+            nargs="?",
+            help="Full path of item collection to process (s3 or local)",
         )
 
         parser.add_argument(
@@ -532,18 +534,23 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
             logging.getLogger(ql).propagate = False
 
         if cmd == "run":
-            href = args.pop("input")
+            href = args.pop("input", None)
             href_out = args.pop("output", None)
 
             # read input
-            with fsspec.open(href) as f:
-                payload = json.loads(f.read())
+            if href is None:
+                payload = json.load(sys.stdin)
+            else:
+                with fsspec.open(href) as f:
+                    payload = json.loads(f.read())
 
             # run task handler
             payload_out = cls.handler(payload, **args)
 
             # write output
-            if href_out is not None:
+            if href_out is None:
+                json.dump(payload_out, sys.stdout)
+            else:
                 with fsspec.open(href_out, "w") as f:
                     f.write(json.dumps(payload_out))
 

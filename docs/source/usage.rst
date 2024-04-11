@@ -175,6 +175,11 @@ An example of running it might look like:
 
    src/mytask/mytask.py run --logging DEBUG --local my-input-file.json
 
+Payload can be read from stdin:
+
+.. code-block:: console
+
+   cat my-input-file.json | src/mytask/mytask.py run --logging DEBUG --local
 
 The first argument is the command, of which the only option currently is `run`.
 
