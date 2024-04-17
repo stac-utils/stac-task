@@ -24,6 +24,7 @@ from .asset_io import (
     upload_item_assets_to_s3,
 )
 from .exceptions import FailedValidation
+from .logging import TaskLoggerAdapter
 from .utils import stac_jsonpath_match
 
 # types
@@ -74,7 +75,6 @@ class Task(ABC):
         upload: bool = True,
         validate: bool = True,
     ):
-        self.logger = logging.getLogger(self.name)
 
         if not skip_validation and validate:
             if not self.validate(payload):
@@ -99,6 +99,11 @@ class Task(ABC):
             makedirs(self._workdir, exist_ok=True)
             # if a workdir was specified we don't want to rm by default
             self._save_workdir = save_workdir if save_workdir is not None else True
+
+        self.logger = TaskLoggerAdapter(
+            logging.getLogger(self.name),
+            self._payload.get("id"),
+        )
 
     @property
     def process_definition(self) -> Dict[str, Any]:
