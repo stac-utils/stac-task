@@ -179,7 +179,7 @@ Payload can be read from stdin:
 
 .. code-block:: console
 
-   cat input.json | src/mytask/mytask.py run > tee output.json
+   cat input.json | src/mytask/mytask.py run --local > tee output.json
 
 The first argument is the command, of which the only option currently is `run`.
 
