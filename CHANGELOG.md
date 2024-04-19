@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - CLI flags `--skip-upload` and `--skip-validation` deprecated in favor of `--upload/--no-upload` and `--validate/no-validate`
 - Task constructor arguments `skip_upload` and `skip_validation` deprecated in favor of `upload` and `validate`
 
+## Added
+
+- Added support for using stdin and stdout as input and output for task, e.g., `cat in.json | src/mytask/mytask.py run --local | tee out.json`
+
 ## [v0.4.2] - 2024-03-08
 
 ### Added
