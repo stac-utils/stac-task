@@ -177,5 +177,11 @@ def test_parse_args_upload_and_validation() -> None:
     assert args["validate"] is True
 
 
+def test_collection_mapping(nothing_task: Task) -> None:
+    assert nothing_task.collection_mapping == {
+        "sentinel-2-l2a": "$[?(@.id =~ 'S2[AB].*')]"
+    }
+
+
 if __name__ == "__main__":
     output = NothingTask.cli()
