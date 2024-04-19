@@ -24,7 +24,7 @@ from .asset_io import (
 )
 from .exceptions import FailedValidation
 from .logging import TaskLoggerAdapter
-from .utils import find_collection as utils_find_collection, stac_jsonpath_match
+from .utils import find_collection as utils_find_collection
 
 # types
 PathLike = Union[str, Path]
