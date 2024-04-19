@@ -225,7 +225,8 @@ class Task(ABC):
             )
 
     def assign_collections(self) -> None:
-        """Assigns new collection names based on upload_options collections attribute"""
+        """Assigns new collection names based on upload_options collections attribute
+        according to the first matching expression in the order they are defined."""
         for item in self._payload["features"]:
             if coll := utils_find_collection(self.collection_mapping, item):
                 item["collection"] = coll
