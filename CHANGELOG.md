@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   because the intention of the STAC Processing Extension is to add metadata about the
   processing of the data, whereas stactask is frequently used only for processing
   metadata. Users wishing to retain this field can call the method `Task.add_software_version_to_item(item)` on the resulting item to add it.
+- Task logging now identifies the task instance that is logging, e.g.,
+  `INFO:my-task-name:[my-collection/workflow-my-workflow/task-1] Task did a thing.`
 - Collection assignment now assigns the first matching collection expression, rather
   than the last.
 

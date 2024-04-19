@@ -23,7 +23,8 @@ from .asset_io import (
     upload_item_assets_to_s3,
 )
 from .exceptions import FailedValidation
-from .utils import find_collection as utils_find_collection
+from .logging import TaskLoggerAdapter
+from .utils import find_collection as utils_find_collection, stac_jsonpath_match
 
 # types
 PathLike = Union[str, Path]
@@ -73,7 +74,6 @@ class Task(ABC):
         upload: bool = True,
         validate: bool = True,
     ):
-        self.logger = logging.getLogger(self.name)
 
         if not skip_validation and validate:
             if not self.validate(payload):
@@ -98,6 +98,11 @@ class Task(ABC):
             makedirs(self._workdir, exist_ok=True)
             # if a workdir was specified we don't want to rm by default
             self._save_workdir = save_workdir if save_workdir is not None else True
+
+        self.logger = TaskLoggerAdapter(
+            logging.getLogger(self.name),
+            self._payload.get("id"),
+        )
 
     @property
     def process_definition(self) -> Dict[str, Any]:
@@ -415,7 +420,9 @@ class Task(ABC):
             help="Process STAC Item Collection",
         )
         parser.add_argument(
-            "input", help="Full path of item collection to process (s3 or local)"
+            "input",
+            nargs="?",
+            help="Full path of item collection to process (s3 or local)",
         )
 
         parser.add_argument(
@@ -537,18 +544,23 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
             logging.getLogger(ql).propagate = False
 
         if cmd == "run":
-            href = args.pop("input")
+            href = args.pop("input", None)
             href_out = args.pop("output", None)
 
             # read input
-            with fsspec.open(href) as f:
-                payload = json.loads(f.read())
+            if href is None:
+                payload = json.load(sys.stdin)
+            else:
+                with fsspec.open(href) as f:
+                    payload = json.loads(f.read())
 
             # run task handler
             payload_out = cls.handler(payload, **args)
 
             # write output
-            if href_out is not None:
+            if href_out is None:
+                json.dump(payload_out, sys.stdout)
+            else:
                 with fsspec.open(href_out, "w") as f:
                     f.write(json.dumps(payload_out))
 
