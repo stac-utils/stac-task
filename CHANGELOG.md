@@ -36,9 +36,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Utils method `find_collection` to allow the retrieval of the collection name for
   an Item dict
 - Task method `upload_local_item_assets_to_s3(item)` to upload all local assets to S3
-
-## Added
-
 - Added support for using stdin and stdout as input and output for task, e.g., `cat in.json | src/mytask/mytask.py run --local | tee out.json`
 
 ## [v0.4.2] - 2024-03-08
