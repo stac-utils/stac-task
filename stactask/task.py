@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import itertools
 import json
 import logging
 import os
@@ -25,7 +24,7 @@ from .asset_io import (
 )
 from .exceptions import FailedValidation
 from .logging import TaskLoggerAdapter
-from .utils import stac_jsonpath_match
+from .utils import find_collection as utils_find_collection
 
 # types
 PathLike = Union[str, Path]
@@ -152,6 +151,14 @@ class Task(ABC):
             raise ValueError(f"upload_options is not a dict: {type(upload_options)}")
 
     @property
+    def collection_mapping(self) -> Dict[str, str]:
+        collection_mapping = self.upload_options.get("collections", {})
+        if isinstance(collection_mapping, dict):
+            return collection_mapping
+        else:
+            raise ValueError(f"collections is not a dict: {type(collection_mapping)}")
+
+    @property
     def items_as_dicts(self) -> List[Dict[str, Any]]:
         features = self._payload.get("features", [])
         if isinstance(features, list):
@@ -223,13 +230,11 @@ class Task(ABC):
             )
 
     def assign_collections(self) -> None:
-        """Assigns new collection names based on"""
-        for i, (coll, expr) in itertools.product(
-            self._payload["features"],
-            self.upload_options.get("collections", dict()).items(),
-        ):
-            if stac_jsonpath_match(i, expr):
-                i["collection"] = coll
+        """Assigns new collection names based on upload_options collections attribute
+        according to the first matching expression in the order they are defined."""
+        for item in self._payload["features"]:
+            if coll := utils_find_collection(self.collection_mapping, item):
+                item["collection"] = coll
 
     def download_item_assets(
         self,

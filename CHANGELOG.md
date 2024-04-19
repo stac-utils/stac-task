@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [unreleased]
 
+## Deprecated
+
+- CLI flags `--skip-upload` and `--skip-validation` deprecated in favor of `--upload/--no-upload` and `--validate/no-validate`
+- Task constructor arguments `skip_upload` and `skip_validation` deprecated in favor of `upload` and `validate`
+
 ## Fixed
 
 - Several CLI arguments were missing `help` descriptions
@@ -20,11 +25,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   metadata. Users wishing to retain this field can call the method `Task.add_software_version_to_item(item)` on the resulting item to add it.
 - Task logging now identifies the task instance that is logging, e.g.,
   `INFO:my-task-name:[my-collection/workflow-my-workflow/task-1] Task did a thing.`
+- Collection assignment now assigns the first matching collection expression, rather
+  than the last.
 
-## Deprecated
+## Added
 
-- CLI flags `--skip-upload` and `--skip-validation` deprecated in favor of `--upload/--no-upload` and `--validate/no-validate`
-- Task constructor arguments `skip_upload` and `skip_validation` deprecated in favor of `upload` and `validate`
+- Added property `collection_mapping` to `Task` class to retrieve the collection mappings
+  from upload_options
+- Added utils method `find_collection` to allow the retrieval of the collection name for
+  an Item dict
 
 ## Added
 
