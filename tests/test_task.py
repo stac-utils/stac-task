@@ -3,7 +3,10 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import boto3
 import pytest
+from moto import mock_aws
+from pystac import Asset
 
 from stactask.exceptions import FailedValidation
 from stactask.task import Task
@@ -181,6 +184,32 @@ def test_collection_mapping(nothing_task: Task) -> None:
     assert nothing_task.collection_mapping == {
         "sentinel-2-l2a": "$[?(@.id =~ 'S2[AB].*')]"
     }
+
+
+@mock_aws  # type: ignore
+def test_s3_upload(nothing_task: Task) -> None:
+
+    # start S3 mocks
+    s3_client = boto3.client("s3")
+    s3_client.create_bucket(
+        Bucket="sentinel-cogs",
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
+    # end S3 mocks
+
+    item = nothing_task.items.items[0]
+    key1_path = nothing_task._workdir / "foo.txt"
+    key1_path.write_text("some text")
+    asset = Asset(href=str(key1_path))
+    item.add_asset("key1", asset)
+    item_after_upload = nothing_task.upload_local_item_assets_to_s3(item)
+
+    assert (
+        item_after_upload.assets["key1"].href
+        == "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-2-l2a/52/H/GH/2022/10/S2A_52HGH_20221007_0_L2A/foo.txt"
+    )
 
 
 if __name__ == "__main__":

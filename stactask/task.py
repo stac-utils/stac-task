@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import fsspec
 from boto3utils import s3
-from pystac import Item, ItemCollection
+from pystac import Asset, Item, ItemCollection
 
 from .asset_io import (
     download_item_assets,
@@ -315,6 +315,25 @@ class Task(ABC):
             self.logger.warning("Skipping upload of new and modified assets")
 
         return item
+
+    def _is_local_asset(self, asset: Asset) -> bool:
+        return bool(asset.href.startswith(str(self._workdir)))
+
+    def _get_local_asset_keys(self, item: Item) -> List[str]:
+        return [
+            key for key, asset in item.assets.items() if self._is_local_asset(asset)
+        ]
+
+    def upload_local_item_assets_to_s3(
+        self,
+        item: Item,
+        s3_client: Optional[s3] = None,
+    ) -> Item:
+        return self.upload_item_assets_to_s3(
+            item=item,
+            assets=self._get_local_asset_keys(item),
+            s3_client=s3_client,
+        )
 
     # this should be in PySTAC
     @staticmethod

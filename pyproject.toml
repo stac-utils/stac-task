@@ -39,6 +39,7 @@ dev = [
     "pytest~=8.0",
     "ruff~=0.3.1",
     "types-setuptools~=69.0",
+    "moto~=5.0.5",
 ]
 
 [project.urls]
@@ -55,3 +56,17 @@ ignore_missing_imports = true
 
 [tool.ruff.lint]
 select = ["F", "E", "W", "I", "ERA", "RUF"]
+
+[tool.pytest.ini_options]
+addopts = "-rx -q -s -vvv"
+log_cli_level = "INFO"
+log_cli = true
+markers = ["system", "unit"]
+env = [
+    "AWS_DEFAULT_REGION=us-west-2",
+    "AWS_ACCESS_KEY_ID=foo",
+    "AWS_SECRET_ACCESS_KEY=bar",
+    "AWS_SESSION_TOKEN=baz",
+]
+filterwarnings = [
+]
