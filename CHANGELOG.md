@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Deprecated
 
+- Support for Python 3.8 has been removed.
 - CLI flags `--skip-upload` and `--skip-validation` deprecated in favor of `--upload/--no-upload` and `--validate/no-validate`
 - Task constructor arguments `skip_upload` and `skip_validation` deprecated in favor of `upload` and `validate`
 
