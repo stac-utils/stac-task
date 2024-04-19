@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional
-
-if TYPE_CHECKING:
-    _LoggerAdapter = logging.LoggerAdapter[logging.Logger]  # pragma: no cover
-else:
-    _LoggerAdapter = logging.LoggerAdapter
+from typing import Any, Optional
 
 
-class TaskLoggerAdapter(logging.LoggerAdapter[logging.Logger]):
+class TaskLoggerAdapter(logging.LoggerAdapter):  # type: ignore
     def __init__(self, logger: logging.Logger, prefix: Optional[str]) -> None:
         super().__init__(logger, {})
         self.prefix = prefix
