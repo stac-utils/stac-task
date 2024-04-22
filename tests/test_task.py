@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import boto3
 import pytest
@@ -18,7 +18,7 @@ cassettepath = testpath / "fixtures" / "cassettes"
 
 
 @pytest.fixture
-def items() -> Dict[str, Any]:
+def items() -> dict[str, Any]:
     filename = testpath / "fixtures" / "sentinel2-l2a-j2k-payload.json"
     with open(filename) as f:
         items = json.loads(f.read())
@@ -27,12 +27,12 @@ def items() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def nothing_task(items: Dict[str, Any]) -> Task:
+def nothing_task(items: dict[str, Any]) -> Task:
     return NothingTask(items)
 
 
 @pytest.fixture
-def derived_item_task(items: Dict[str, Any]) -> Task:
+def derived_item_task(items: dict[str, Any]) -> Task:
     return DerivedItemTask(items)
 
 
@@ -43,7 +43,7 @@ def test_task_init(nothing_task: Task) -> None:
     assert nothing_task._save_workdir is False
 
 
-def test_failed_validation(items: Dict[str, Any]) -> None:
+def test_failed_validation(items: dict[str, Any]) -> None:
     with pytest.raises(FailedValidation, match="Extra context"):
         FailValidateTask(items)
 
@@ -58,7 +58,7 @@ def test_edit_items2(nothing_task: Task) -> None:
 
 
 @pytest.mark.parametrize("save_workdir", [False, True, None])
-def test_tmp_workdir(items: Dict[str, Any], save_workdir: Optional[bool]) -> None:
+def test_tmp_workdir(items: dict[str, Any], save_workdir: Optional[bool]) -> None:
     t = NothingTask(items, save_workdir=save_workdir)
     expected = save_workdir if save_workdir is not None else False
     assert t._save_workdir is expected
@@ -72,7 +72,7 @@ def test_tmp_workdir(items: Dict[str, Any], save_workdir: Optional[bool]) -> Non
 
 @pytest.mark.parametrize("save_workdir", [False, True, None])
 def test_workdir(
-    items: Dict[str, Any],
+    items: dict[str, Any],
     tmp_path: Path,
     save_workdir: Optional[bool],
 ) -> None:
@@ -87,7 +87,7 @@ def test_workdir(
     assert workdir.exists() is expected
 
 
-def test_parameters(items: Dict[str, Any]) -> None:
+def test_parameters(items: dict[str, Any]) -> None:
     nothing_task = NothingTask(items)
     assert nothing_task.process_definition["workflow"] == "cog-archive"
     assert (
@@ -101,12 +101,12 @@ def test_process(nothing_task: Task) -> None:
     assert processed_items[0]["type"] == "Feature"
 
 
-def test_post_process(items: Dict[str, Any]) -> None:
+def test_post_process(items: dict[str, Any]) -> None:
     class PostProcessTask(NothingTask):
         name = "post-processing-test"
         version = "42"
 
-        def post_process_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
+        def post_process_item(self, item: dict[str, Any]) -> dict[str, Any]:
             item["properties"]["foo"] = "bar"
             item["stac_extensions"].insert(0, "zzz")
             return super().post_process_item(item)
@@ -126,7 +126,7 @@ def test_derived_item(derived_item_task: Task) -> None:
     assert links[0]["href"] == self_link["href"]
 
 
-def test_task_handler(items: Dict[str, Any]) -> None:
+def test_task_handler(items: dict[str, Any]) -> None:
     self_link = next(lk for lk in items["features"][0]["links"] if lk["rel"] == "self")
     output_items = DerivedItemTask.handler(items)
     derived_link = next(

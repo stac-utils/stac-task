@@ -1,15 +1,15 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from jsonpath_ng.ext import parser
 
 
-def stac_jsonpath_match(item: Dict[str, Any], expr: str) -> bool:
+def stac_jsonpath_match(item: dict[str, Any], expr: str) -> bool:
     """Match jsonpath expression against STAC JSON.
        Use https://jsonpath.com to experiment with JSONpath
         and https://regex101.com to experiment with regex
 
     Args:
-        item (Dict): A STAC Item
+        item (dict): A STAC Item represented as a dict
         expr (str): A valid JSONPath expression
 
     Raises:
@@ -22,15 +22,15 @@ def stac_jsonpath_match(item: Dict[str, Any], expr: str) -> bool:
 
 
 def find_collection(
-    collection_mapping: Dict[str, str], item: Dict[str, Any]
+    collection_mapping: dict[str, str], item: dict[str, Any]
 ) -> Optional[str]:
     """Find the collection for a given STAC Item represented as a dictionary from a
        dictionary of collection names to JSONPath expressions.
 
     Args:
-        collection_mapping (Dict): A dictionary of collection names to JSONPath
+        collection_mapping (dict): A dictionary of collection names to JSONPath
             expressions.
-        item (Dict): A STAC Item
+        item (dict): A STAC Item
 
     Returns:
         Optional[str]: Returns None if no JSONPath expression matches, returns a
