@@ -7,7 +7,7 @@
         ],
         "workflow": "cog-archive",
         "upload_options": {
-            "path_template": "s3://sentinel-cogs/${collection}/${grid:utm_zone}/${grid:latitude_band}/${grid:grid_square}/${year}/${month}/${id}",
+            "path_template": "s3://sentinel-cogs/${collection}/${mgrs:utm_zone}/${mgrs:latitude_band}/${mgrs:grid_square}/${year}/${month}/${id}",
             "public_assets": "ALL",
             "collections": {
                 "sentinel-2-l2a": "$[?(@.id =~ 'S2[AB].*')]"

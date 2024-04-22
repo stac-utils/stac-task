@@ -23,10 +23,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - name: Install
+      - name: Install dependencies for linting
         run: pip install '.[dev]'
       - name: Lint
         run: pre-commit run --all-files
+      - name: Install dependencies for testing
+        run: pip install '.[test]'
       - name: Test
         run: pytest
   codecov:
@@ -41,7 +43,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install
-        run: pip install '.[dev]'
+        run: pip install '.[test]'
       - name: Test
         run: pytest --cov=stactask
       - name: Upload coverage to Codecov
