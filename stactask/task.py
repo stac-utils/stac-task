@@ -11,7 +11,7 @@ from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Iterable, Optional, Union
 
 import fsspec
 from boto3utils import s3
@@ -66,7 +66,7 @@ class Task(ABC):
 
     def __init__(
         self: "Task",
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         workdir: Optional[PathLike] = None,
         save_workdir: Optional[bool] = None,
         skip_upload: bool = False,  # deprecated
@@ -105,7 +105,7 @@ class Task(ABC):
         )
 
     @property
-    def process_definition(self) -> Dict[str, Any]:
+    def process_definition(self) -> dict[str, Any]:
         process = self._payload.get("process", {})
         if isinstance(process, dict):
             return process
@@ -113,9 +113,9 @@ class Task(ABC):
             raise ValueError(f"process is not a dict: {type(process)}")
 
     @property
-    def parameters(self) -> Dict[str, Any]:
+    def parameters(self) -> dict[str, Any]:
         task_configs = self.process_definition.get("tasks", [])
-        if isinstance(task_configs, List):
+        if isinstance(task_configs, list):
             warnings.warn(
                 "task configs is list, use a dictionary instead",
                 DeprecationWarning,
@@ -125,13 +125,13 @@ class Task(ABC):
             if len(task_config_list) == 0:
                 return {}
             else:
-                task_config: Dict[str, Any] = task_config_list[0]
+                task_config: dict[str, Any] = task_config_list[0]
                 parameters = task_config.get("parameters", {})
                 if isinstance(parameters, dict):
                     return parameters
                 else:
                     raise ValueError(f"parameters is not a dict: {type(parameters)}")
-        elif isinstance(task_configs, Dict):
+        elif isinstance(task_configs, dict):
             config = task_configs.get(self.name, {})
             if isinstance(config, dict):
                 return config
@@ -143,7 +143,7 @@ class Task(ABC):
             raise ValueError(f"unexpected value for 'tasks': {task_configs}")
 
     @property
-    def upload_options(self) -> Dict[str, Any]:
+    def upload_options(self) -> dict[str, Any]:
         upload_options = self.process_definition.get("upload_options", {})
         if isinstance(upload_options, dict):
             return upload_options
@@ -151,7 +151,7 @@ class Task(ABC):
             raise ValueError(f"upload_options is not a dict: {type(upload_options)}")
 
     @property
-    def collection_mapping(self) -> Dict[str, str]:
+    def collection_mapping(self) -> dict[str, str]:
         collection_mapping = self.upload_options.get("collections", {})
         if isinstance(collection_mapping, dict):
             return collection_mapping
@@ -159,7 +159,7 @@ class Task(ABC):
             raise ValueError(f"collections is not a dict: {type(collection_mapping)}")
 
     @property
-    def items_as_dicts(self) -> List[Dict[str, Any]]:
+    def items_as_dicts(self) -> list[dict[str, Any]]:
         features = self._payload.get("features", [])
         if isinstance(features, list):
             return features
@@ -172,14 +172,14 @@ class Task(ABC):
         return ItemCollection.from_dict(items_dict, preserve_dict=True)
 
     @classmethod
-    def validate(cls, payload: Dict[str, Any]) -> bool:
+    def validate(cls, payload: dict[str, Any]) -> bool:
         """Validates the payload and returns True if valid. If invalid, raises
         ``stactask.exceptions.FailedValidation`` or returns False."""
         # put validation logic on input Items and process definition here
         return True
 
     @classmethod
-    def add_software_version(cls, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def add_software_version(cls, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         warnings.warn(
             "add_software_version is deprecated, "
             "use add_software_version_to_item instead",
@@ -191,7 +191,7 @@ class Task(ABC):
         return modified_items
 
     @classmethod
-    def add_software_version_to_item(cls, item: Dict[str, Any]) -> Dict[str, Any]:
+    def add_software_version_to_item(cls, item: dict[str, Any]) -> dict[str, Any]:
         """Adds software version information to a single item.
 
         Uses the processing extension.
@@ -200,7 +200,7 @@ class Task(ABC):
             item: A single STAC item
 
         Returns:
-            Dict[str, Any]: The same item with processing information applied.
+            dict[str, Any]: The same item with processing information applied.
         """
         processing_ext = (
             "https://stac-extensions.github.io/processing/v1.1.0/schema.json"
@@ -249,7 +249,7 @@ class Task(ABC):
 
         Args:
             item (pystac.Item): STAC Item for which assets need be downloaded.
-            assets (Optional[List[str]]): List of asset keys to download.
+            assets (Optional[list[str]]): List of asset keys to download.
                 Defaults to all assets.
             path_template (Optional[str]): String to be interpolated to specify
                 where to store downloaded files.
@@ -274,15 +274,15 @@ class Task(ABC):
         path_template: str = "${collection}/${id}",
         keep_original_filenames: bool = False,
         **kwargs: Any,
-    ) -> List[Item]:
+    ) -> list[Item]:
         """Download provided asset keys for the given items. Assets are
         saved in workdir in a directory (as specified by path_template), and
         the items are updated with the new asset hrefs.
 
         Args:
-            items (List[pystac.Item]): List of STAC Items for which assets need
+            items (list[pystac.Item]): List of STAC Items for which assets need
                 be downloaded.
-            assets (Optional[List[str]]): List of asset keys to download.
+            assets (Optional[list[str]]): List of asset keys to download.
                 Defaults to all assets.
             path_template (Optional[str]): String to be interpolated to specify
                 where to store downloaded files.
@@ -304,7 +304,7 @@ class Task(ABC):
     def upload_item_assets_to_s3(
         self,
         item: Item,
-        assets: Optional[List[str]] = None,
+        assets: Optional[list[str]] = None,
         s3_client: Optional[s3] = None,
     ) -> Item:
         if self._upload:
@@ -319,7 +319,7 @@ class Task(ABC):
     def _is_local_asset(self, asset: Asset) -> bool:
         return bool(asset.href.startswith(str(self._workdir)))
 
-    def _get_local_asset_keys(self, item: Item) -> List[str]:
+    def _get_local_asset_keys(self, item: Item) -> list[str]:
         return [
             key for key, asset in item.assets.items() if self._is_local_asset(asset)
         ]
@@ -337,7 +337,7 @@ class Task(ABC):
 
     # this should be in PySTAC
     @staticmethod
-    def create_item_from_item(item: Dict[str, Any]) -> Dict[str, Any]:
+    def create_item_from_item(item: dict[str, Any]) -> dict[str, Any]:
         new_item = deepcopy(item)
         # create a derived output item
         links = [
@@ -356,7 +356,7 @@ class Task(ABC):
         return new_item
 
     @abstractmethod
-    def process(self, **kwargs: Any) -> List[Dict[str, Any]]:
+    def process(self, **kwargs: Any) -> list[dict[str, Any]]:
         """Main task logic - virtual
 
         Returns:
@@ -366,7 +366,7 @@ class Task(ABC):
         # do some stuff
         pass
 
-    def post_process_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
+    def post_process_item(self, item: dict[str, Any]) -> dict[str, Any]:
         """Perform post-processing operations on an item.
 
         E.g. add software version information.
@@ -380,7 +380,7 @@ class Task(ABC):
             item: An item produced by :py:meth:`Task.process`
 
         Returns:
-            Dict[str, Any]: The item with any additional attributes applied.
+            dict[str, Any]: The item with any additional attributes applied.
         """
         assert "stac_extensions" in item
         assert isinstance(item["stac_extensions"], list)
@@ -388,7 +388,7 @@ class Task(ABC):
         return item
 
     @classmethod
-    def handler(cls, payload: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+    def handler(cls, payload: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
         task = None
         try:
             if "href" in payload or "url" in payload:
@@ -414,7 +414,7 @@ class Task(ABC):
                 task.cleanup_workdir()
 
     @classmethod
-    def parse_args(cls, args: List[str]) -> Dict[str, Any]:
+    def parse_args(cls, args: list[str]) -> dict[str, Any]:
         dhf = argparse.ArgumentDefaultsHelpFormatter
         parser0 = argparse.ArgumentParser(description=cls.description)
         parser0.add_argument(
