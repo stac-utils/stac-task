@@ -30,7 +30,7 @@ This library is based on a [branch of cirrus-lib](https://github.com/cirrus-geo/
 ## Quickstart for Creating New Tasks
 
 ```python
-from typing import Any, Dict, List
+from typing import Any
 
 from stactask import Task, DownloadConfig
 
@@ -38,10 +38,10 @@ class MyTask(Task):
     name = "my-task"
     description = "this task does it all"
 
-    def validate(self, payload: Dict[str, Any]) -> bool:
+    def validate(self, payload: dict[str, Any]) -> bool:
         return len(self.items) == 1
 
-    def process(self, **kwargs: Any) -> List[Dict[str, Any]]:
+    def process(self, **kwargs: Any) -> list[dict[str, Any]]:
         item = self.items[0]
 
         # download a datafile
@@ -74,7 +74,7 @@ ItemCollection.
 | -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | description    | string        | Optional description of the process configuration                                                                                                                              |
 | upload_options | UploadOptions | Options used when uploading assets to a remote server                                                                                                                          |
-| tasks          | Map<str, Map> | Dictionary of task configurations. A List of [task configurations](#taskconfig-object) is supported for backwards compatibility reasons, but a dictionary should be preferred. |
+| tasks          | Map<str, Map> | Dictionary of task configurations. A list of [task configurations](#taskconfig-object) is supported for backwards compatibility reasons, but a dictionary should be preferred. |
 
 #### UploadOptions Object
 

@@ -27,6 +27,6 @@ repos:
           - pytest
           - types-setuptools == 65.7.0.3
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.2
+    rev: v0.4.1
     hooks:
       - id: ruff

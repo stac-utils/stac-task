@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from os import path as op
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Iterable, Optional, Union
 
 import stac_asset
 from boto3utils import s3
@@ -36,7 +36,7 @@ async def download_items_assets(
     path_template: str = "${collection}/${id}",
     config: Optional[DownloadConfig] = None,
     keep_non_downloaded: bool = True,
-) -> List[Item]:
+) -> list[Item]:
     return await asyncio.gather(
         *[
             asyncio.create_task(
@@ -54,30 +54,30 @@ async def download_items_assets(
 
 def upload_item_assets_to_s3(
     item: Item,
-    assets: Optional[List[str]] = None,
-    public_assets: Union[None, List[str], str] = None,
+    assets: Optional[list[str]] = None,
+    public_assets: Union[None, list[str], str] = None,
     path_template: str = "${collection}/${id}",
     s3_urls: bool = False,
-    headers: Optional[Dict[str, Any]] = None,
+    headers: Optional[dict[str, Any]] = None,
     s3_client: Optional[s3] = None,
     **kwargs: Any,  # unused, but retain to permit unused attributes from upload_options
 ) -> Item:
-    """Upload Item assets to s3 bucket
+    """Upload Item assets to an S3 bucket
     Args:
-        item (Dict): STAC Item
-        assets (List[str], optional): List of asset keys to upload. Defaults to None.
-        public_assets (List[str], optional): List of assets keys that should be
+        item (Item): STAC Item
+        assets (list[str], optional): List of asset keys to upload. Defaults to None.
+        public_assets (list[str], optional): List of assets keys that should be
             public. Defaults to [].
         path_template (str, optional): Path string template. Defaults to
             '${collection}/${id}'.
         s3_urls (bool, optional): Return s3 URLs instead of http URLs. Defaults
             to False.
-        headers (Dict, optional): Dictionary of headers to set on uploaded
+        headers (dict, optional): Dictionary of headers to set on uploaded
             assets. Defaults to {}.
         s3_client (boto3utils.s3, optional): Use this s3 object instead of the default
             global one. Defaults to None.
     Returns:
-        Dict: A new STAC Item with uploaded assets pointing to newly uploaded file URLs
+        Item: A new STAC Item with uploaded assets pointing to newly uploaded file URLs
     """
 
     if s3_client is None:
