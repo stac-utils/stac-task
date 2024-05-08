@@ -22,6 +22,7 @@ from .asset_io import (
     download_items_assets,
     upload_item_assets_to_s3,
 )
+from .config import DownloadConfig
 from .exceptions import FailedValidation
 from .logging import TaskLoggerAdapter
 from .utils import find_collection as utils_find_collection
@@ -240,8 +241,8 @@ class Task(ABC):
         self,
         item: Item,
         path_template: str = "${collection}/${id}",
-        keep_original_filenames: bool = False,
-        **kwargs: Any,
+        config: Optional[DownloadConfig] = None,
+        keep_non_downloaded: bool = True,
     ) -> Item:
         """Download provided asset keys for the given item. Assets are
         saved in workdir in a directory (as specified by path_template), and
@@ -256,24 +257,21 @@ class Task(ABC):
             keep_original_filenames (Optional[bool]): Controls whether original
                 file names should be used, or asset key + extension.
         """
-        outdir = str(self._workdir / path_template)
-        loop = asyncio.get_event_loop()
-        item = loop.run_until_complete(
+        return asyncio.get_event_loop().run_until_complete(
             download_item_assets(
                 item,
-                path_template=outdir,
-                keep_original_filenames=keep_original_filenames,
-                **kwargs,
+                path_template=str(self._workdir / path_template),
+                config=config,
+                keep_non_downloaded=keep_non_downloaded,
             )
         )
-        return item
 
     def download_items_assets(
         self,
         items: Iterable[Item],
         path_template: str = "${collection}/${id}",
-        keep_original_filenames: bool = False,
-        **kwargs: Any,
+        config: Optional[DownloadConfig] = None,
+        keep_non_downloaded: bool = True,
     ) -> list[Item]:
         """Download provided asset keys for the given items. Assets are
         saved in workdir in a directory (as specified by path_template), and
@@ -289,17 +287,16 @@ class Task(ABC):
             keep_original_filenames (Optional[bool]): Controls whether original
                 file names should be used, or asset key + extension.
         """
-        outdir = str(self._workdir / path_template)
-        loop = asyncio.get_event_loop()
-        items = loop.run_until_complete(
-            download_items_assets(
-                items,
-                path_template=outdir,
-                keep_original_filenames=keep_original_filenames,
-                **kwargs,
+        return list(
+            asyncio.get_event_loop().run_until_complete(
+                download_items_assets(
+                    items,
+                    path_template=str(self._workdir / path_template),
+                    config=config,
+                    keep_non_downloaded=keep_non_downloaded,
+                )
             )
         )
-        return list(items)
 
     def upload_item_assets_to_s3(
         self,

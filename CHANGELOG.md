@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changed
 
+- Replaced the use of fsspec with stac-asset for downloading Item Assets
 - `--local` flag no longer turns off validation
 - The `processing:software` field is no longer added to Items by default. This is
   because the intention of the STAC Processing Extension is to add metadata about the

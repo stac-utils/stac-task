@@ -1,102 +1,55 @@
 import asyncio
 import logging
-import os
 from os import path as op
 from typing import Any, Iterable, Optional, Union
-from urllib.parse import urlparse
 
-import fsspec
+import stac_asset
 from boto3utils import s3
-from fsspec import AbstractFileSystem
 from pystac import Item
 from pystac.layout import LayoutTemplate
+
+from .config import DownloadConfig
 
 logger = logging.getLogger(__name__)
 
 # global dictionary of sessions per bucket
 global_s3_client = s3()
 
-SIMULTANEOUS_DOWNLOADS = int(os.getenv("STAC_SIMULTANEOUS_DOWNLOADS", 3))
-sem = asyncio.Semaphore(SIMULTANEOUS_DOWNLOADS)
-
-
-async def download_file(fs: AbstractFileSystem, src: str, dest: str) -> None:
-    async with sem:
-        logger.debug(f"{src} start")
-        if hasattr(fs, "_get_file"):
-            await fs._get_file(src, dest)
-        elif hasattr(fs, "get_file"):
-            fs.get_file(src, dest)
-        else:
-            raise NotImplementedError(
-                "stac-task only supports filesystems providing"
-                " `get_file` or `_get_file` interface"
-            )
-        logger.debug(f"{src} completed")
-
 
 async def download_item_assets(
     item: Item,
-    assets: Optional[list[str]] = None,
-    save_item: bool = True,
-    overwrite: bool = False,
     path_template: str = "${collection}/${id}",
-    absolute_path: bool = False,
-    keep_original_filenames: bool = False,
-    **kwargs: Any,
+    config: Optional[DownloadConfig] = None,
+    keep_non_downloaded: bool = True,
 ) -> Item:
-    _assets = item.assets.keys() if assets is None else assets
-
-    # determine path from template and item
-    layout = LayoutTemplate(path_template)
-    path = layout.substitute(item)
-
-    # make necessary directories
-    os.makedirs(path, exist_ok=True)
-
-    new_item = item.clone()
-
-    tasks = []
-    for a in _assets:
-        if a not in item.assets:
-            continue
-        href = item.assets[a].href
-
-        # local filename
-        url_path = urlparse(href).path
-        if keep_original_filenames:
-            basename = os.path.basename(url_path)
-        else:
-            basename = a + os.path.splitext(url_path)[1]
-        new_href = os.path.join(path, basename)
-        if absolute_path:
-            new_href = os.path.abspath(new_href)
-
-        # save file
-        if not os.path.exists(new_href) or overwrite:
-            fs = fsspec.core.url_to_fs(href, asynchronous=True, **kwargs)[0]
-            task = asyncio.create_task(download_file(fs, href, new_href))
-            tasks.append(task)
-
-        # update
-        new_item.assets[a].href = new_href
-
-    await asyncio.gather(*tasks)
-
-    # save Item metadata alongside saved assets
-    if save_item:
-        new_item.remove_links("root")
-        new_item.save_object(dest_href=os.path.join(path, "item.json"))
-
-    return new_item
+    return await stac_asset.download_item(
+        item=item.clone(),
+        directory=LayoutTemplate(path_template).substitute(item),
+        file_name="item.json",
+        config=config,
+        keep_non_downloaded=keep_non_downloaded,
+    )
 
 
-async def download_items_assets(items: Iterable[Item], **kwargs: Any) -> list[Item]:
-    tasks = []
-    for item in items:
-        tasks.append(asyncio.create_task(download_item_assets(item, **kwargs)))
-    new_items: list[Item] = await asyncio.gather(*tasks)
-    return new_items
+async def download_items_assets(
+    items: Iterable[Item],
+    path_template: str = "${collection}/${id}",
+    config: Optional[DownloadConfig] = None,
+    keep_non_downloaded: bool = True,
+) -> list[Item]:
+    return await asyncio.gather(
+        *[
+            asyncio.create_task(
+                download_item_assets(
+                    item=item,
+                    path_template=path_template,
+                    config=config,
+                    keep_non_downloaded=keep_non_downloaded,
+                )
+            )
+            for item in items
+        ]
+    )
 
 
 def upload_item_assets_to_s3(
@@ -107,7 +60,7 @@ def upload_item_assets_to_s3(
     s3_urls: bool = False,
     headers: Optional[dict[str, Any]] = None,
     s3_client: Optional[s3] = None,
-    **kwargs: Any,
+    **kwargs: Any,  # unused, but retain to permit unused attributes from upload_options
 ) -> Item:
     """Upload Item assets to an S3 bucket
     Args:
