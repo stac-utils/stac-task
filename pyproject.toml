@@ -1,6 +1,6 @@
 [project]
 name = "stactask"
-version = "0.5.0-pre1"
+version = "0.5.0"
 authors = [{ name = "Matthew Hanson", email = "matt.a.hanson@gmail.com" }]
 maintainers = [{ name = "Pete Gadomski", email = "pete.gadomski@gmail.com" }]
 description = "Class interface for running custom algorithms and workflows on STAC Items"
