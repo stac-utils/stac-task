@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Configure the filename for saving the item.
+- download_item_asset and download_item_assets methods now accept a parameter `file_name` for configuring the filename to save the STAC Item as. If unset, it defaults to `item.json` and if set to `None` the filename is inferred from the ID.
 
 ## [0.5.0] - 2024-05-08
 
