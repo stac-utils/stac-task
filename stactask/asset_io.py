@@ -21,11 +21,12 @@ async def download_item_assets(
     path_template: str = "${collection}/${id}",
     config: Optional[DownloadConfig] = None,
     keep_non_downloaded: bool = True,
+    file_name: Optional[str] = "item.json",
 ) -> Item:
     return await stac_asset.download_item(
         item=item.clone(),
         directory=LayoutTemplate(path_template).substitute(item),
-        file_name="item.json",
+        file_name=file_name,
         config=config,
         keep_non_downloaded=keep_non_downloaded,
     )
@@ -36,6 +37,7 @@ async def download_items_assets(
     path_template: str = "${collection}/${id}",
     config: Optional[DownloadConfig] = None,
     keep_non_downloaded: bool = True,
+    file_name: Optional[str] = "item.json",
 ) -> list[Item]:
     return await asyncio.gather(
         *[
@@ -45,6 +47,7 @@ async def download_items_assets(
                     path_template=path_template,
                     config=config,
                     keep_non_downloaded=keep_non_downloaded,
+                    file_name=file_name,
                 )
             )
             for item in items

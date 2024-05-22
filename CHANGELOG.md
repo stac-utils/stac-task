@@ -5,19 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## Added
+
+- Configure the filename for saving the item.
+
 ## [0.5.0] - 2024-05-08
 
-## Deprecated
+### Deprecated
 
 - Support for Python 3.8 has been removed.
 - CLI flags `--skip-upload` and `--skip-validation` deprecated in favor of `--upload/--no-upload` and `--validate/no-validate`
 - Task constructor arguments `skip_upload` and `skip_validation` deprecated in favor of `upload` and `validate`
 
-## Fixed
+### Fixed
 
 - Several CLI arguments were missing `help` descriptions
 
-## Changed
+### Changed
 
 - Replaced the use of fsspec with stac-asset for downloading Item Assets
 - `--local` flag no longer turns off validation
@@ -30,7 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Collection assignment now assigns the first matching collection expression, rather
   than the last.
 
-## Added
+### Added
 
 - Property `collection_mapping` to `Task` class to retrieve the collection mappings
   from upload_options

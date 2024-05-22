@@ -243,6 +243,7 @@ class Task(ABC):
         path_template: str = "${collection}/${id}",
         config: Optional[DownloadConfig] = None,
         keep_non_downloaded: bool = True,
+        file_name: Optional[str] = "item.json",
     ) -> Item:
         """Download provided asset keys for the given item. Assets are
         saved in workdir in a directory (as specified by path_template), and
@@ -256,6 +257,7 @@ class Task(ABC):
                 where to store downloaded files.
             keep_original_filenames (Optional[bool]): Controls whether original
                 file names should be used, or asset key + extension.
+            file_name (Optional[str]): The name of the item file to save.
         """
         return asyncio.get_event_loop().run_until_complete(
             download_item_assets(
@@ -263,6 +265,7 @@ class Task(ABC):
                 path_template=str(self._workdir / path_template),
                 config=config,
                 keep_non_downloaded=keep_non_downloaded,
+                file_name=file_name,
             )
         )
 
@@ -272,6 +275,7 @@ class Task(ABC):
         path_template: str = "${collection}/${id}",
         config: Optional[DownloadConfig] = None,
         keep_non_downloaded: bool = True,
+        file_name: Optional[str] = "item.json",
     ) -> list[Item]:
         """Download provided asset keys for the given items. Assets are
         saved in workdir in a directory (as specified by path_template), and
@@ -286,6 +290,7 @@ class Task(ABC):
                 where to store downloaded files.
             keep_original_filenames (Optional[bool]): Controls whether original
                 file names should be used, or asset key + extension.
+            file_name (Optional[str]): The name of the item file to save.
         """
         return list(
             asyncio.get_event_loop().run_until_complete(
@@ -294,6 +299,7 @@ class Task(ABC):
                     path_template=str(self._workdir / path_template),
                     config=config,
                     keep_non_downloaded=keep_non_downloaded,
+                    file_name=file_name,
                 )
             )
         )
