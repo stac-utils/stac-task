@@ -251,10 +251,10 @@ class Task(ABC):
 
         Args:
             item (pystac.Item): STAC Item for which assets need be downloaded.
-            assets (Optional[list[str]]): List of asset keys to download.
-                Defaults to all assets.
             path_template (Optional[str]): String to be interpolated to specify
                 where to store downloaded files.
+            config (Optional[DownloadConfig]): Configuration for downloading an item
+                and its assets.
             keep_original_filenames (Optional[bool]): Controls whether original
                 file names should be used, or asset key + extension.
             file_name (Optional[str]): The name of the item file to save.
@@ -284,10 +284,10 @@ class Task(ABC):
         Args:
             items (list[pystac.Item]): List of STAC Items for which assets need
                 be downloaded.
-            assets (Optional[list[str]]): List of asset keys to download.
-                Defaults to all assets.
             path_template (Optional[str]): String to be interpolated to specify
                 where to store downloaded files.
+            config (Optional[DownloadConfig]): Configuration for downloading items
+                and their assets.
             keep_original_filenames (Optional[bool]): Controls whether original
                 file names should be used, or asset key + extension.
             file_name (Optional[str]): The name of the item file to save.
