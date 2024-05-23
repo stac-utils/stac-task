@@ -12,8 +12,8 @@ sys.path.insert(
 project = "STAC Task"
 copyright = "2021, Element 84, Inc."
 
-release = "0.4"
-version = "0.5.0"
+release = "0.5"
+version = "0.5.1"
 
 # -- General configuration
 
