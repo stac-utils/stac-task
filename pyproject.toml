@@ -33,7 +33,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "black~=24.0",
-    "codespell~=2.2.5",
+    "codespell~=2.3",
     "mypy~=1.9",
     "pre-commit~=3.7",
     "ruff~=0.5.0",
