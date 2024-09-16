@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### ⚠️ Breaking Change
 
-- ([#147]) Moved `Task.validate` from class method to instance method, availing
+- ([#147](https://github.com/stac-utils/stac-task/pull/147)) Moved `Task.validate` from class method to instance method, availing
   implementers of other instance convenience methods (i.e. `self.parameters`).
 
 ## [0.5.1] - 2024-05-23
