@@ -76,8 +76,10 @@ class Task(ABC):
         validate: bool = True,
     ):
 
+        self._payload = payload
+
         if not skip_validation and validate:
-            if not self.validate(payload):
+            if not self.validate():
                 raise FailedValidation()
 
         # set instance variables
@@ -87,7 +89,6 @@ class Task(ABC):
             self._upload = upload
 
         self._skip_upload = not upload  # deprecated
-        self._payload = payload
 
         # create temporary work directory if workdir is None
         if workdir is None:
@@ -173,13 +174,6 @@ class Task(ABC):
         return ItemCollection.from_dict(items_dict, preserve_dict=True)
 
     @classmethod
-    def validate(cls, payload: dict[str, Any]) -> bool:
-        """Validates the payload and returns True if valid. If invalid, raises
-        ``stactask.exceptions.FailedValidation`` or returns False."""
-        # put validation logic on input Items and process definition here
-        return True
-
-    @classmethod
     def add_software_version(cls, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         warnings.warn(
             "add_software_version is deprecated, "
@@ -214,6 +208,12 @@ class Task(ABC):
             item["properties"] = {}
         item["properties"]["processing:software"] = {cls.name: cls.version}
         return item
+
+    def validate(self) -> bool:
+        """Validates `self._payload` and returns True if valid. If invalid, raises
+        ``stactask.exceptions.FailedValidation`` or returns False."""
+        # put validation logic on input Items and process definition here
+        return True
 
     def cleanup_workdir(self) -> None:
         """Remove work directory if configured not to save it"""

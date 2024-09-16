@@ -16,9 +16,8 @@ class FailValidateTask(Task):
     name = "failvalidation-task"
     description = "this task always fails validation"
 
-    @classmethod
-    def validate(self, payload: dict[str, Any]) -> bool:
-        if payload:
+    def validate(self) -> bool:
+        if self._payload:
             raise FailedValidation("Extra context about what went wrong")
         return True
 
