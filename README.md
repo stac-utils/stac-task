@@ -242,6 +242,32 @@ Migration of these various parameters to `DownloadConfig` are as follows:
 - `absolute_path`: none. To create or retrieve the Asset hrefs as absolute paths, use either
   `Item#make_all_asset_hrefs_absolute()` or `Asset#get_absolute_href()`
 
+### 0.5.x -> 0.6.0
+
+Previously, the `validate` method was a _classmethod_, validating the payload
+argument passed.  This has now been made an instance method, which validates
+the `self._payload` copy of the payload, from which the `Task` instance is
+constructed.  This is behaviorally the same, in that construction will fail if
+validation fails, but allows implementers to utilize the instance method's
+convenience functions.
+
+Previous implementations of `validate` would have been similar to this:
+
+```python
+    @classmethod
+    def validate(payload: dict[str, Any]) -> bool:
+        # Check The Things™
+        return isinstance(payload, dict)
+```
+
+And will now need to be updated to this form:
+
+```python
+    def validate(self) -> bool:
+        # Check The Things™
+        return isinstance(self._payload, dict)
+```
+
 ## Development
 
 Clone, install in editable mode with development requirements, and install the **pre-commit** hooks:

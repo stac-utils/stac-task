@@ -1,8 +1,8 @@
 [project]
 name = "stactask"
-version = "0.5.1"
+version = "0.6.0"
 authors = [{ name = "Matthew Hanson", email = "matt.a.hanson@gmail.com" }]
-maintainers = [{ name = "Pete Gadomski", email = "pete.gadomski@gmail.com" }]
+maintainers = [{ name = "Ian Cooke", email = "ircwaves@gmail.com" }]
 description = "Class interface for running custom algorithms and workflows on STAC Items"
 readme = "README.md"
 requires-python = ">=3.9"
