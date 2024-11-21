@@ -129,7 +129,7 @@ class Task(ABC):
 
     @property
     def parameters(self) -> dict[str, Any]:
-        task_configs = self.process_definition.get("tasks", [])
+        task_configs = self.process_definition.get("tasks", {})
         if isinstance(task_configs, list):
             warnings.warn(
                 "task configs is list, use a dictionary instead",
