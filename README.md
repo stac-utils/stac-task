@@ -270,12 +270,12 @@ And will now need to be updated to this form:
 
 ## Development
 
-Clone, install in editable mode with development requirements, and install the **pre-commit** hooks:
+Clone, install in editable mode with development and test requirements, and install the **pre-commit** hooks:
 
 ```shell
 git clone https://github.com/stac-utils/stac-task
 cd stac-task
-pip install -e '.[dev]'
+pip install -e '.[dev,test]'
 pre-commit install
 ```
 
