@@ -75,7 +75,6 @@ class Task(ABC):
         upload: bool = True,
         validate: bool = True,
     ):
-
         self._payload = payload
 
         if not skip_validation and validate:
@@ -108,11 +107,25 @@ class Task(ABC):
 
     @property
     def process_definition(self) -> dict[str, Any]:
-        process = self._payload.get("process", {})
+        process = self._payload.get("process", [])
         if isinstance(process, dict):
+            warnings.warn(
+                "`process` is dictionary, use a list instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return process
-        else:
-            raise ValueError(f"process is not a dict: {type(process)}")
+
+        if not isinstance(process, list):
+            raise TypeError("`process` must be a list of dictionaries")
+
+        if not process:
+            return {}
+
+        if not isinstance(process[0], dict):
+            raise TypeError("`process` list elements must be dictionaries")
+
+        return process[0]
 
     @property
     def parameters(self) -> dict[str, Any]:
