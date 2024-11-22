@@ -54,6 +54,40 @@ def test_deprecated_payload_dict(nothing_task: Task) -> None:
         nothing_task.process_definition
 
 
+def test_workflow_options_append_task_options(nothing_task: Task) -> None:
+    nothing_task._payload["process"][0]["workflow_options"] = {
+        "workflow_option": "workflow_option_value"
+    }
+    parameters = nothing_task.parameters
+    assert parameters == {
+        "do_nothing": True,
+        "workflow_option": "workflow_option_value",
+    }
+
+
+def test_workflow_options_populate_when_no_task_options(nothing_task: Task) -> None:
+    nothing_task._payload["process"][0]["tasks"].pop("nothing-task")
+    nothing_task._payload["process"][0]["workflow_options"] = {
+        "workflow_option": "workflow_option_value"
+    }
+    parameters = nothing_task.parameters
+    assert parameters == {
+        "workflow_option": "workflow_option_value",
+    }
+
+
+def test_task_options_supersede_workflow_options(nothing_task: Task) -> None:
+    nothing_task._payload["process"][0]["workflow_options"] = {
+        "do_nothing": False,
+        "workflow_option": "workflow_option_value",
+    }
+    parameters = nothing_task.parameters
+    assert parameters == {
+        "do_nothing": True,
+        "workflow_option": "workflow_option_value",
+    }
+
+
 def test_edit_items(nothing_task: Task) -> None:
     nothing_task.process_definition["workflow"] = "test-task-workflow"
     assert nothing_task._payload["process"][0]["workflow"] == "test-task-workflow"
