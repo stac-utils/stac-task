@@ -10,8 +10,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - ([#167](https://github.com/stac-utils/stac-task/issues/167)) Adds workflow-level
-  options to the ProcessDefinition object that are combined with each task's options,
-  giving precedence to the task options on conflict.
+  options to the ProcessDefinition object in a new `workflow_options` field. They are
+  combined with each task's options, giving precedence to the task options on conflict.
+- ([#167](https://github.com/stac-utils/stac-task/issues/167)) Adds a `workflow_options`
+  property to the `Task` class that returns the `workflow_options` dictionary from the
+  `ProcessDefinition` object.
+- ([#167](https://github.com/stac-utils/stac-task/issues/167)) Adds a `task_options`
+  property to the `Task` class that returns the task options from the `tasks` dictionary
+  in the `ProcessDefinition` object.
 
 ### Deprecated
 
