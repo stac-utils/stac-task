@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- ([#167](https://github.com/stac-utils/stac-task/issues/167)) Adds workflow-level
+  options to the ProcessDefinition object that are combined with each task's options,
+  giving precedence to the task options on conflict.
+
 ### Deprecated
 
-- ([#123](https://github.com/stac-utils/stac-task/issues/123)) Bare `ProcessDefinition`
+- ([#166](https://github.com/stac-utils/stac-task/issues/123)) Bare `ProcessDefinition`
   objects are deprecated in favor of arrays of `ProcessDefinition` objects.
 
 ## [0.6.0]
