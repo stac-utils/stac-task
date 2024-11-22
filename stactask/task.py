@@ -110,20 +110,28 @@ class Task(ABC):
         process = self._payload.get("process", [])
         if isinstance(process, dict):
             warnings.warn(
-                "`process` is dictionary, use a list instead",
+                (
+                    "`process` as a bare dictionary will be unsupported in a future "
+                    "version; wrap it in a list to remove this warning"
+                ),
                 DeprecationWarning,
                 stacklevel=2,
             )
             return process
 
         if not isinstance(process, list):
-            raise TypeError("`process` must be a list of dictionaries")
+            raise TypeError("unable to parse `process`: must be type list")
 
         if not process:
             return {}
 
         if not isinstance(process[0], dict):
-            raise TypeError("`process` list elements must be dictionaries")
+            raise TypeError(
+                (
+                    "unable to parse `process`: the first element of the list must be "
+                    "a dictionary"
+                )
+            )
 
         return process[0]
 
