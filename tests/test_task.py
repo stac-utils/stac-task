@@ -18,22 +18,22 @@ cassettepath = testpath / "fixtures" / "cassettes"
 
 
 @pytest.fixture
-def items() -> dict[str, Any]:
+def payload() -> dict[str, Any]:
     filename = testpath / "fixtures" / "sentinel2-l2a-j2k-payload.json"
     with open(filename) as f:
-        items = json.loads(f.read())
-    assert isinstance(items, dict)
-    return items
+        payload = json.loads(f.read())
+    assert isinstance(payload, dict)
+    return payload
 
 
 @pytest.fixture
-def nothing_task(items: dict[str, Any]) -> Task:
-    return NothingTask(items)
+def nothing_task(payload: dict[str, Any]) -> Task:
+    return NothingTask(payload)
 
 
 @pytest.fixture
-def derived_item_task(items: dict[str, Any]) -> Task:
-    return DerivedItemTask(items)
+def derived_item_task(payload: dict[str, Any]) -> Task:
+    return DerivedItemTask(payload)
 
 
 def test_task_init(nothing_task: Task) -> None:
@@ -43,14 +43,20 @@ def test_task_init(nothing_task: Task) -> None:
     assert nothing_task._save_workdir is False
 
 
-def test_failed_validation(items: dict[str, Any]) -> None:
+def test_failed_validation(payload: dict[str, Any]) -> None:
     with pytest.raises(FailedValidation, match="Extra context"):
-        FailValidateTask(items)
+        FailValidateTask(payload)
+
+
+def test_deprecated_payload_dict(nothing_task: Task) -> None:
+    nothing_task._payload["process"] = nothing_task._payload["process"][0]
+    with pytest.warns(DeprecationWarning):
+        nothing_task.process_definition
 
 
 def test_edit_items(nothing_task: Task) -> None:
     nothing_task.process_definition["workflow"] = "test-task-workflow"
-    assert nothing_task._payload["process"]["workflow"] == "test-task-workflow"
+    assert nothing_task._payload["process"][0]["workflow"] == "test-task-workflow"
 
 
 def test_edit_items2(nothing_task: Task) -> None:
@@ -58,8 +64,8 @@ def test_edit_items2(nothing_task: Task) -> None:
 
 
 @pytest.mark.parametrize("save_workdir", [False, True, None])
-def test_tmp_workdir(items: dict[str, Any], save_workdir: Optional[bool]) -> None:
-    t = NothingTask(items, save_workdir=save_workdir)
+def test_tmp_workdir(payload: dict[str, Any], save_workdir: Optional[bool]) -> None:
+    t = NothingTask(payload, save_workdir=save_workdir)
     expected = save_workdir if save_workdir is not None else False
     assert t._save_workdir is expected
     workdir = t._workdir
@@ -72,11 +78,11 @@ def test_tmp_workdir(items: dict[str, Any], save_workdir: Optional[bool]) -> Non
 
 @pytest.mark.parametrize("save_workdir", [False, True, None])
 def test_workdir(
-    items: dict[str, Any],
+    payload: dict[str, Any],
     tmp_path: Path,
     save_workdir: Optional[bool],
 ) -> None:
-    t = NothingTask(items, workdir=tmp_path / "test_task", save_workdir=save_workdir)
+    t = NothingTask(payload, workdir=tmp_path / "test_task", save_workdir=save_workdir)
     expected = save_workdir if save_workdir is not None else True
     assert t._save_workdir is expected
     workdir = t._workdir
@@ -87,12 +93,12 @@ def test_workdir(
     assert workdir.exists() is expected
 
 
-def test_parameters(items: dict[str, Any]) -> None:
-    nothing_task = NothingTask(items)
+def test_parameters(payload: dict[str, Any]) -> None:
+    nothing_task = NothingTask(payload)
     assert nothing_task.process_definition["workflow"] == "cog-archive"
     assert (
         nothing_task.upload_options["path_template"]
-        == items["process"]["upload_options"]["path_template"]
+        == payload["process"][0]["upload_options"]["path_template"]
     )
 
 
@@ -101,7 +107,7 @@ def test_process(nothing_task: Task) -> None:
     assert processed_items[0]["type"] == "Feature"
 
 
-def test_post_process(items: dict[str, Any]) -> None:
+def test_post_process(payload: dict[str, Any]) -> None:
     class PostProcessTask(NothingTask):
         name = "post-processing-test"
         version = "42"
@@ -111,8 +117,8 @@ def test_post_process(items: dict[str, Any]) -> None:
             item["stac_extensions"].insert(0, "zzz")
             return super().post_process_item(item)
 
-    payload = PostProcessTask.handler(items)
-    for item in payload["features"]:
+    payload_out = PostProcessTask.handler(payload)
+    for item in payload_out["features"]:
         assert item["properties"]["foo"] == "bar"
         stac_extensions = item["stac_extensions"]
         assert item["stac_extensions"] == sorted(stac_extensions)
@@ -126,9 +132,11 @@ def test_derived_item(derived_item_task: Task) -> None:
     assert links[0]["href"] == self_link["href"]
 
 
-def test_task_handler(items: dict[str, Any]) -> None:
-    self_link = next(lk for lk in items["features"][0]["links"] if lk["rel"] == "self")
-    output_items = DerivedItemTask.handler(items)
+def test_task_handler(payload: dict[str, Any]) -> None:
+    self_link = next(
+        lk for lk in payload["features"][0]["links"] if lk["rel"] == "self"
+    )
+    output_items = DerivedItemTask.handler(payload)
     derived_link = next(
         lk for lk in output_items["features"][0]["links"] if lk["rel"] == "derived_from"
     )
@@ -188,7 +196,6 @@ def test_collection_mapping(nothing_task: Task) -> None:
 
 @mock_aws  # type: ignore
 def test_s3_upload(nothing_task: Task) -> None:
-
     # start S3 mocks
     s3_client = boto3.client("s3")
     s3_client.create_bucket(

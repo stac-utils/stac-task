@@ -75,7 +75,6 @@ class Task(ABC):
         upload: bool = True,
         validate: bool = True,
     ):
-
         self._payload = payload
 
         if not skip_validation and validate:
@@ -108,15 +107,37 @@ class Task(ABC):
 
     @property
     def process_definition(self) -> dict[str, Any]:
-        process = self._payload.get("process", {})
+        process = self._payload.get("process", [])
         if isinstance(process, dict):
+            warnings.warn(
+                (
+                    "`process` as a bare dictionary will be unsupported in a future "
+                    "version; wrap it in a list to remove this warning"
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return process
-        else:
-            raise ValueError(f"process is not a dict: {type(process)}")
+
+        if not isinstance(process, list):
+            raise TypeError("unable to parse `process`: must be type list")
+
+        if not process:
+            return {}
+
+        if not isinstance(process[0], dict):
+            raise TypeError(
+                (
+                    "unable to parse `process`: the first element of the list must be "
+                    "a dictionary"
+                )
+            )
+
+        return process[0]
 
     @property
     def parameters(self) -> dict[str, Any]:
-        task_configs = self.process_definition.get("tasks", [])
+        task_configs = self.process_definition.get("tasks", {})
         if isinstance(task_configs, list):
             warnings.warn(
                 "task configs is list, use a dictionary instead",
