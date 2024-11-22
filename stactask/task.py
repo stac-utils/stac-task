@@ -136,15 +136,33 @@ class Task(ABC):
         return process[0]
 
     @property
-    def parameters(self) -> dict[str, Any]:
-        task_configs = self.process_definition.get("tasks", {})
-        if isinstance(task_configs, list):
+    def workflow_options(self) -> dict[str, Any]:
+        workflow_options_ = self.process_definition.get("workflow_options", {})
+        if not isinstance(workflow_options_, dict):
+            raise TypeError("unable to parse `workflow_options`: must be type dict")
+        return workflow_options_
+
+    @property
+    def task_options(self) -> dict[str, Any]:
+        task_options_ = self.process_definition.get("tasks", {})
+        if not isinstance(task_options_, (dict, list)):
+            raise TypeError(
+                "unable to parse `tasks`: must be type dict or type list (deprecated)"
+            )
+
+        if isinstance(task_options_, list):
             warnings.warn(
-                "task configs is list, use a dictionary instead",
+                (
+                    "`tasks` as a list of TaskConfig objects will be unsupported in a "
+                    "future version; use a dictionary of task options to remove this "
+                    "warning"
+                ),
                 DeprecationWarning,
                 stacklevel=2,
             )
-            task_config_list = [cfg for cfg in task_configs if cfg["name"] == self.name]
+            task_config_list = [
+                cfg for cfg in task_options_ if cfg["name"] == self.name
+            ]
             if len(task_config_list) == 0:
                 return {}
             else:
@@ -153,17 +171,20 @@ class Task(ABC):
                 if isinstance(parameters, dict):
                     return parameters
                 else:
-                    raise ValueError(f"parameters is not a dict: {type(parameters)}")
-        elif isinstance(task_configs, dict):
-            config = task_configs.get(self.name, {})
-            if isinstance(config, dict):
-                return config
+                    raise TypeError("unable to parse `parameters`: must be type dict")
+
+        if isinstance(task_options_, dict):
+            options = task_options_.get(self.name, {})
+            if isinstance(options, dict):
+                return options
             else:
-                raise ValueError(
-                    f"task config for {self.name} is not a dict: {type(config)}"
+                raise TypeError(
+                    f"unable to parse options for task '{self.name}': must be type dict"
                 )
-        else:
-            raise ValueError(f"unexpected value for 'tasks': {task_configs}")
+
+    @property
+    def parameters(self) -> dict[str, Any]:
+        return {**self.workflow_options, **self.task_options}
 
     @property
     def upload_options(self) -> dict[str, Any]:

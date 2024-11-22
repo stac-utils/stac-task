@@ -15,6 +15,7 @@
       - [collections](#collections)
     - [tasks](#tasks)
     - [TaskConfig Object](#taskconfig-object)
+    - [workflow_options](#workflow_options)
   - [Full ProcessDefinition Example](#full-processdefinition-example)
 - [Migration](#migration)
   - [0.4.x -\> 0.5.x](#04x---05x)
@@ -76,12 +77,13 @@ Task input is often referred to as a 'payload'.
 A Task can be provided additional configuration via the 'process' field in the input
 payload.
 
-| Field Name     | Type               | Description                                    |
-| -------------- | ------------------ | ---------------------------------------------- |
-| description    | string             | Description of the process configuration       |
-| upload_options | `UploadOptions`    | An `UploadOptions` object                      |
-| tasks          | Map<str, Map>      | Dictionary of task configurations.             |
-| ~~tasks~~      | ~~[`TaskConfig`]~~ | **DEPRECATED** A list of `TaskConfig` objects. |
+| Field Name       | Type               | Description                                                              |
+| ---------------- | ------------------ | ------------------------------------------------------------------------ |
+| description      | string             | Description of the process configuration                                 |
+| upload_options   | `UploadOptions`    | An `UploadOptions` object                                                |
+| tasks            | Map<str, Map>      | Dictionary of task configurations.                                       |
+| ~~tasks~~        | ~~[`TaskConfig`]~~ | **DEPRECATED** A list of `TaskConfig` objects.                           |
+| workflow_options | Map<str, Any>      | Dictionary of configuration options applied to all tasks in the workflow |
 
 
 #### UploadOptions Object
@@ -162,6 +164,12 @@ for backwards compatibility.
 | name       | str           | **REQUIRED** Name of the task                                                       |
 | parameters | Map<str, str> | Dictionary of keyword parameters that will be passed to the Task `process` function |
 
+#### workflow_options
+
+The 'workflow_options' field is a dictionary of options that apply to all tasks in the
+workflow. The 'workflow_options' dictionary is combined with each task's option
+dictionary. If a key in the 'workflow_options' dictionary conflicts with a key in a
+task's option dictionary, the task option value takes precedence.
 
 ### Full ProcessDefinition Example
 
