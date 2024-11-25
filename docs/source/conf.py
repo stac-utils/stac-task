@@ -13,7 +13,7 @@ project = "STAC Task"
 copyright = "2021, Element 84, Inc."
 
 release = "0.6"
-version = "0.6.0"
+version = "0.6.1"
 
 # -- General configuration
 
