@@ -36,7 +36,7 @@ dev = [
     "codespell~=2.3",
     "mypy~=1.9",
     "pre-commit~=3.7",
-    "ruff~=0.6.5",
+    "ruff~=0.8.1",
     "types-setuptools~=75.1",
     "boto3-stubs",
 ]
