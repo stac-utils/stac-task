@@ -25,6 +25,7 @@ from .asset_io import (
 from .config import DownloadConfig
 from .exceptions import FailedValidation
 from .logging import TaskLoggerAdapter
+from .payload import Payload
 from .utils import find_collection as utils_find_collection
 
 # types
@@ -67,7 +68,7 @@ class Task(ABC):
 
     def __init__(
         self: "Task",
-        payload: dict[str, Any],
+        payload: Payload | dict[str, Any],
         workdir: Optional[PathLike] = None,
         save_workdir: Optional[bool] = None,
         skip_upload: bool = False,  # deprecated
@@ -75,7 +76,11 @@ class Task(ABC):
         upload: bool = True,
         validate: bool = True,
     ):
-        self._payload = payload
+        if isinstance(payload, Payload):
+            self.payload = payload
+        else:
+            self.payload = Payload(payload)
+        self.payload.validate()
 
         if not skip_validation and validate:
             if not self.validate():
@@ -102,117 +107,95 @@ class Task(ABC):
 
         self.logger = TaskLoggerAdapter(
             logging.getLogger(self.name),
-            self._payload.get("id"),
+            self.payload.get("id"),
         )
 
     @property
+    def _payload(self) -> dict[str, Any]:
+        warnings.warn(
+            "`_payload` is deprecated, use `payload` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload
+
+    @_payload.setter
+    def _payload(self, value: dict[str, Any]) -> None:
+        warnings.warn(
+            "`_payload` is deprecated, use `payload` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.payload = Payload(value)
+
+    @property
     def process_definition(self) -> dict[str, Any]:
-        process = self._payload.get("process", [])
-        if isinstance(process, dict):
-            warnings.warn(
-                (
-                    "`process` as a bare dictionary will be unsupported in a future "
-                    "version; wrap it in a list to remove this warning"
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return process
-
-        if not isinstance(process, list):
-            raise TypeError("unable to parse `process`: must be type list")
-
-        if not process:
-            return {}
-
-        if not isinstance(process[0], dict):
-            raise TypeError(
-                (
-                    "unable to parse `process`: the first element of the list must be "
-                    "a dictionary"
-                )
-            )
-
-        return process[0]
+        warnings.warn(
+            (
+                "`process_definition` is deprecated, "
+                "use `payload.process_definition` instead"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.process_definition
 
     @property
     def workflow_options(self) -> dict[str, Any]:
-        workflow_options_ = self.process_definition.get("workflow_options", {})
-        if not isinstance(workflow_options_, dict):
-            raise TypeError("unable to parse `workflow_options`: must be type dict")
-        return workflow_options_
+        warnings.warn(
+            (
+                "`workflow_options` is deprecated, "
+                "use `payload.workflow_options` instead"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.workflow_options
 
     @property
     def task_options(self) -> dict[str, Any]:
-        task_options_ = self.process_definition.get("tasks", {})
-        if not isinstance(task_options_, (dict, list)):
-            raise TypeError(
-                "unable to parse `tasks`: must be type dict or type list (deprecated)"
-            )
-
-        if isinstance(task_options_, list):
-            warnings.warn(
-                (
-                    "`tasks` as a list of TaskConfig objects will be unsupported in a "
-                    "future version; use a dictionary of task options to remove this "
-                    "warning"
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            task_config_list = [
-                cfg for cfg in task_options_ if cfg["name"] == self.name
-            ]
-            if len(task_config_list) == 0:
-                return {}
-            else:
-                task_config: dict[str, Any] = task_config_list[0]
-                parameters = task_config.get("parameters", {})
-                if isinstance(parameters, dict):
-                    return parameters
-                else:
-                    raise TypeError("unable to parse `parameters`: must be type dict")
-
-        if isinstance(task_options_, dict):
-            options = task_options_.get(self.name, {})
-            if isinstance(options, dict):
-                return options
-            else:
-                raise TypeError(
-                    f"unable to parse options for task '{self.name}': must be type dict"
-                )
+        return self.payload.task_options_dict.get(self.name, {})
 
     @property
     def parameters(self) -> dict[str, Any]:
-        return {**self.workflow_options, **self.task_options}
+        return {**self.payload.workflow_options, **self.task_options}
 
     @property
     def upload_options(self) -> dict[str, Any]:
-        upload_options = self.process_definition.get("upload_options", {})
-        if isinstance(upload_options, dict):
-            return upload_options
-        else:
-            raise ValueError(f"upload_options is not a dict: {type(upload_options)}")
+        warnings.warn(
+            "`upload_options` is deprecated, use `payload.upload_options` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.upload_options
 
     @property
     def collection_mapping(self) -> dict[str, str]:
-        collection_mapping = self.upload_options.get("collections", {})
-        if isinstance(collection_mapping, dict):
-            return collection_mapping
-        else:
-            raise ValueError(f"collections is not a dict: {type(collection_mapping)}")
+        warnings.warn(
+            (
+                "`collection_mapping` is deprecated, "
+                "use `payload.collection_mapping` instead"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.collection_mapping
 
     @property
     def items_as_dicts(self) -> list[dict[str, Any]]:
-        features = self._payload.get("features", [])
-        if isinstance(features, list):
-            return features
-        else:
-            raise ValueError(f"features is not a list: {type(features)}")
+        warnings.warn(
+            "`items_as_dicts` is deprecated, use `payload.items_as_dicts` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.items_as_dicts
 
     @property
     def items(self) -> ItemCollection:
-        items_dict = {"type": "FeatureCollection", "features": self.items_as_dicts}
+        items_dict = {
+            "type": "FeatureCollection",
+            "features": self.payload.items_as_dicts,
+        }
         return ItemCollection.from_dict(items_dict, preserve_dict=True)
 
     @classmethod
@@ -252,7 +235,7 @@ class Task(ABC):
         return item
 
     def validate(self) -> bool:
-        """Validates `self._payload` and returns True if valid. If invalid, raises
+        """Validates `self.payload` and returns True if valid. If invalid, raises
         ``stactask.exceptions.FailedValidation`` or returns False."""
         # put validation logic on input Items and process definition here
         return True
@@ -275,7 +258,7 @@ class Task(ABC):
     def assign_collections(self) -> None:
         """Assigns new collection names based on upload_options collections attribute
         according to the first matching expression in the order they are defined."""
-        for item in self._payload["features"]:
+        for item in self.payload["features"]:
             if coll := utils_find_collection(self.collection_mapping, item):
                 item["collection"] = coll
 
@@ -417,9 +400,7 @@ class Task(ABC):
         E.g. add software version information.
 
         Most tasks should prefer to not override this method, as logic should be
-        kept in :py:meth:`Task.process`. If you do override this method, make
-        sure to call ``super().post_process_item()`` AFTER doing any custom
-        post-processing, so any regular behavior can take your changes into account.
+        kept in :py:meth:`Task.process`.
 
         Args:
             item: An item produced by :py:meth:`Task.process`
@@ -427,9 +408,26 @@ class Task(ABC):
         Returns:
             dict[str, Any]: The item with any additional attributes applied.
         """
-        assert "stac_extensions" in item
-        assert isinstance(item["stac_extensions"], list)
-        item["stac_extensions"].sort()
+        return item
+
+    def _post_process_item(self, item: dict[str, Any]) -> dict[str, Any]:
+        """Perform post-processing operations on an item.
+
+        Args:
+            item: An item produced by :py:meth:`Task.process`
+
+        Returns:
+            dict[str, Any]: The item with any additional attributes applied.
+        """
+        self.post_process_item(item)
+
+        if "stac_extensions" in item:
+            if not isinstance(item["stac_extensions"], list):
+                raise TypeError(
+                    "stac_extensions must be type list, "
+                    f"not type {type(item['stac_extensions'])}"
+                )
+            item["stac_extensions"].sort()
         return item
 
     @classmethod
@@ -445,12 +443,12 @@ class Task(ABC):
             try:
                 items = list()
                 for item in task.process(**task.parameters):
-                    items.append(task.post_process_item(item))
+                    items.append(task._post_process_item(item))
 
-                task._payload["features"] = items
+                task.payload["features"] = items
                 task.assign_collections()
 
-                return task._payload
+                return task.payload
             except Exception as err:
                 task.logger.error(err, exc_info=True)
                 raise err
