@@ -43,20 +43,20 @@ class Payload(dict[str, Any]):
 
     @property
     def workflow_options(self) -> dict[str, Any]:
-        workflow_options_ = self.process_definition.get("workflow_options", {})
-        if not isinstance(workflow_options_, dict):
+        workflow_options = self.process_definition.get("workflow_options", {})
+        if not isinstance(workflow_options, dict):
             raise TypeError("unable to parse `workflow_options`: must be type dict")
-        return workflow_options_
+        return workflow_options
 
     @property
     def task_options_dict(self) -> dict[str, dict[str, Any]]:
-        task_options_ = self.process_definition.get("tasks", {})
-        if not isinstance(task_options_, (dict, list)):
+        task_options = self.process_definition.get("tasks", {})
+        if not isinstance(task_options, (dict, list)):
             raise TypeError(
                 "unable to parse `tasks`: must be type dict or type list (deprecated)"
             )
 
-        if isinstance(task_options_, list):
+        if isinstance(task_options, list):
             warnings.warn(
                 (
                     "`tasks` as a list of TaskConfig objects will be unsupported in a "
@@ -67,7 +67,7 @@ class Payload(dict[str, Any]):
                 stacklevel=2,
             )
             options: dict[str, dict[str, Any]] = {}
-            for cfg in task_options_:
+            for cfg in task_options:
                 name = cfg["name"]
                 parameters = cfg.get("parameters", {})
                 if not isinstance(parameters, dict):
@@ -78,13 +78,13 @@ class Payload(dict[str, Any]):
                 options[name] = parameters
             return options
 
-        if isinstance(task_options_, dict):
-            for name, options in task_options_.items():
+        if isinstance(task_options, dict):
+            for name, options in task_options.items():
                 if not isinstance(options, dict):
                     raise TypeError(
                         f"unable to parse options for task '{name}': must be type dict"
                     )
-            return task_options_
+            return task_options
 
     @property
     def upload_options(self) -> dict[str, Any]:
