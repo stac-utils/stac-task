@@ -37,7 +37,7 @@ class Payload(dict[str, Any]):
         if isinstance(process, dict):
             warnings.warn(
                 (
-                    "`process` as a bare dictionary will be unsupported in a future "
+                    "'process' as a bare dictionary will be unsupported in a future "
                     "version; wrap it in a list to remove this warning"
                 ),
                 DeprecationWarning,
@@ -46,17 +46,15 @@ class Payload(dict[str, Any]):
             return process
 
         if not isinstance(process, list):
-            raise TypeError("unable to parse `process`: must be type list")
+            raise TypeError("unable to parse 'process': must be type list")
 
         if not process:
             return {}
 
         if not isinstance(process[0], dict):
             raise TypeError(
-                (
-                    "unable to parse `process`: the first element of the list must be "
-                    "a dictionary"
-                )
+                "unable to parse 'process': the first element of the list must be "
+                "type dict"
             )
 
         return process[0]
@@ -65,7 +63,7 @@ class Payload(dict[str, Any]):
     def workflow_options(self) -> dict[str, Any]:
         workflow_options = self.process_definition.get("workflow_options", {})
         if not isinstance(workflow_options, dict):
-            raise TypeError("unable to parse `workflow_options`: must be type dict")
+            raise TypeError("unable to parse 'workflow_options': must be type dict")
         return workflow_options
 
     @property
@@ -73,13 +71,13 @@ class Payload(dict[str, Any]):
         task_options = self.process_definition.get("tasks", {})
         if not isinstance(task_options, (dict, list)):
             raise TypeError(
-                "unable to parse `tasks`: must be type dict or type list (deprecated)"
+                "unable to parse 'tasks': must be type dict or type list (deprecated)"
             )
 
         if isinstance(task_options, list):
             warnings.warn(
                 (
-                    "`tasks` as a list of TaskConfig objects will be unsupported in a "
+                    "'tasks' as a list of TaskConfig objects will be unsupported in a "
                     "future version; use a dictionary of task options to remove this "
                     "warning"
                 ),
@@ -92,8 +90,8 @@ class Payload(dict[str, Any]):
                 parameters = cfg.get("parameters", {})
                 if not isinstance(parameters, dict):
                     raise TypeError(
-                        f"unable to parse 'parameters' for task '{name}': must be "
-                        "type dict"
+                        f"unable to parse 'parameters' for task '{name}': "
+                        "must be type dict"
                     )
                 options[name] = parameters
             return options
@@ -112,7 +110,7 @@ class Payload(dict[str, Any]):
         if isinstance(features, list):
             return features
         else:
-            raise ValueError(f"features is not a list: {type(features)}")
+            raise TypeError("unable to parse 'features': must be type list")
 
     @property
     def global_upload_options(self) -> dict[str, Any]:
@@ -120,7 +118,7 @@ class Payload(dict[str, Any]):
         if isinstance(upload_options, dict):
             return upload_options
         else:
-            raise ValueError(f"upload_options is not a dict: {type(upload_options)}")
+            raise TypeError("unable to parse 'upload_options': must be type dict")
 
     @property
     def collection_mapping(self) -> dict[str, str]:
@@ -128,29 +126,32 @@ class Payload(dict[str, Any]):
         if isinstance(collection_mapping, dict):
             return collection_mapping
         else:
-            raise ValueError(f"collections is not a dict: {type(collection_mapping)}")
+            raise TypeError("unable to parse 'collections': must be type dict")
 
     @property
     def collection_matchers(self) -> list[dict[str, Any]]:
         matchers = self.process_definition.get("collection_matchers", [])
         if not isinstance(matchers, list):
-            raise TypeError(f"collection_matchers is not a list: {type(matchers)}")
+            raise TypeError("unable to parse 'collection_matchers': must be type list")
         if not all(isinstance(matcher, dict) for matcher in matchers):
-            raise TypeError("each collection matcher must be a dict")
+            raise TypeError(
+                "unable to parse 'collection_matchers': each matcher must be type dict"
+            )
         return matchers
 
     @property
     def collection_options(self) -> dict[str, dict[str, Any]]:
         options = self.process_definition.get("collection_options", {})
         if not isinstance(options, dict):
-            raise TypeError("collection_options must be a dict")
+            raise TypeError("unable to parse 'collection_options': must be type dict")
         return options
 
     def get_collection_options(self, collection_name: str) -> dict[str, Any]:
         options = self.collection_options.get(collection_name, {})
         if not isinstance(options, dict):
             raise TypeError(
-                f"collection_options for collection '{collection_name}' must be a dict"
+                f"unable to parse 'collection_options' for collection "
+                f"'{collection_name}': must be type dict"
             )
         return options
 

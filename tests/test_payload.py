@@ -424,3 +424,168 @@ def test_get_collection_upload_options_new(new_payload: dict[str, Any]) -> None:
     # Test collection falling back to global options
     expected_global = new_payload["process"][0]["upload_options"]
     assert payload.get_collection_upload_options("nonexistent") == expected_global
+
+
+# 4. Expected Payload Property Errors Tests
+
+
+def test_process_definition_error_not_list(new_payload: dict[str, Any]) -> None:
+    """Test process_definition raises TypeError when process is not list or dict."""
+    new_payload["process"] = "invalid_process"
+    payload = Payload(new_payload)
+
+    expected_msg = "unable to parse 'process': must be type list"
+    with pytest.raises(TypeError, match=expected_msg):
+        payload.process_definition
+
+
+def test_process_definition_error_first_not_dict(new_payload: dict[str, Any]) -> None:
+    """Test process_definition raises TypeError when first element is not dict."""
+    new_payload["process"] = ["not_a_dict"]
+    payload = Payload(new_payload)
+
+    expected_msg = (
+        "unable to parse 'process': the first element of the list must be type dict"
+    )
+    with pytest.raises(TypeError, match=expected_msg):
+        payload.process_definition
+
+
+def test_workflow_options_error_not_dict(new_payload: dict[str, Any]) -> None:
+    """Test workflow_options raises TypeError when not dict."""
+    new_payload["process"][0]["workflow_options"] = "not_a_dict"
+    payload = Payload(new_payload)
+
+    expected_msg = "unable to parse 'workflow_options': must be type dict"
+    with pytest.raises(TypeError, match=expected_msg):
+        payload.workflow_options
+
+
+def test_task_options_dict_error_not_dict_or_list(new_payload: dict[str, Any]) -> None:
+    """Test task_options_dict raises TypeError when not dict or list."""
+    new_payload["process"][0]["tasks"] = "not_dict_or_list"
+    payload = Payload(new_payload)
+
+    expected_msg = "unable to parse 'tasks': must be type dict or type list"
+    with pytest.raises(TypeError, match=expected_msg):
+        payload.task_options_dict
+
+
+def test_task_options_dict_error_params_not_dict(new_payload: dict[str, Any]) -> None:
+    """Test task_options_dict raises TypeError when parameters not dict."""
+    new_payload["process"][0]["tasks"] = [
+        {"name": "test-task", "parameters": "not_a_dict"}
+    ]
+    payload = Payload(new_payload)
+
+    expected_msg = (
+        "unable to parse 'parameters' for task 'test-task': must be type dict"
+    )
+    with pytest.raises(TypeError, match=expected_msg):
+        payload.task_options_dict
+
+
+def test_task_options_dict_error_options_not_dict(new_payload: dict[str, Any]) -> None:
+    """Test task_options_dict raises TypeError when task options not dict."""
+    new_payload["process"][0]["tasks"] = {"test-task": "not_a_dict"}
+    payload = Payload(new_payload)
+
+    expected_msg = "unable to parse options for task 'test-task': must be type dict"
+    with pytest.raises(TypeError, match=expected_msg):
+        payload.task_options_dict
+
+
+def test_items_as_dicts_error_features_not_list(new_payload: dict[str, Any]) -> None:
+    """Test items_as_dicts raises ValueError when features not list."""
+    new_payload["features"] = "not_a_list"
+    payload = Payload(new_payload)
+
+    with pytest.raises(
+        TypeError, match="unable to parse 'features': must be type list"
+    ):
+        payload.items_as_dicts
+
+
+def test_global_upload_options_error_not_dict(new_payload: dict[str, Any]) -> None:
+    """Test global_upload_options raises ValueError when upload_options not dict."""
+    new_payload["process"][0]["upload_options"] = "not_a_dict"
+    payload = Payload(new_payload)
+
+    with pytest.raises(
+        TypeError, match="unable to parse 'upload_options': must be type dict"
+    ):
+        payload.global_upload_options
+
+
+def test_collection_mapping_error_not_dict(legacy_payload: dict[str, Any]) -> None:
+    """Test collection_mapping raises ValueError when collections not dict."""
+    legacy_payload["process"][0]["upload_options"]["collections"] = "not_a_dict"
+    payload = Payload(legacy_payload)
+
+    with pytest.raises(
+        TypeError, match="unable to parse 'collections': must be type dict"
+    ):
+        payload.collection_mapping
+
+
+def test_collection_matchers_error_not_list(new_payload: dict[str, Any]) -> None:
+    """Test collection_matchers raises TypeError when not list."""
+    new_payload["process"][0]["collection_matchers"] = "not_a_list"
+    payload = Payload(new_payload)
+
+    with pytest.raises(
+        TypeError, match="unable to parse 'collection_matchers': must be type list"
+    ):
+        payload.collection_matchers
+
+
+def test_collection_matchers_error_not_dicts(new_payload: dict[str, Any]) -> None:
+    """Test collection_matchers raises TypeError when matchers not dicts."""
+    new_payload["process"][0]["collection_matchers"] = ["not_a_dict"]
+    payload = Payload(new_payload)
+
+    with pytest.raises(
+        TypeError,
+        match="unable to parse 'collection_matchers': each matcher must be type dict",
+    ):
+        payload.collection_matchers
+
+
+def test_collection_options_error_not_dict(new_payload: dict[str, Any]) -> None:
+    """Test collection_options raises TypeError when not dict."""
+    new_payload["process"][0]["collection_options"] = "not_a_dict"
+    payload = Payload(new_payload)
+
+    with pytest.raises(
+        TypeError, match="unable to parse 'collection_options': must be type dict"
+    ):
+        payload.collection_options
+
+
+# 5. Expected Payload Method Errors Tests
+
+
+def test_get_collection_options_error_not_dict(new_payload: dict[str, Any]) -> None:
+    """Test get_collection_options raises TypeError when collection options not dict."""
+    new_payload["process"][0]["collection_options"]["test-collection"] = "not_a_dict"
+    payload = Payload(new_payload)
+
+    expected_msg = (
+        "unable to parse 'collection_options' for collection 'test-collection': "
+        "must be type dict"
+    )
+    with pytest.raises(TypeError, match=expected_msg):
+        payload.get_collection_options("test-collection")
+
+
+def test_get_collection_upload_options_error_no_options(
+    new_payload: dict[str, Any],
+) -> None:
+    """Test get_collection_upload_options raises ValueError when no options found."""
+    # Remove global upload_options and collection-specific options
+    del new_payload["process"][0]["upload_options"]
+    payload = Payload(new_payload)
+
+    expected_msg = "No upload options found for collection 'nonexistent-collection'"
+    with pytest.raises(ValueError, match=expected_msg):
+        payload.get_collection_upload_options("nonexistent-collection")
