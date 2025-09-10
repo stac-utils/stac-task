@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import boto3
 import pytest
+from boto3utils import s3
 from moto import mock_aws
 from pystac import Asset
 
@@ -34,6 +35,24 @@ def nothing_task(payload: dict[str, Any]) -> Task:
 @pytest.fixture
 def derived_item_task(payload: dict[str, Any]) -> Task:
     return DerivedItemTask(payload)
+
+
+@pytest.fixture
+def mock_s3_client() -> Callable[[], s3]:
+    """Recreate the global S3 client within mock context to avoid state pollution.
+
+    This fixture must be called from within a mock_aws context.
+    """
+    from boto3utils import s3
+
+    from stactask import asset_io
+
+    # This will be called during test execution, when mock is active
+    def _recreate_client() -> s3:
+        asset_io.global_s3_client = s3()
+        return asset_io.global_s3_client
+
+    return _recreate_client
 
 
 def test_task_init(nothing_task: Task) -> None:
@@ -229,7 +248,7 @@ def test_collection_mapping(nothing_task: Task) -> None:
 
 
 @mock_aws  # type: ignore
-def test_s3_upload(nothing_task: Task) -> None:
+def test_s3_upload(nothing_task: Task, mock_s3_client: Callable[[], s3]) -> None:
     # start S3 mocks
     s3_client = boto3.client("s3")
     s3_client.create_bucket(
@@ -238,6 +257,8 @@ def test_s3_upload(nothing_task: Task) -> None:
             "LocationConstraint": "us-west-2",
         },
     )
+    # Recreate global s3 client within mock context
+    mock_s3_client()
     # end S3 mocks
 
     item = nothing_task.items.items[0]
