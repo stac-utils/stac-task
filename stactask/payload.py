@@ -7,9 +7,29 @@ class Payload(dict[str, Any]):
         self.process_definition
         self.workflow_options
         self.task_options_dict
-        self.upload_options
-        self.collection_mapping
+        self.global_upload_options
+        collection_mapping = self.collection_mapping
         self.items_as_dicts
+        collection_matchers = self.collection_matchers
+        self.collection_options
+
+        # a collection matchers list or a legacy collection mapping must exist
+        if not collection_matchers and not collection_mapping:
+            raise ValueError(
+                "'collection_matchers' or the legacy 'upload_options.collections' "
+                "must be provided"
+            )
+
+        # collection matchers and the legacy collection mapping are mutually exclusive
+        if collection_matchers and collection_mapping:
+            raise ValueError(
+                "A payload must not contain both 'collection_matchers' and the legacy "
+                "'upload_options.collections'"
+            )
+
+        # each collection in collection matchers list must have upload options
+        for matcher in collection_matchers:
+            self.get_collection_upload_options(matcher["collection_name"])
 
     @property
     def process_definition(self) -> dict[str, Any]:
@@ -87,8 +107,15 @@ class Payload(dict[str, Any]):
             return task_options
 
     @property
-    def upload_options(self) -> dict[str, Any]:
-        # self.payload.global_upload_options
+    def items_as_dicts(self) -> list[dict[str, Any]]:
+        features = self.get("features", [])
+        if isinstance(features, list):
+            return features
+        else:
+            raise ValueError(f"features is not a list: {type(features)}")
+
+    @property
+    def global_upload_options(self) -> dict[str, Any]:
         upload_options = self.process_definition.get("upload_options", {})
         if isinstance(upload_options, dict):
             return upload_options
@@ -97,16 +124,43 @@ class Payload(dict[str, Any]):
 
     @property
     def collection_mapping(self) -> dict[str, str]:
-        collection_mapping = self.upload_options.get("collections", {})
+        collection_mapping = self.global_upload_options.get("collections", {})
         if isinstance(collection_mapping, dict):
             return collection_mapping
         else:
             raise ValueError(f"collections is not a dict: {type(collection_mapping)}")
 
     @property
-    def items_as_dicts(self) -> list[dict[str, Any]]:
-        features = self.get("features", [])
-        if isinstance(features, list):
-            return features
-        else:
-            raise ValueError(f"features is not a list: {type(features)}")
+    def collection_matchers(self) -> list[dict[str, Any]]:
+        matchers = self.process_definition.get("collection_matchers", [])
+        if not isinstance(matchers, list):
+            raise TypeError(f"collection_matchers is not a list: {type(matchers)}")
+        if not all(isinstance(matcher, dict) for matcher in matchers):
+            raise TypeError("each collection matcher must be a dict")
+        return matchers
+
+    @property
+    def collection_options(self) -> dict[str, dict[str, Any]]:
+        options = self.process_definition.get("collection_options", {})
+        if not isinstance(options, dict):
+            raise TypeError("collection_options must be a dict")
+        return options
+
+    def get_collection_options(self, collection_name: str) -> dict[str, Any]:
+        options = self.collection_options.get(collection_name, {})
+        if not isinstance(options, dict):
+            raise TypeError(
+                f"collection_options for collection '{collection_name}' must be a dict"
+            )
+        return options
+
+    def get_collection_upload_options(self, collection_name: str) -> dict[str, Any]:
+        options = (
+            self.get_collection_options(collection_name).get("upload_options", {})
+            or self.global_upload_options
+        )
+        if not options:
+            raise ValueError(
+                f"No upload options found for collection '{collection_name}'"
+            )
+        return options

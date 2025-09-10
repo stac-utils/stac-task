@@ -68,7 +68,7 @@ class Task(ABC):
 
     def __init__(
         self: "Task",
-        payload: Payload | dict[str, Any],
+        payload: dict[str, Any],
         workdir: Optional[PathLike] = None,
         save_workdir: Optional[bool] = None,
         skip_upload: bool = False,  # deprecated
@@ -76,10 +76,7 @@ class Task(ABC):
         upload: bool = True,
         validate: bool = True,
     ):
-        if isinstance(payload, Payload):
-            self.payload = payload
-        else:
-            self.payload = Payload(payload)
+        self.payload = Payload(payload)
         self.payload.validate()
 
         if not skip_validation and validate:
@@ -163,11 +160,14 @@ class Task(ABC):
     @property
     def upload_options(self) -> dict[str, Any]:
         warnings.warn(
-            "`upload_options` is deprecated, use `payload.upload_options` instead",
+            (
+                "`upload_options` is deprecated, "
+                "use `payload.global_upload_options` instead"
+            ),
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.payload.upload_options
+        return self.payload.global_upload_options
 
     @property
     def collection_mapping(self) -> dict[str, str]:
@@ -256,10 +256,18 @@ class Task(ABC):
             )
 
     def assign_collections(self) -> None:
-        """Assigns new collection names based on upload_options collections attribute
-        according to the first matching expression in the order they are defined."""
+        """Assigns new collection names based on collection_matchers or the legacy
+        upload_options collections attribute according to the first matching
+        expression in the order they are defined."""
+        if self.payload.collection_matchers:
+            collection_config: Union[dict[str, str], list[dict[str, Any]]] = (
+                self.payload.collection_matchers
+            )
+        else:
+            collection_config = self.payload.collection_mapping
+
         for item in self.payload["features"]:
-            if coll := utils_find_collection(self.collection_mapping, item):
+            if coll := utils_find_collection(collection_config, item):
                 item["collection"] = coll
 
     def download_item_assets(
@@ -336,8 +344,20 @@ class Task(ABC):
         s3_client: Optional[s3] = None,
     ) -> Item:
         if self._upload:
+            if not self.payload.collection_options:
+                # preserve legacy behaviour
+                upload_options = self.payload.global_upload_options
+            else:
+                if item.collection_id is None:
+                    raise ValueError(
+                        f"Unable to get upload options for Item '{item.id}' because it "
+                        "does not have an assigned collection"
+                    )
+                upload_options = self.payload.get_collection_upload_options(
+                    item.collection_id
+                )
             item = upload_item_assets_to_s3(
-                item=item, assets=assets, s3_client=s3_client, **self.upload_options
+                item=item, assets=assets, s3_client=s3_client, **upload_options
             )
         else:
             self.logger.warning("Skipping upload of new and modified assets")
