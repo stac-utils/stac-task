@@ -69,3 +69,6 @@ env = [
     "AWS_SESSION_TOKEN=baz",
 ]
 filterwarnings = ["ignore::UserWarning:stactask.*:"]
+
+[tool.setuptools]
+packages = ["stactask"]

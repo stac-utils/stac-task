@@ -9,13 +9,14 @@
 
 - [Quickstart for Creating New Tasks](#quickstart-for-creating-new-tasks)
 - [Task Input](#task-input)
-  - [ProcessDefinition Object](#processdefinition-object)
-    - [UploadOptions Object](#uploadoptions-object)
-      - [path\_template](#path_template)
-      - [collections](#collections)
-    - [tasks](#tasks)
-    - [TaskConfig Object](#taskconfig-object)
-    - [workflow_options](#workflow_options)
+- [ProcessDefinition Object](#processdefinition-object)
+  - [UploadOptions Object](#uploadoptions-object)
+    - [path\_template](#path_template)
+    - [collections](#collections)
+  - [CollectionMatcher Object](#collectionmatcher-object)
+  - [collection\_options](#collection_options)
+  - [tasks](#tasks)
+  - [workflow_options](#workflow_options)
   - [Full ProcessDefinition Example](#full-processdefinition-example)
 - [Migration](#migration)
   - [0.4.x -\> 0.5.x](#04x---05x)
@@ -23,13 +24,11 @@
 - [Development](#development)
 - [Contributing](#contributing)
 
-This Python library consists of the Task class, which is used to create custom tasks
-based on a "STAC In, STAC Out" approach. The Task class acts as wrapper around custom
-code and provides several convenience methods for modifying STAC Items, creating derived
-Items, and providing a CLI.
-
-This library is based on a [branch of cirrus-lib](https://github.com/cirrus-geo/cirrus-lib/tree/features/task-class)
-except aims to be more generic.
+This Python library consists of a Task class and Payload class. The Task class is used
+to create custom tasks based on a "STAC In, STAC Out" approach. The Task class acts as
+wrapper around custom code and provides several convenience methods for modifying STAC
+Items, creating derived Items, and providing a CLI. The Payload class provides input
+payload validation and structured access to payload components.
 
 ## Quickstart for Creating New Tasks
 
@@ -42,7 +41,7 @@ class MyTask(Task):
     name = "my-task"
     description = "this task does it all"
 
-    def validate(self, payload: dict[str, Any]) -> bool:
+    def validate(self) -> bool:
         return len(self.items) == 1
 
     def process(self, **kwargs: Any) -> list[dict[str, Any]]:
@@ -63,78 +62,156 @@ class MyTask(Task):
 
 ## Task Input
 
-Task input is often referred to as a 'payload'.
+Task input is referred to as a "payload" and has the following top-level fields.
 
-| Field Name | Type                      | Description                                         |
-| ---------- | ------------------------- | --------------------------------------------------- |
-| type       | string                    | Must be FeatureCollection                           |
-| features   | [Item]                    | An array of STAC Items                              |
-| process    | [`ProcessDefinition`]     | An array of `ProcessDefinition` objects.            |
-| ~~process~~  | ~~`ProcessDefinition`~~ | **DEPRECATED** A `ProcessDefinition` object         |
+| Field Name | Type                       | Description                                           |
+| ---------- | -------------------------- | ----------------------------------------------------- |
+| type       | string                     | Must be "FeatureCollection"                           |
+| features   | [Item]                     | An array of STAC Items                                |
+| process    | [ProcessDefinition Object] | **REQUIRED.** An array of `ProcessDefinition` objects |
 
-### ProcessDefinition Object
+## ProcessDefinition Object
 
-A Task can be provided additional configuration via the 'process' field in the input
-payload.
+Provides configuration for a Task.
 
-| Field Name       | Type               | Description                                                              |
-| ---------------- | ------------------ | ------------------------------------------------------------------------ |
-| description      | string             | Description of the process configuration                                 |
-| upload_options   | `UploadOptions`    | An `UploadOptions` object                                                |
-| tasks            | Map<str, Map>      | Dictionary of task configurations.                                       |
-| ~~tasks~~        | ~~[`TaskConfig`]~~ | **DEPRECATED** A list of `TaskConfig` objects.                           |
-| workflow_options | Map<str, Any>      | Dictionary of configuration options applied to all tasks in the workflow |
+| Field Name          | Type                         | Description                                                                                                                                   |
+| ------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| description         | string                       | Description of the process configuration                                                                                                      |
+| upload_options      | UploadOptions Object         | **CONDITIONAL.** An `UploadOptions` object                                                                                                    |
+| collection_matchers | [CollectionMatcher Object]   | **CONDITIONAL.** An array of `CollectionMatcher` objects used for collection assignment. Mutually exclusive with `upload_options.collections` |
+| collection_options  | Map<string, Map<string, Any> | Dictionary of collection-specific configuration options                                                                                       |
+| tasks               | Map<string, Map<string, Any> | Dictionary of task configurations                                                                                                             |
+| workflow_options    | Map<string, Any>             | Dictionary of configuration options applied to all tasks in the workflow                                                                      |
 
+Either `collection_matchers` OR `upload_options.collections` must be provided for
+collection assignment. When using `collection_matchers`, each referenced collection must
+have upload options available either in `collection_options` or in the global
+`upload_options`.
 
-#### UploadOptions Object
+### UploadOptions Object
 
-Options used when uploading Item assets to a remote server can be specified in a
-'upload_options' field in the `ProcessDefinition` object.
+Options used when uploading Item assets to a AWS S3. If `collection_options` is
+provided, the Task will look there first for collection-specific upload options before
+falling back to these upload options.
 
-| Field Name    | Type          | Description                                                                             |
-| ------------- | ------------- | --------------------------------------------------------------------------------------- |
-| path_template | string        | **REQUIRED** A string template for specifying the location of uploaded assets           |
-| public_assets | [str]         | A list of asset keys that should be marked as public when uploaded                      |
-| headers       | Map<str, str> | A set of key, value headers to send when uploading data to s3                           |
-| collections   | Map<str, str> | A mapping of output collection name to a JSONPath pattern (for matching Items)          |
-| s3_urls       | bool          | Controls if the final published URLs should be an s3 (s3://*bucket*/*key*) or https URL |
+| Field Name    | Type                | Description                                                                                                  |
+| ------------- | ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| path_template | string              | **REQUIRED.** A string template for specifying the location of uploaded assets                               |
+| public_assets | [string]            | A list of asset keys that should be marked as public when uploaded                                           |
+| headers       | Map<string, string> | A set of key, value headers to send when uploading data to S3                                                |
+| collections   | Map<string, string> | **DEPRECATED.** A mapping of output collection name to a JSONPath pattern                                    |
+| s3_urls       | boolean             | Controls if the final published URLs should be in S3 (`true`) or https (`false`) format. Defaults to `false` |
 
-##### path_template
+#### path_template
 
-The 'path_template' string is a way to control the output location of uploaded assets
+The `path_template` string is a way to control the output location of uploaded assets
 from a STAC Item using metadata from the Item itself. The template can contain fixed
 strings along with variables used for substitution. See [the PySTAC documentation for
 `LayoutTemplate`](https://pystac.readthedocs.io/en/stable/api/layout.html#pystac.layout.LayoutTemplate)
 for a list of supported template variables and their meaning.
 
-##### collections
+Example:
 
-The 'collections' dictionary provides a collection ID and JSONPath pattern for matching
-against STAC Items. At the end of processing, before the final STAC Items are returned,
-the Task class can be used to assign all of the Items to specific collection IDs. For
-each Item the JSONPath pattern for all collections will be compared. The first match
-will cause the Item's Collection ID to be set to the provided value.
+```json
+"path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}"
+```
 
-For example:
+#### collections
+
+Deprecated. The `collections` dictionary provides a collection ID and JSONPath pattern
+for matching against STAC Items. At the end of processing, before the final STAC Items
+are returned, the Task class can be used to assign all of the Items to specific
+collection IDs. For each Item the JSONPath pattern for all collections will be compared.
+The first match will cause the Item's Collection ID to be set to the provided value.
+This field is deprecated in favor of the `collection_matchers` array, which guarantees
+order during the matching process.
+
+Example:
 
 ```json
 "collections": {
-    "landsat-c2l2": "$[?(@.id =~ 'LC08.*')]"
+    "landsat-c2l2": "$[?(@.id =~ 'LC08.*')]",
+    "sentinel-2-l2a": "$[?(@.id =~ 'S2.*')]"
 }
 ```
 
 In this example, the task will set any STAC Items that have an ID beginning with "LC08"
-to the `landsat-c2l2` collection.
-
-See [JSONPath Online Evaluator](https://jsonpath.com) to experiment with JSONPath and
+to the `landsat-c2l2` collection and any STAC Items that have an ID beginning with "S2"
+to the `sentinel-2-l2a` collection. See [JSONPath Online
+Evaluator](https://jsonpath.com) to experiment with JSONPath and
 [regex101](https://regex101.com) to experiment with regex.
 
-#### tasks
+### CollectionMatcher Object
 
-The 'tasks' field is a dictionary with an optional key for each task. If present, it
+The `collection_matchers` array provides deterministic ordering to collection
+assignment. This is mutually exclusive with the legacy `collections` field in
+`UploadOptions`. Collection matchers are processed in the order they appear in the
+array, and the first match determines the collection assignment.
+
+| Field Name      | Type   | Description                                                                                     |
+| --------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| type            | string | **REQUIRED.** The matcher type. Supported values: "jsonpath", "catch_all"                       |
+| pattern         | string | **CONDITIONAL.** JSONPath pattern for matching Items. Required for all types except "catch_all" |
+| collection_name | string | **REQUIRED.** The collection ID to assign to matching Items                                     |
+
+Example:
+
+```json
+"collection_matchers": [
+    {
+        "type": "jsonpath",
+        "pattern": "$[?(@.id =~ 'LC08.*')]",
+        "collection_name": "landsat-c2l2"
+    },
+    {
+        "type": "jsonpath",
+        "pattern": "$[?(@.id =~ 'S2.*')]",
+        "collection_name": "sentinel-2-l2a"
+    },
+    {
+        "type": "catch_all",
+        "collection_name": "default-collection"
+    }
+]
+```
+
+### collection_options
+
+The `collection_options` field is a dictionary that allows you to specify
+collection-specific configuration options, including `UploadOptions` objects. For
+example, when uploading asset data to S3, the Task will first look for
+collection-specific upload options and fall back to the global options (the top-level
+`upload_options` dictionary) if none are found.
+
+Example:
+
+```json
+"collection_options": {
+    "sentinel-2-l2a": {
+        "upload_options": {
+            "path_template": "s3://sentinel-bucket/${collection}/${year}/${month}/${day}/${id}",
+            "headers": {
+                "StorageClass": "INTELLIGENT_TIERING"
+            }
+        }
+    },
+    "landsat-c2l2": {
+        "upload_options": {
+            "path_template": "s3://landsat-bucket/${collection}/${path}/${row}/${id}",
+            "public_assets": ["thumbnail", "overview"]
+        }
+    }
+}
+```
+
+### tasks
+
+The `tasks` field is a dictionary with an optional key for each task. If present, it
 contains a dictionary that is converted to a set of keywords and passed to the Task's
-`process` function. The documentation for each Task will provide the list of available
+`process` function. The documentation for each Task should provide the list of available
 parameters.
+
+Example:
 
 ```json
 {
@@ -153,23 +230,23 @@ In the example above, a task named `task-a` would have the `param1=value1` passe
 keyword, while `task-c` would have `param2=value2` passed. If there were a `task-b` to
 be run, it would not be passed any keywords.
 
-#### TaskConfig Object
 
-**DEPRECATED** The 'tasks' field _should_ be a dictionary of parameters, with task names
-as keys. See [tasks](#tasks) for more information. `TaskConfig` objects are supported
-for backwards compatibility.
+### workflow_options
 
-| Field Name | Type          | Description                                                                         |
-| ---------- | ------------- | ----------------------------------------------------------------------------------- |
-| name       | str           | **REQUIRED** Name of the task                                                       |
-| parameters | Map<str, str> | Dictionary of keyword parameters that will be passed to the Task `process` function |
-
-#### workflow_options
-
-The 'workflow_options' field is a dictionary of options that apply to all tasks in the
-workflow. The 'workflow_options' dictionary is combined with each task's option
-dictionary. If a key in the 'workflow_options' dictionary conflicts with a key in a
+The `workflow_options` field is a dictionary of options that apply to all tasks in the
+workflow. The `workflow_options` dictionary is combined with each task's option
+dictionary. If a key in the `workflow_options` dictionary conflicts with a key in a
 task's option dictionary, the task option value takes precedence.
+
+Example:
+
+```json
+{
+    "workflow_options": {
+        "global_param": "global_value"
+    }
+}
+```
 
 ### Full ProcessDefinition Example
 
@@ -178,14 +255,41 @@ task's option dictionary, the task option value takes precedence.
     "description": "My process configuration",
     "upload_options": {
         "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}",
-        "collections": {
-            "landsat-c2l2": "$[?(@.id =~ 'LC08.*')]"
+        "public_assets": ["thumbnail", "overview"]
+    },
+    "collection_matchers": [
+        {
+            "type": "jsonpath",
+            "pattern": "$[?(@.id =~ 'LC08.*')]",
+            "collection_name": "landsat-c2l2"
+        },
+        {
+            "type": "jsonpath",
+            "pattern": "$[?(@.id =~ 'S2.*')]",
+            "collection_name": "sentinel-2-l2a"
+        },
+        {
+            "type": "catch_all",
+            "collection_name": "default-collection"
+        }
+    ],
+    "collection_options": {
+        "sentinel-2-l2a": {
+            "upload_options": {
+                "path_template": "s3://sentinel-bucket/${collection}/${mgrs:utm_zone}/${mgrs:latitude_band}/${mgrs:grid_square}/${year}/${month}/${id}",
+                "headers": {
+                    "StorageClass": "INTELLIGENT_TIERING"
+                }
+            }
         }
     },
     "tasks": {
         "task-name": {
             "param": "value"
         }
+    },
+    "workflow_options": {
+        "global_param": "global_value"
     }
 }
 ```

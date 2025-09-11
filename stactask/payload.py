@@ -124,6 +124,14 @@ class Payload(dict[str, Any]):
     def collection_mapping(self) -> dict[str, str]:
         collection_mapping = self.global_upload_options.get("collections", {})
         if isinstance(collection_mapping, dict):
+            warnings.warn(
+                (
+                    "'upload_options.collections' is deprecated and will be removed in "
+                    "a future version. Use 'collection_matchers' instead."
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return collection_mapping
         else:
             raise TypeError("unable to parse 'collections': must be type dict")
