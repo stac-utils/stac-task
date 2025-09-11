@@ -230,7 +230,6 @@ In the example above, a task named `task-a` would have the `param1=value1` passe
 keyword, while `task-c` would have `param2=value2` passed. If there were a `task-b` to
 be run, it would not be passed any keywords.
 
-
 ### workflow_options
 
 The `workflow_options` field is a dictionary of options that apply to all tasks in the
@@ -399,26 +398,25 @@ And will now need to be updated to this form:
 
 ## Development
 
-Clone, install in editable mode with development and test requirements, and install the
-**pre-commit** hooks:
+Get [uv](https://docs.astral.sh/uv/getting-started/installation/). Then:
 
 ```shell
 git clone https://github.com/stac-utils/stac-task
 cd stac-task
-pip install -e '.[dev,test]'
-pre-commit install
+uv sync --all-extras
+uv run pre-commit install
 ```
 
 To run the tests:
 
 ```shell
-pytest
+uv run pytest
 ```
 
 To lint all the files:
 
 ```shell
-pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 ## Contributing
