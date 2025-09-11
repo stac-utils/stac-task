@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "stactask"
 version = "0.6.1"
@@ -5,7 +9,7 @@ authors = [{ name = "Matthew Hanson", email = "matt.a.hanson@gmail.com" }]
 maintainers = [{ name = "Ian Cooke", email = "ircwaves@gmail.com" }]
 description = "Class interface for running custom algorithms and workflows on STAC Items"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["pystac", "imagery", "raster", "catalog", "STAC"]
 license = { text = "Apache-2.0" }
 classifiers = [
@@ -14,10 +18,10 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "pystac>=1.6",
@@ -32,13 +36,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black~=24.0",
     "codespell~=2.3",
     "mypy~=1.9",
     "pre-commit~=3.7",
     "ruff~=0.6.5",
-    "types-setuptools~=75.1",
-    "boto3-stubs",
+    "boto3-stubs~=1.35.0",
 ]
 test = ["pytest~=8.0", "pytest-cov~=5.0", "pytest-env~=1.1", "moto~=5.0.5"]
 
@@ -69,6 +71,3 @@ env = [
     "AWS_SESSION_TOKEN=baz",
 ]
 filterwarnings = ["ignore::UserWarning:stactask.*:"]
-
-[tool.setuptools]
-packages = ["stactask"]
