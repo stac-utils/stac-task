@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Adds a `collection_matchers`
+  array to the payload process block to support deterministic order when collection
+  matching.
+- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Adds a `collection_options`
+  object to the payload process block to support collection-specific options such as
+  upload options.
+
+### Changed
+
+- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Separated the payload
+  data model from the Task class.
+- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Direct access to the
+  payload dictionary is now through `self.payload` rather than `self._payload`
+  (deprecated).
+- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Payload properties are now
+  accessed through `self.payload.<property>` rather than `self.<property>` (deprecated).
+
 ## [0.6.1]
 
 ### Added
