@@ -81,7 +81,7 @@ Provides configuration for a Task.
 | collection_matchers | [CollectionMatcher Object]   | **CONDITIONAL.** An array of `CollectionMatcher` objects used for collection assignment. Mutually exclusive with `upload_options.collections` |
 | collection_options  | Map<string, Map<string, Any> | Dictionary of collection-specific configuration options                                                                                       |
 | tasks               | Map<string, Map<string, Any> | Dictionary of task configurations                                                                                                             |
-| workflow_options    | Map<string, Any>             | Dictionary of configuration options applied to all tasks in the workflow                                                                      |
+| workflow_options    | Map<string, Any>             | Dictionary of configuration options applied to all tasks in a workflow                                                                        |
 
 Either `collection_matchers` OR `upload_options.collections` must be provided for
 collection assignment. When using `collection_matchers`, each referenced collection must
