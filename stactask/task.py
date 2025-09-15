@@ -40,24 +40,47 @@ class DeprecatedStoreTrueAction(argparse._StoreTrueAction):
 
 class Task(ABC):
     """
-    Tasks can use parameters provided in a `process` Dictionary that is supplied in
-    the ItemCollection JSON under the "process" field. An example process
-    definition:
+    Tasks can access input payload configuration in two ways: through properties and
+    methods on the `self.payload` Payload class (e.g.,
+    `self.payload.collection_options`) or by accessing the underlying dictionary
+    directly (e.g., `self.payload["process"]["collection_options"]`).
 
     ```
     {
-        "description": "My process configuration"
+        "description": "My process configuration",
         "upload_options": {
             "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}",
-            "collections": {
-                "landsat-c2l2": ""
+            "public_assets": ["thumbnail", "overview"]
+        },
+        "collection_matchers": [
+            {
+                "type": "jsonpath",
+                "pattern": "$[?(@.id =~ 'S2.*')]",
+                "collection_name": "sentinel-2-l2a"
+            },
+            {
+                "type": "catch_all",
+                "collection_name": "default-collection"
+            }
+        ],
+        "collection_options": {
+            "sentinel-2-l2a": {
+                "upload_options": {
+                    "path_template": "s3://sentinel-bucket/${collection}/${mgrs:utm_zone}/${mgrs:latitude_band}/${mgrs:grid_square}/${year}/${month}/${id}",
+                    "headers": {
+                        "StorageClass": "INTELLIGENT_TIERING"
+                    }
+                }
             }
         },
         "tasks": {
             "task-name": {
                 "param": "value"
             }
-        ]
+        },
+        "workflow_options": {
+            "global_param": "global_value"
+        }
     }
     ```
     """

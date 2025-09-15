@@ -53,8 +53,10 @@ class MyTask(Task):
             config=DownloadConfig(include=['data'])
         )
 
-        # operate on the local file to create a new asset
-        item = self.upload_item_assets_to_s3(item)
+        # operate on the local 'data' asset file to create a new asset...
+
+        # upload the new asset to S3
+        item = self.upload_item_assets_to_s3(item, assets=['new-asset'])
 
         # this task returns a single item
         return [item.to_dict(include_self_link=True, transform_hrefs=False)]
