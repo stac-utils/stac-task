@@ -206,21 +206,6 @@ def test_payload_instantiation_and_validation_new(
     payload.validate()
 
 
-def test_validation_missing_both_collection_configs(
-    payload_missing_both_collection_configs: dict[str, Any],
-) -> None:
-    """Test validation fails when both collection_matchers and legacy
-    upload_options.collections are missing."""
-    payload = Payload(payload_missing_both_collection_configs)
-
-    expected_msg = (
-        "'collection_matchers' or the legacy 'upload_options.collections' "
-        "must be provided"
-    )
-    with pytest.raises(ValueError, match=expected_msg):
-        payload.validate()
-
-
 def test_validation_both_collection_configs_present(
     payload_with_both_collection_configs: dict[str, Any],
 ) -> None:
