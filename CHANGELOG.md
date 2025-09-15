@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   (deprecated).
 - ([#176](https://github.com/stac-utils/stac-task/pull/167)) Payload properties are now
   accessed through `self.payload.<property>` rather than `self.<property>` (deprecated).
+- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Removed support for Python
+  3.9.
 
 ## [0.6.1]
 
