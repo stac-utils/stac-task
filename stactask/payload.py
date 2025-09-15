@@ -13,13 +13,6 @@ class Payload(dict[str, Any]):
         collection_matchers = self.collection_matchers
         self.collection_options
 
-        # a collection matchers list or a legacy collection mapping must exist
-        if not collection_matchers and not collection_mapping:
-            raise ValueError(
-                "'collection_matchers' or the legacy 'upload_options.collections' "
-                "must be provided"
-            )
-
         # collection matchers and the legacy collection mapping are mutually exclusive
         if collection_matchers and collection_mapping:
             raise ValueError(
