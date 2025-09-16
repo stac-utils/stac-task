@@ -61,7 +61,8 @@ def test_download_item_asset(tmp_path: Path, item_collection: dict[str, Any]) ->
     item = t.download_item_assets(
         t.items[0], config=DownloadConfig(include=["tileinfo_metadata"])
     )
-    assert Path(item.assets["tileinfo_metadata"].get_absolute_href()).is_file()
+    href = item.assets["tileinfo_metadata"].get_absolute_href()
+    assert href is not None and Path(href).is_file()
 
 
 def test_download_keep_original_filenames(
@@ -104,7 +105,7 @@ def test_download_item_asset_local(
     )
     assert "again" in item.self_href
     href = item.assets["tileinfo_metadata"].get_absolute_href()
-    assert "again" in href
+    assert href is not None and "again" in href
     assert Path(href).is_file()
 
 
@@ -120,8 +121,10 @@ def test_download_item_assets(tmp_path: Path, item_collection: dict[str, Any]) -
         config=DownloadConfig(include=["tileinfo_metadata", "granule_metadata"]),
     )
 
-    assert Path(item.assets["tileinfo_metadata"].get_absolute_href()).is_file()
-    assert Path(item.assets["granule_metadata"].get_absolute_href()).is_file()
+    href = item.assets["tileinfo_metadata"].get_absolute_href()
+    assert href is not None and Path(href).is_file()
+    href = item.assets["granule_metadata"].get_absolute_href()
+    assert href is not None and Path(href).is_file()
 
 
 def test_download_items_assets(tmp_path: Path, item_collection: dict[str, Any]) -> None:
@@ -135,7 +138,8 @@ def test_download_items_assets(tmp_path: Path, item_collection: dict[str, Any]) 
 
     assert len(items) == 2
     for item in items:
-        assert Path(item.assets[asset_key].get_absolute_href()).is_file()
+        href = item.assets[asset_key].get_absolute_href()
+        assert href is not None and Path(href).is_file()
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
@@ -150,4 +154,5 @@ def test_download_large_asset(tmp_path: Path, item_collection: dict[str, Any]) -
         t.items[0], config=DownloadConfig(s3_requester_pays=True, include=["red"])
     )
 
-    assert Path(item.assets["red"].get_absolute_href()).is_file()
+    href = item.assets["red"].get_absolute_href()
+    assert href is not None and Path(href).is_file()

@@ -247,7 +247,7 @@ def test_collection_mapping(nothing_task: Task) -> None:
     }
 
 
-@mock_aws  # type: ignore
+@mock_aws
 def test_s3_upload(nothing_task: Task, mock_s3_client: Callable[[], s3]) -> None:
     # start S3 mocks
     s3_client = boto3.client("s3")
