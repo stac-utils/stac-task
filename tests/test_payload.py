@@ -34,7 +34,7 @@ def legacy_payload() -> dict[str, Any]:
                     "task-a": {"param_a": "value_a"},
                     "task-b": {"param_b": "value_b"},
                 },
-            }
+            },
         ],
     }
 
@@ -80,20 +80,20 @@ def new_payload() -> dict[str, Any]:
                 ],
                 "collection_options": {
                     "sentinel-collection": {
-                        "upload_options": {"path_template": "/sentinel/${id}"}
+                        "upload_options": {"path_template": "/sentinel/${id}"},
                     },
                     "landsat-collection": {
-                        "upload_options": {"path_template": "/landsat/${id}"}
+                        "upload_options": {"path_template": "/landsat/${id}"},
                     },
                     "default-collection": {
-                        "upload_options": {"path_template": "/default/${id}"}
+                        "upload_options": {"path_template": "/default/${id}"},
                     },
                 },
                 "tasks": {
                     "new-task-a": {"new_param_a": "new_value_a"},
                     "new-task-b": {"new_param_b": "new_value_b"},
                 },
-            }
+            },
         ],
     }
 
@@ -108,7 +108,7 @@ def payload_missing_both_collection_configs() -> dict[str, Any]:
                 "workflow": "test-workflow",
                 "upload_options": {"path_template": "/test/${id}"},
                 "tasks": {"test-task": {}},
-            }
+            },
         ],
     }
 
@@ -130,10 +130,10 @@ def payload_with_both_collection_configs() -> dict[str, Any]:
                         "type": "jsonpath",
                         "pattern": "$[?(@.id == 'test-item')]",
                         "collection_name": "test-collection",
-                    }
+                    },
                 ],
                 "tasks": {"test-task": {}},
-            }
+            },
         ],
     }
 
@@ -153,10 +153,10 @@ def payload_collection_missing_upload_options() -> dict[str, Any]:
                         "type": "jsonpath",
                         "pattern": "$[?(@.id == 'test-item')]",
                         "collection_name": "missing-options-collection",
-                    }
+                    },
                 ],
                 "tasks": {"test-task": {}},
-            }
+            },
         ],
     }
 
@@ -177,10 +177,10 @@ def payload_collection_missing_upload_options_and_global_upload_options() -> (
                         "type": "jsonpath",
                         "pattern": "$[?(@.id == 'test-item')]",
                         "collection_name": "missing-options-collection",
-                    }
+                    },
                 ],
                 "tasks": {"test-task": {}},
-            }
+            },
         ],
     }
 
@@ -406,7 +406,7 @@ def test_process_definition_error_not_list(new_payload: dict[str, Any]) -> None:
 
     expected_msg = "unable to parse 'process': must be type list"
     with pytest.raises(TypeError, match=expected_msg):
-        payload.process_definition
+        _ = payload.process_definition
 
 
 def test_process_definition_error_first_not_dict(new_payload: dict[str, Any]) -> None:
@@ -418,7 +418,7 @@ def test_process_definition_error_first_not_dict(new_payload: dict[str, Any]) ->
         "unable to parse 'process': the first element of the list must be type dict"
     )
     with pytest.raises(TypeError, match=expected_msg):
-        payload.process_definition
+        _ = payload.process_definition
 
 
 def test_workflow_options_error_not_dict(new_payload: dict[str, Any]) -> None:
@@ -428,7 +428,7 @@ def test_workflow_options_error_not_dict(new_payload: dict[str, Any]) -> None:
 
     expected_msg = "unable to parse 'workflow_options': must be type dict"
     with pytest.raises(TypeError, match=expected_msg):
-        payload.workflow_options
+        _ = payload.workflow_options
 
 
 def test_task_options_dict_error_not_dict_or_list(new_payload: dict[str, Any]) -> None:
@@ -438,13 +438,13 @@ def test_task_options_dict_error_not_dict_or_list(new_payload: dict[str, Any]) -
 
     expected_msg = "unable to parse 'tasks': must be type dict or type list"
     with pytest.raises(TypeError, match=expected_msg):
-        payload.task_options_dict
+        _ = payload.task_options_dict
 
 
 def test_task_options_dict_error_params_not_dict(new_payload: dict[str, Any]) -> None:
     """Test task_options_dict raises TypeError when parameters not dict."""
     new_payload["process"][0]["tasks"] = [
-        {"name": "test-task", "parameters": "not_a_dict"}
+        {"name": "test-task", "parameters": "not_a_dict"},
     ]
     payload = Payload(new_payload)
 
@@ -452,7 +452,7 @@ def test_task_options_dict_error_params_not_dict(new_payload: dict[str, Any]) ->
         "unable to parse 'parameters' for task 'test-task': must be type dict"
     )
     with pytest.raises(TypeError, match=expected_msg):
-        payload.task_options_dict
+        _ = payload.task_options_dict
 
 
 def test_task_options_dict_error_options_not_dict(new_payload: dict[str, Any]) -> None:
@@ -462,7 +462,7 @@ def test_task_options_dict_error_options_not_dict(new_payload: dict[str, Any]) -
 
     expected_msg = "unable to parse options for task 'test-task': must be type dict"
     with pytest.raises(TypeError, match=expected_msg):
-        payload.task_options_dict
+        _ = payload.task_options_dict
 
 
 def test_items_as_dicts_error_features_not_list(new_payload: dict[str, Any]) -> None:
@@ -471,9 +471,10 @@ def test_items_as_dicts_error_features_not_list(new_payload: dict[str, Any]) -> 
     payload = Payload(new_payload)
 
     with pytest.raises(
-        TypeError, match="unable to parse 'features': must be type list"
+        TypeError,
+        match="unable to parse 'features': must be type list",
     ):
-        payload.items_as_dicts
+        _ = payload.items_as_dicts
 
 
 def test_upload_options_error_not_dict(new_payload: dict[str, Any]) -> None:
@@ -482,9 +483,10 @@ def test_upload_options_error_not_dict(new_payload: dict[str, Any]) -> None:
     payload = Payload(new_payload)
 
     with pytest.raises(
-        TypeError, match="unable to parse 'upload_options': must be type dict"
+        TypeError,
+        match="unable to parse 'upload_options': must be type dict",
     ):
-        payload.upload_options
+        _ = payload.upload_options
 
 
 def test_collection_mapping_error_not_dict(legacy_payload: dict[str, Any]) -> None:
@@ -493,9 +495,10 @@ def test_collection_mapping_error_not_dict(legacy_payload: dict[str, Any]) -> No
     payload = Payload(legacy_payload)
 
     with pytest.raises(
-        TypeError, match="unable to parse 'collections': must be type dict"
+        TypeError,
+        match="unable to parse 'collections': must be type dict",
     ):
-        payload.collection_mapping
+        _ = payload.collection_mapping
 
 
 def test_collection_matchers_error_not_list(new_payload: dict[str, Any]) -> None:
@@ -504,9 +507,10 @@ def test_collection_matchers_error_not_list(new_payload: dict[str, Any]) -> None
     payload = Payload(new_payload)
 
     with pytest.raises(
-        TypeError, match="unable to parse 'collection_matchers': must be type list"
+        TypeError,
+        match="unable to parse 'collection_matchers': must be type list",
     ):
-        payload.collection_matchers
+        _ = payload.collection_matchers
 
 
 def test_collection_matchers_error_not_dicts(new_payload: dict[str, Any]) -> None:
@@ -518,7 +522,7 @@ def test_collection_matchers_error_not_dicts(new_payload: dict[str, Any]) -> Non
         TypeError,
         match="unable to parse 'collection_matchers': each matcher must be type dict",
     ):
-        payload.collection_matchers
+        _ = payload.collection_matchers
 
 
 def test_collection_options_error_not_dict(new_payload: dict[str, Any]) -> None:
@@ -527,9 +531,10 @@ def test_collection_options_error_not_dict(new_payload: dict[str, Any]) -> None:
     payload = Payload(new_payload)
 
     with pytest.raises(
-        TypeError, match="unable to parse 'collection_options': must be type dict"
+        TypeError,
+        match="unable to parse 'collection_options': must be type dict",
     ):
-        payload.collection_options
+        _ = payload.collection_options
 
 
 # 5. Expected Payload Method Errors Tests

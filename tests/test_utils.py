@@ -26,7 +26,8 @@ def test_find_collection_with_mapping() -> None:
     assert find_collection({"a": "$[?(@.id =~ '.*')]"}, {"id": "1"}) == "a"
     assert (
         find_collection(
-            {"a": "$[?(@.id == '1')]", "b": "$[?(@.id == '2')]"}, {"id": "2"}
+            {"a": "$[?(@.id == '1')]", "b": "$[?(@.id == '2')]"},
+            {"id": "2"},
         )
         == "b"
     )
@@ -113,7 +114,7 @@ def test_find_collection_no_matchers_match() -> None:
             "type": "jsonpath",
             "pattern": "$[?(@.id == 'specific-item')]",
             "collection_name": "specific-collection",
-        }
+        },
     ]
 
     assert find_collection(matchers, {"id": "different-item"}) is None

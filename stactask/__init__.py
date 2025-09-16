@@ -1,12 +1,11 @@
+from contextlib import suppress
 from importlib.metadata import PackageNotFoundError, version
 
-try:
+with suppress(PackageNotFoundError):
     __version__ = version("stactask")
-except PackageNotFoundError:
-    # package is not installed
-    pass
 
 from .config import DownloadConfig
+from .payload import Payload
 from .task import Task
 
-__all__ = ["Task", "DownloadConfig"]
+__all__ = ["Task", "Payload", "DownloadConfig"]

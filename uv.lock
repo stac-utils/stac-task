@@ -1831,7 +1831,6 @@ wheels = [
 
 [[package]]
 name = "stactask"
-version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "boto3-utils" },

@@ -28,7 +28,8 @@ def stac_jsonpath_match(item: dict[str, Any], expr: str) -> bool:
 
 
 def _find_collection_from_mapping(
-    collection_mapping: dict[str, str], item: dict[str, Any]
+    collection_mapping: dict[str, str],
+    item: dict[str, Any],
 ) -> str | None:
     """Find the collection for a given STAC Item represented as a dictionary from a
        dictionary of collection names to JSONPath expressions.
@@ -53,7 +54,8 @@ def _find_collection_from_mapping(
 
 
 def _find_collection_from_matchers(
-    collection_matchers: list[dict[str, Any]], item: dict[str, Any]
+    collection_matchers: list[dict[str, Any]],
+    item: dict[str, Any],
 ) -> str | None:
     """Find the collection for a given STAC Item represented as a dictionary from a
     list of collection matcher dictionaries.
@@ -83,7 +85,8 @@ def _find_collection_from_matchers(
 
 
 def find_collection(
-    collection_config: dict[str, str] | list[dict[str, Any]], item: dict[str, Any]
+    collection_config: dict[str, str] | list[dict[str, Any]],
+    item: dict[str, Any],
 ) -> str | None:
     """Find the collection for a given STAC Item from either a list of collection
        matchers or a legacy collection mapping.
@@ -103,10 +106,9 @@ def find_collection(
 
     if isinstance(collection_config, dict):
         return _find_collection_from_mapping(collection_config, item)
-    elif isinstance(collection_config, list):
+    if isinstance(collection_config, list):
         return _find_collection_from_matchers(collection_config, item)
-    else:
-        raise TypeError(
-            f"Unsupported collection config type: {type(collection_config)}. "
-            "Expected dict or list of dicts."
-        )
+    raise TypeError(
+        f"Unsupported collection config type: {type(collection_config)}. "
+        "Expected dict or list of dicts.",
+    )

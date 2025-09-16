@@ -1,7 +1,9 @@
 import asyncio
 import logging
+from collections.abc import Iterable
 from os import path as op
-from typing import Any, Iterable
+from pathlib import Path
+from typing import Any
 
 import stac_asset
 from boto3utils import s3
@@ -48,10 +50,10 @@ async def download_items_assets(
                     config=config,
                     keep_non_downloaded=keep_non_downloaded,
                     file_name=file_name,
-                )
+                ),
             )
             for item in items
-        ]
+        ],
     )
 
 
@@ -104,25 +106,29 @@ def upload_item_assets_to_s3(
     # if assets not provided, upload all assets
     _assets = assets if assets is not None else _item["assets"].keys()
 
-    for key in [a for a in _assets if a in _item["assets"].keys()]:
+    for key in [a for a in _assets if a in _item["assets"]]:
         asset = _item["assets"][key]
         filename = asset["href"]
-        if not op.exists(filename):
-            logger.warning(f"Cannot upload {filename}: does not exist")
+        if not Path(filename).exists():
+            logger.warning("Cannot upload %s: does not exist", filename)
             continue
-        public = True if key in public_assets else False
+        public = key in public_assets
         _headers = {}
         if "type" in asset:
             _headers["ContentType"] = asset["type"]
         _headers.update(headers)
         # output URL
-        layout = LayoutTemplate(op.join(path_template, op.basename(filename)))
+        layout = LayoutTemplate(op.join(path_template, op.basename(filename)))  # noqa: PTH118, PTH119
         url = layout.substitute(item)
 
         # upload
-        logger.debug(f"Uploading {filename} to {url}")
+        logger.debug("Uploading %s to %s", filename, url)
         url_out = s3_client.upload(
-            filename, url, public=public, extra=_headers, http_url=not s3_urls
+            filename,
+            url,
+            public=public,
+            extra=_headers,
+            http_url=not s3_urls,
         )
         _item["assets"][key]["href"] = url_out
 

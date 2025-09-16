@@ -17,5 +17,4 @@ class TaskLoggerAdapter(_LoggerAdapter):
     def process(self, msg: str, kwargs: Any) -> tuple[str, Any]:
         if self.prefix is not None:
             return f"[{self.prefix}] {msg}", kwargs
-        else:
-            return msg, kwargs
+        return msg, kwargs
