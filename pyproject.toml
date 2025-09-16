@@ -45,11 +45,11 @@ dev = [
     "pytest-cov~=5.0",
     "pytest-env~=1.1",
     "moto~=5.0.5",
-    "sphinx-rtd-theme~=2.0.0",
+    "esbonio~=0.16.0",
 ]
 docs = [
-    "esbonio~=0.16.0",
     "sphinx~=7.3.7",
+    "sphinx-rtd-theme~=2.0.0",
 ]
 
 [project.urls]
