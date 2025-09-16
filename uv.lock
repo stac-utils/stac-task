@@ -1775,48 +1775,52 @@ dependencies = [
     { name = "stac-asset" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "boto3-stubs" },
     { name = "codespell" },
+    { name = "moto" },
     { name = "mypy" },
     { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-env" },
     { name = "ruff" },
+    { name = "sphinx-rtd-theme" },
 ]
 docs = [
     { name = "esbonio" },
     { name = "sphinx" },
-    { name = "sphinx-rtd-theme" },
-]
-test = [
-    { name = "moto" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-env" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "boto3-stubs", marker = "extra == 'dev'", specifier = "~=1.35.0" },
     { name = "boto3-utils", specifier = ">=0.3.2" },
-    { name = "codespell", marker = "extra == 'dev'", specifier = "~=2.3" },
-    { name = "esbonio", marker = "extra == 'docs'", specifier = "~=0.16.0" },
     { name = "fsspec", specifier = ">=2022.8.2" },
     { name = "jsonpath-ng", specifier = ">=1.5.3" },
-    { name = "moto", marker = "extra == 'test'", specifier = "~=5.0.5" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = "~=1.9" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = "~=3.7" },
     { name = "pystac", specifier = ">=1.6" },
-    { name = "pytest", marker = "extra == 'test'", specifier = "~=8.0" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = "~=5.0" },
-    { name = "pytest-env", marker = "extra == 'test'", specifier = "~=1.1" },
     { name = "python-dateutil", specifier = ">=2.7.0" },
     { name = "requests", specifier = ">=2.28.1" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = "~=0.6.5" },
     { name = "s3fs", specifier = ">=2022.8.2" },
-    { name = "sphinx", marker = "extra == 'docs'", specifier = "~=7.3.7" },
-    { name = "sphinx-rtd-theme", marker = "extra == 'docs'", specifier = "~=2.0.0" },
     { name = "stac-asset", specifier = ">=0.3.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "boto3-stubs", specifier = "~=1.35.0" },
+    { name = "codespell", specifier = "~=2.3" },
+    { name = "moto", specifier = "~=5.0.5" },
+    { name = "mypy", specifier = "~=1.9" },
+    { name = "pre-commit", specifier = "~=3.7" },
+    { name = "pytest", specifier = "~=8.0" },
+    { name = "pytest-cov", specifier = "~=5.0" },
+    { name = "pytest-env", specifier = "~=1.1" },
+    { name = "ruff", specifier = "~=0.6.5" },
+    { name = "sphinx-rtd-theme", specifier = "~=2.0.0" },
+]
+docs = [
+    { name = "esbonio", specifier = "~=0.16.0" },
+    { name = "sphinx", specifier = "~=7.3.7" },
 ]
 
 [[package]]

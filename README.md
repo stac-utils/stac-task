@@ -405,7 +405,7 @@ Get [uv](https://docs.astral.sh/uv/getting-started/installation/). Then:
 ```shell
 git clone https://github.com/stac-utils/stac-task
 cd stac-task
-uv sync --all-extras
+uv sync --group dev
 uv run pre-commit install
 ```
 
