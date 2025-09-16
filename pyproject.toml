@@ -1,10 +1,9 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "stactask"
-version = "0.6.1"
 authors = [{ name = "Matthew Hanson", email = "matt.a.hanson@gmail.com" }]
 maintainers = [{ name = "Ian Cooke", email = "ircwaves@gmail.com" }]
 description = "Class interface for running custom algorithms and workflows on STAC Items"
@@ -33,6 +32,15 @@ dependencies = [
     "requests>=2.28.1",
     "s3fs>=2022.8.2",
 ]
+dynamic = [
+    "version"
+]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "stactask/__version__.py"
 
 [dependency-groups]
 dev = [
