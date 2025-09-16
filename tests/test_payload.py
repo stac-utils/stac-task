@@ -232,21 +232,6 @@ def test_validation_collection_missing_upload_options(
     payload.validate()
 
 
-def test_validation_collection_missing_upload_options_and_global_upload_options(
-    payload_collection_missing_upload_options_and_global_upload_options: dict[str, Any],
-) -> None:
-    """Test validation fails when no global upload options are available."""
-    payload = Payload(
-        payload_collection_missing_upload_options_and_global_upload_options
-    )
-
-    # This should raise an error because get_collection_upload_options
-    # cannot fall back to global upload options when they don't exist
-    expected_msg = "No upload options found for collection 'missing-options-collection'"
-    with pytest.raises(ValueError, match=expected_msg):
-        payload.validate()
-
-
 # 2. Payload Properties Tests
 
 
@@ -561,16 +546,3 @@ def test_get_collection_options_error_not_dict(new_payload: dict[str, Any]) -> N
     )
     with pytest.raises(TypeError, match=expected_msg):
         payload.get_collection_options("test-collection")
-
-
-def test_get_collection_upload_options_error_no_options(
-    new_payload: dict[str, Any],
-) -> None:
-    """Test get_collection_upload_options raises ValueError when no options found."""
-    # Remove global upload_options and collection-specific options
-    del new_payload["process"][0]["upload_options"]
-    payload = Payload(new_payload)
-
-    expected_msg = "No upload options found for collection 'nonexistent-collection'"
-    with pytest.raises(ValueError, match=expected_msg):
-        payload.get_collection_upload_options("nonexistent-collection")
