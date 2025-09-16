@@ -8,10 +8,10 @@ sys.path.insert(0, os.path.abspath("../.."))  # Source code dir relative to this
 # -- Project information
 
 project = "STAC Task"
-copyright = "2021, Element 84, Inc."
+copyright = "2025, Element 84, Inc."
 
-release = "0.6"
-version = "0.6.1"
+release = "0.6.1"
+version = "0.6"
 
 # -- General configuration
 
