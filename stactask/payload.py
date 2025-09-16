@@ -7,7 +7,7 @@ class Payload(dict[str, Any]):
         self.process_definition
         self.workflow_options
         self.task_options_dict
-        self.global_upload_options
+        self.upload_options
         collection_mapping = self.collection_mapping
         self.items_as_dicts
         collection_matchers = self.collection_matchers
@@ -106,7 +106,7 @@ class Payload(dict[str, Any]):
             raise TypeError("unable to parse 'features': must be type list")
 
     @property
-    def global_upload_options(self) -> dict[str, Any]:
+    def upload_options(self) -> dict[str, Any]:
         upload_options = self.process_definition.get("upload_options", {})
         if isinstance(upload_options, dict):
             return upload_options
@@ -115,7 +115,7 @@ class Payload(dict[str, Any]):
 
     @property
     def collection_mapping(self) -> dict[str, str]:
-        collection_mapping = self.global_upload_options.get("collections", {})
+        collection_mapping = self.upload_options.get("collections", {})
         if isinstance(collection_mapping, dict):
             warnings.warn(
                 (
@@ -147,7 +147,7 @@ class Payload(dict[str, Any]):
             raise TypeError("unable to parse 'collection_options': must be type dict")
         return options
 
-    def get_collection_options(self, collection_name: str) -> dict[str, Any]:
+    def get_collection_options(self, collection_name: str) -> dict[str, dict[str, Any]]:
         options = self.collection_options.get(collection_name, {})
         if not isinstance(options, dict):
             raise TypeError(
@@ -157,9 +157,8 @@ class Payload(dict[str, Any]):
         return options
 
     def get_collection_upload_options(self, collection_name: str) -> dict[str, Any]:
-        options = (
-            self.get_collection_options(collection_name).get("upload_options", {})
-            or self.global_upload_options
+        options = self.get_collection_options(collection_name).get(
+            "upload_options", self.upload_options
         )
         if not options:
             raise ValueError(
