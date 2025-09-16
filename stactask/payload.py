@@ -4,20 +4,20 @@ from typing import Any
 
 class Payload(dict[str, Any]):
     def validate(self) -> None:
-        self.process_definition
-        self.workflow_options
-        self.task_options_dict
-        self.upload_options
+        _ = self.process_definition
+        _ = self.workflow_options
+        _ = self.task_options_dict
+        _ = self.upload_options
         collection_mapping = self.collection_mapping
-        self.items_as_dicts
+        _ = self.items_as_dicts
         collection_matchers = self.collection_matchers
-        self.collection_options
+        _ = self.collection_options
 
         # collection matchers and the legacy collection mapping are mutually exclusive
         if collection_matchers and collection_mapping:
             raise ValueError(
                 "A payload must not contain both 'collection_matchers' and the legacy "
-                "'upload_options.collections'"
+                "'upload_options.collections'",
             )
 
     @property
@@ -43,7 +43,7 @@ class Payload(dict[str, Any]):
         if not isinstance(process[0], dict):
             raise TypeError(
                 "unable to parse 'process': the first element of the list must be "
-                "type dict"
+                "type dict",
             )
 
         return process[0]
@@ -58,9 +58,9 @@ class Payload(dict[str, Any]):
     @property
     def task_options_dict(self) -> dict[str, dict[str, Any]]:
         task_options = self.process_definition.get("tasks", {})
-        if not isinstance(task_options, (dict, list)):
+        if not isinstance(task_options, dict | list):
             raise TypeError(
-                "unable to parse 'tasks': must be type dict or type list (deprecated)"
+                "unable to parse 'tasks': must be type dict or type list (deprecated)",
             )
 
         if isinstance(task_options, list):
@@ -80,7 +80,7 @@ class Payload(dict[str, Any]):
                 if not isinstance(parameters, dict):
                     raise TypeError(
                         f"unable to parse 'parameters' for task '{name}': "
-                        "must be type dict"
+                        "must be type dict",
                     )
                 options[name] = parameters
             return options
@@ -89,25 +89,25 @@ class Payload(dict[str, Any]):
             for name, options in task_options.items():
                 if not isinstance(options, dict):
                     raise TypeError(
-                        f"unable to parse options for task '{name}': must be type dict"
+                        f"unable to parse options for task '{name}': must be type dict",
                     )
             return task_options
+
+        return {}
 
     @property
     def items_as_dicts(self) -> list[dict[str, Any]]:
         features = self.get("features", [])
         if isinstance(features, list):
             return features
-        else:
-            raise TypeError("unable to parse 'features': must be type list")
+        raise TypeError("unable to parse 'features': must be type list")
 
     @property
     def upload_options(self) -> dict[str, Any]:
         upload_options = self.process_definition.get("upload_options", {})
         if isinstance(upload_options, dict):
             return upload_options
-        else:
-            raise TypeError("unable to parse 'upload_options': must be type dict")
+        raise TypeError("unable to parse 'upload_options': must be type dict")
 
     @property
     def collection_mapping(self) -> dict[str, str]:
@@ -122,8 +122,7 @@ class Payload(dict[str, Any]):
                 stacklevel=2,
             )
             return collection_mapping
-        else:
-            raise TypeError("unable to parse 'collections': must be type dict")
+        raise TypeError("unable to parse 'collections': must be type dict")
 
     @property
     def collection_matchers(self) -> list[dict[str, Any]]:
@@ -132,7 +131,7 @@ class Payload(dict[str, Any]):
             raise TypeError("unable to parse 'collection_matchers': must be type list")
         if not all(isinstance(matcher, dict) for matcher in matchers):
             raise TypeError(
-                "unable to parse 'collection_matchers': each matcher must be type dict"
+                "unable to parse 'collection_matchers': each matcher must be type dict",
             )
         return matchers
 
@@ -148,16 +147,17 @@ class Payload(dict[str, Any]):
         if not isinstance(options, dict):
             raise TypeError(
                 f"unable to parse 'collection_options' for collection "
-                f"'{collection_name}': must be type dict"
+                f"'{collection_name}': must be type dict",
             )
         return options
 
     def get_collection_upload_options(
-        self, collection_name: str | None
+        self,
+        collection_name: str | None,
     ) -> dict[str, Any]:
         if collection_name is None:
             return self.upload_options
-        else:
-            return self.get_collection_options(collection_name).get(
-                "upload_options", self.upload_options
-            )
+        return self.get_collection_options(collection_name).get(
+            "upload_options",
+            self.upload_options,
+        )

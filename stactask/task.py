@@ -2,16 +2,15 @@ import argparse
 import asyncio
 import json
 import logging
-import os
 import sys
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable
 from copy import deepcopy
-from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
-from typing import Any, Callable, Iterable
+from typing import Any
 
 import fsspec
 from boto3utils import s3
@@ -34,7 +33,7 @@ PathLike = str | Path
 
 class DeprecatedStoreTrueAction(argparse._StoreTrueAction):
     def __call__(self, parser, namespace, values, option_string=None) -> None:  # type: ignore
-        warnings.warn("Argument %s is deprecated." % self.option_strings)
+        warnings.warn(f"Argument {self.option_strings} is deprecated.", stacklevel=2)
         super().__call__(parser, namespace, values, option_string)
 
 
@@ -102,9 +101,8 @@ class Task(ABC):
         self.payload = Payload(payload)
         self.payload.validate()
 
-        if not skip_validation and validate:
-            if not self.validate():
-                raise FailedValidation()
+        if not skip_validation and validate and not self.validate():
+            raise FailedValidation()
 
         # set instance variables
         if skip_upload:
@@ -121,7 +119,7 @@ class Task(ABC):
             self._save_workdir = save_workdir if save_workdir is not None else False
         else:
             self._workdir = Path(workdir).absolute()
-            makedirs(self._workdir, exist_ok=True)
+            self._workdir.mkdir(parents=True, exist_ok=True)
             # if a workdir was specified we don't want to rm by default
             self._save_workdir = save_workdir if save_workdir is not None else True
 
@@ -224,8 +222,9 @@ class Task(ABC):
             "add_software_version is deprecated, "
             "use add_software_version_to_item instead",
             DeprecationWarning,
+            stacklevel=2,
         )
-        modified_items = list()
+        modified_items = []
         for item in items:
             modified_items.append(cls.add_software_version_to_item(item))
         return modified_items
@@ -263,16 +262,14 @@ class Task(ABC):
     def cleanup_workdir(self) -> None:
         """Remove work directory if configured not to save it"""
         try:
-            if (
-                not self._save_workdir
-                and self._workdir
-                and os.path.exists(self._workdir)
-            ):
+            if not self._save_workdir and self._workdir and self._workdir.exists():
                 self.logger.debug("Removing work directory %s", self._workdir)
                 rmtree(self._workdir)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.logger.warning(
-                "Failed removing work directory %s: %s", self._workdir, e
+                "Failed removing work directory %s: %s",
+                self._workdir,
+                e,
             )
 
     def assign_collections(self) -> None:
@@ -319,7 +316,7 @@ class Task(ABC):
                 config=config,
                 keep_non_downloaded=keep_non_downloaded,
                 file_name=file_name,
-            )
+            ),
         )
 
     def download_items_assets(
@@ -353,8 +350,8 @@ class Task(ABC):
                     config=config,
                     keep_non_downloaded=keep_non_downloaded,
                     file_name=file_name,
-                )
-            )
+                ),
+            ),
         )
 
     def upload_item_assets_to_s3(
@@ -365,10 +362,13 @@ class Task(ABC):
     ) -> Item:
         if self._upload:
             upload_options = self.payload.get_collection_upload_options(
-                item.collection_id
+                item.collection_id,
             )
             item = upload_item_assets_to_s3(
-                item=item, assets=assets, s3_client=s3_client, **upload_options
+                item=item,
+                assets=assets,
+                s3_client=s3_client,
+                **upload_options,
             )
         else:
             self.logger.warning("Skipping upload of new and modified assets")
@@ -410,7 +410,7 @@ class Task(ABC):
                     "rel": "derived_from",
                     "href": links[0],
                     "type": "application/json",
-                }
+                },
             )
         return new_item
 
@@ -456,7 +456,7 @@ class Task(ABC):
             if not isinstance(item["stac_extensions"], list):
                 raise TypeError(
                     "stac_extensions must be type list, "
-                    f"not type {type(item['stac_extensions'])}"
+                    f"not type {type(item['stac_extensions'])}",
                 )
             item["stac_extensions"].sort()
         return item
@@ -472,7 +472,7 @@ class Task(ABC):
 
             task = cls(payload, **kwargs)
             try:
-                items = list()
+                items = []
                 for item in task.process(**task.parameters):
                     items.append(task._post_process_item(item))
 
@@ -481,7 +481,7 @@ class Task(ABC):
 
                 return task.payload
             except Exception as err:
-                task.logger.error(err, exc_info=True)
+                task.logger.exception(err)
                 raise err
         finally:
             if task:
@@ -500,7 +500,9 @@ class Task(ABC):
 
         pparser = argparse.ArgumentParser(add_help=False)
         pparser.add_argument(
-            "--logging", default="INFO", help="DEBUG, INFO, WARN, ERROR, CRITICAL"
+            "--logging",
+            default="INFO",
+            help="DEBUG, INFO, WARN, ERROR, CRITICAL",
         )
 
         subparsers = parser0.add_subparsers(dest="command")
@@ -658,27 +660,27 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
                     f.write(json.dumps(payload_out))
 
 
-# from https://pythonalgos.com/runtimeerror-event-loop-is-closed-asyncio-fix/
-"""fix yelling at me error"""
-from asyncio.proactor_events import _ProactorBasePipeTransport  # noqa
-from functools import wraps  # noqa
+if sys.platform == "win32":
+    from asyncio.proactor_events import _ProactorBasePipeTransport
+    from functools import wraps
 
+    def _silence_event_loop_closed(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        """Suppress 'Event loop is closed' RuntimeError on Windows.
 
-def silence_event_loop_closed(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
-    @wraps(func)
-    def wrapper(self, *args: Any, **kwargs: Any) -> Any:  # type: ignore
-        try:
-            return func(self, *args, **kwargs)
-        except RuntimeError as e:
-            if str(e) != "Event loop is closed":
-                raise
+        This is a known issue with asyncio on Windows when using the ProactorEventLoop.
+        See: https://bugs.python.org/issue39232
+        """
 
-    return wrapper
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):  # type: ignore
+            try:
+                return func(self, *args, **kwargs)
+            except RuntimeError as e:
+                if "Event loop is closed" not in str(e):
+                    raise
 
+        return wrapper
 
-setattr(
-    _ProactorBasePipeTransport,
-    "__del__",
-    silence_event_loop_closed(_ProactorBasePipeTransport.__del__),
-)
-"""fix yelling at me error end"""
+    _ProactorBasePipeTransport.__del__ = _silence_event_loop_closed(  # type: ignore[method-assign]
+        _ProactorBasePipeTransport.__del__,
+    )

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import boto3
 import pytest
@@ -21,7 +22,7 @@ cassettepath = testpath / "fixtures" / "cassettes"
 @pytest.fixture
 def payload() -> dict[str, Any]:
     filename = testpath / "fixtures" / "sentinel2-l2a-j2k-payload.json"
-    with open(filename) as f:
+    with filename.open() as f:
         payload = json.loads(f.read())
     assert isinstance(payload, dict)
     return payload
@@ -70,12 +71,12 @@ def test_failed_validation(payload: dict[str, Any]) -> None:
 def test_deprecated_payload_dict(nothing_task: Task) -> None:
     nothing_task._payload["process"] = nothing_task._payload["process"][0]
     with pytest.warns(DeprecationWarning):
-        nothing_task.process_definition
+        _ = nothing_task.process_definition
 
 
 def test_workflow_options_append_task_options(nothing_task: Task) -> None:
     nothing_task._payload["process"][0]["workflow_options"] = {
-        "workflow_option": "workflow_option_value"
+        "workflow_option": "workflow_option_value",
     }
     parameters = nothing_task.parameters
     assert parameters == {
@@ -87,7 +88,7 @@ def test_workflow_options_append_task_options(nothing_task: Task) -> None:
 def test_workflow_options_populate_when_no_task_options(nothing_task: Task) -> None:
     nothing_task._payload["process"][0]["tasks"].pop("nothing-task")
     nothing_task._payload["process"][0]["workflow_options"] = {
-        "workflow_option": "workflow_option_value"
+        "workflow_option": "workflow_option_value",
     }
     parameters = nothing_task.parameters
     assert parameters == {
@@ -243,7 +244,7 @@ def test_parse_args_upload_and_validation() -> None:
 
 def test_collection_mapping(nothing_task: Task) -> None:
     assert nothing_task.collection_mapping == {
-        "sentinel-2-l2a": "$[?(@.id =~ 'S2[AB].*')]"
+        "sentinel-2-l2a": "$[?(@.id =~ 'S2[AB].*')]",
     }
 
 
