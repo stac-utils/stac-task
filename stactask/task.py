@@ -183,14 +183,11 @@ class Task(ABC):
     @property
     def upload_options(self) -> dict[str, Any]:
         warnings.warn(
-            (
-                "`upload_options` is deprecated, "
-                "use `payload.global_upload_options` instead"
-            ),
+            "`upload_options` is deprecated, use `payload.upload_options` instead",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.payload.global_upload_options
+        return self.payload.upload_options
 
     @property
     def collection_mapping(self) -> dict[str, str]:
@@ -369,7 +366,7 @@ class Task(ABC):
         if self._upload:
             if not self.payload.collection_options:
                 # preserve legacy behaviour
-                upload_options = self.payload.global_upload_options
+                upload_options = self.payload.upload_options
             else:
                 if item.collection_id is None:
                     raise ValueError(

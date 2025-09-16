@@ -306,18 +306,18 @@ def test_items_as_dicts_new(new_payload: dict[str, Any]) -> None:
     assert payload.items_as_dicts == expected
 
 
-def test_global_upload_options_legacy(legacy_payload: dict[str, Any]) -> None:
-    """Test global_upload_options property with legacy format."""
+def test_upload_options_legacy(legacy_payload: dict[str, Any]) -> None:
+    """Test upload_options property with legacy format."""
     payload = Payload(legacy_payload)
     expected = legacy_payload["process"][0]["upload_options"]
-    assert payload.global_upload_options == expected
+    assert payload.upload_options == expected
 
 
-def test_global_upload_options_new(new_payload: dict[str, Any]) -> None:
-    """Test global_upload_options property with new format."""
+def test_upload_options_new(new_payload: dict[str, Any]) -> None:
+    """Test upload_options property with new format."""
     payload = Payload(new_payload)
     expected = new_payload["process"][0]["upload_options"]
-    assert payload.global_upload_options == expected
+    assert payload.upload_options == expected
 
 
 def test_collection_mapping_legacy(legacy_payload: dict[str, Any]) -> None:
@@ -491,15 +491,15 @@ def test_items_as_dicts_error_features_not_list(new_payload: dict[str, Any]) -> 
         payload.items_as_dicts
 
 
-def test_global_upload_options_error_not_dict(new_payload: dict[str, Any]) -> None:
-    """Test global_upload_options raises ValueError when upload_options not dict."""
+def test_upload_options_error_not_dict(new_payload: dict[str, Any]) -> None:
+    """Test upload_options raises ValueError when upload_options not dict."""
     new_payload["process"][0]["upload_options"] = "not_a_dict"
     payload = Payload(new_payload)
 
     with pytest.raises(
         TypeError, match="unable to parse 'upload_options': must be type dict"
     ):
-        payload.global_upload_options
+        payload.upload_options
 
 
 def test_collection_mapping_error_not_dict(legacy_payload: dict[str, Any]) -> None:
