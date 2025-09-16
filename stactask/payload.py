@@ -152,7 +152,12 @@ class Payload(dict[str, Any]):
             )
         return options
 
-    def get_collection_upload_options(self, collection_name: str) -> dict[str, Any]:
-        return self.get_collection_options(collection_name).get(
-            "upload_options", self.upload_options
-        )
+    def get_collection_upload_options(
+        self, collection_name: str | None
+    ) -> dict[str, Any]:
+        if collection_name is None:
+            return self.upload_options
+        else:
+            return self.get_collection_options(collection_name).get(
+                "upload_options", self.upload_options
+            )

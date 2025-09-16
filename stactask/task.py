@@ -364,18 +364,9 @@ class Task(ABC):
         s3_client: Optional[s3] = None,
     ) -> Item:
         if self._upload:
-            if not self.payload.collection_options:
-                # preserve legacy behaviour
-                upload_options = self.payload.upload_options
-            else:
-                if item.collection_id is None:
-                    raise ValueError(
-                        f"Unable to get upload options for Item '{item.id}' because it "
-                        "does not have an assigned collection"
-                    )
-                upload_options = self.payload.get_collection_upload_options(
-                    item.collection_id
-                )
+            upload_options = self.payload.get_collection_upload_options(
+                item.collection_id
+            )
             item = upload_item_assets_to_s3(
                 item=item, assets=assets, s3_client=s3_client, **upload_options
             )
