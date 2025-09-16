@@ -9,49 +9,49 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Adds a `collection_matchers`
+- ([#176]) Adds a `collection_matchers`
   array to the payload process block to support deterministic order when collection
   matching.
-- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Adds a `collection_options`
+- ([#176]) Adds a `collection_options`
   object to the payload process block to support collection-specific options such as
   upload options.
 
 ### Changed
 
-- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Separated the payload
+- ([#176]) Separated the payload
   data model from the Task class.
-- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Direct access to the
+- ([#176]) Direct access to the
   payload dictionary is now through `self.payload` rather than `self._payload`
   (deprecated).
-- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Payload properties are now
+- ([#176]) Payload properties are now
   accessed through `self.payload.<property>` rather than `self.<property>` (deprecated).
-- ([#176](https://github.com/stac-utils/stac-task/pull/167)) Removed support for Python
+- ([#176]) Removed support for Python
   3.9.
 
 ## [0.6.1]
 
 ### Added
 
-- ([#167](https://github.com/stac-utils/stac-task/pull/167)) Adds workflow-level
+- ([#167]) Adds workflow-level
   options to the ProcessDefinition object in a new `workflow_options` field. They are
   combined with each task's options, giving precedence to the task options on conflict.
-- ([#167](https://github.com/stac-utils/stac-task/pull/167)) Adds a `workflow_options`
+- ([#167]) Adds a `workflow_options`
   property to the `Task` class that returns the `workflow_options` dictionary from the
   `ProcessDefinition` object.
-- ([#167](https://github.com/stac-utils/stac-task/pull/167)) Adds a `task_options`
+- ([#167]) Adds a `task_options`
   property to the `Task` class that returns the task options from the `tasks` dictionary
   in the `ProcessDefinition` object.
 
 ### Deprecated
 
-- ([#166](https://github.com/stac-utils/stac-task/pull/166)) Bare `ProcessDefinition`
+- ([#166]) Bare `ProcessDefinition`
   objects are deprecated in favor of arrays of `ProcessDefinition` objects.
 
 ## [0.6.0]
 
 ### ⚠️ Breaking Change
 
-- ([#147](https://github.com/stac-utils/stac-task/pull/147)) Moved
+- ([#147]) Moved
   `Task.validate` from class method to instance method, availing
   implementers of other instance convenience methods (i.e. `self.parameters`).
 
@@ -99,13 +99,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- ([#92](https://github.com/stac-utils/stac-task/pull/92)) Task.upload_item_assets_to_s3 and asset_io.upload_item_assets_to_s3 support explicitly specifying the boto3utils3.s3 object.
+- ([#92]) Task.upload_item_assets_to_s3 and asset_io.upload_item_assets_to_s3 support explicitly specifying the boto3utils3.s3 object.
 
 ## [v0.4.1] - 2024-03-06
 
 ### Fixed
 
-- ([#90](https://github.com/stac-utils/stac-task/pull/90)) Block asset_io
+- ([#90]) Block asset_io
   module from reaching out to upstream stac APIs (especially on NASA Wednesdays
   `transform_hrefs=False`)
 
@@ -113,14 +113,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- ([#86](https://github.com/stac-utils/stac-task/pull/86)) Guard cleanup of workdir to ensure task was actually created.
+- ([#86]) Guard cleanup of workdir to ensure task was actually created.
 
 ### Added
 
-- ([#72](https://github.com/stac-utils/stac-task/pull/72)) Given that `_get_file` is part of the `AsyncFileSystem` spec, this
+- ([#72]) Given that `_get_file` is part of the `AsyncFileSystem` spec, this
   adds the synchronous `get_file` as a way to retrieve files if `_get_file` is
   not found.
-- ([#77](https://github.com/stac-utils/stac-task/pull/77)) Added option `keep_original_filenames` to download routines to
+- ([#77]) Added option `keep_original_filenames` to download routines to
   support legacy applications dependent on filename specifics.
 
 ## [v0.3.0] - 2023-12-20
@@ -135,9 +135,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Ensure `workdir` is an absolute path
-  ([#54](https://github.com/stac-utils/stac-task/pull/51)).
+  ([#54]).
 - When a `workdir` is set for a `Task` the `workdir` will no longer be removed
-  by default ([#51](https://github.com/stac-utils/stac-task/pull/51)). That is,
+  by default ([#51]). That is,
   the `save_workdir` argument to `Task` constructor now defaults to `None`, and
   if left as `None` the default behavior is now conditional on whether or not a
       `workdir` is specified.
@@ -154,8 +154,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Typing ([#11](https://github.com/stac-utils/stac-task/pull/11), [#25](https://github.com/stac-utils/stac-task/pull/25))
-- Removed console scripts ([#18](https://github.com/stac-utils/stac-task/pull/18))
+- Typing ([#11], [#25])
+- Removed console scripts ([#18])
 
 ## [v0.1.0] - 2022-10-31
 
@@ -173,3 +173,18 @@ Initial release.
 [v0.2.0]: <https://github.com/stac-utils/stac-task/compare/v0.1.1...v0.2.0>
 [v0.1.1]: <https://github.com/stac-utils/stac-task/compare/v0.1.0...v0.1.1>
 [v0.1.0]: <https://github.com/stac-utils/stac-task/tree/v0.1.0>
+
+[#176]: https://github.com/stac-utils/stac-task/pull/176
+[#167]: https://github.com/stac-utils/stac-task/pull/167
+[#166]: https://github.com/stac-utils/stac-task/pull/166
+[#147]: https://github.com/stac-utils/stac-task/pull/147
+[#92]: https://github.com/stac-utils/stac-task/pull/92
+[#90]: https://github.com/stac-utils/stac-task/pull/90
+[#86]: https://github.com/stac-utils/stac-task/pull/86
+[#77]: https://github.com/stac-utils/stac-task/pull/77
+[#72]: https://github.com/stac-utils/stac-task/pull/72
+[#54]: https://github.com/stac-utils/stac-task/pull/54
+[#51]: https://github.com/stac-utils/stac-task/pull/51
+[#25]: https://github.com/stac-utils/stac-task/pull/25
+[#18]: https://github.com/stac-utils/stac-task/pull/18
+[#11]: https://github.com/stac-utils/stac-task/pull/11
