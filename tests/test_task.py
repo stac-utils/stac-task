@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import json
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import boto3
 import pytest
@@ -117,7 +117,7 @@ def test_edit_items2(nothing_task: Task) -> None:
 
 
 @pytest.mark.parametrize("save_workdir", [False, True, None])
-def test_tmp_workdir(payload: dict[str, Any], save_workdir: Optional[bool]) -> None:
+def test_tmp_workdir(payload: dict[str, Any], save_workdir: bool | None) -> None:
     t = NothingTask(payload, save_workdir=save_workdir)
     expected = save_workdir if save_workdir is not None else False
     assert t._save_workdir is expected
@@ -133,7 +133,7 @@ def test_tmp_workdir(payload: dict[str, Any], save_workdir: Optional[bool]) -> N
 def test_workdir(
     payload: dict[str, Any],
     tmp_path: Path,
-    save_workdir: Optional[bool],
+    save_workdir: bool | None,
 ) -> None:
     t = NothingTask(payload, workdir=tmp_path / "test_task", save_workdir=save_workdir)
     expected = save_workdir if save_workdir is not None else True

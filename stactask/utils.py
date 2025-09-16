@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 
 from jsonpath_ng.ext import parser
 
@@ -29,7 +29,7 @@ def stac_jsonpath_match(item: dict[str, Any], expr: str) -> bool:
 
 def _find_collection_from_mapping(
     collection_mapping: dict[str, str], item: dict[str, Any]
-) -> Optional[str]:
+) -> str | None:
     """Find the collection for a given STAC Item represented as a dictionary from a
        dictionary of collection names to JSONPath expressions.
 
@@ -39,7 +39,7 @@ def _find_collection_from_mapping(
         item (dict): A STAC Item
 
     Returns:
-        Optional[str]: Returns None if no JSONPath expression matches, returns a
+        str | None: Returns None if no JSONPath expression matches, returns a
         collection name if one does
     """
     return next(
@@ -54,7 +54,7 @@ def _find_collection_from_mapping(
 
 def _find_collection_from_matchers(
     collection_matchers: list[dict[str, Any]], item: dict[str, Any]
-) -> Optional[str]:
+) -> str | None:
     """Find the collection for a given STAC Item represented as a dictionary from a
     list of collection matcher dictionaries.
 
@@ -64,7 +64,7 @@ def _find_collection_from_matchers(
         item: A STAC Item represented as a dictionary.
 
     Returns:
-        Optional[str]: Returns None if no matcher matches, returns a collection
+        str | None: Returns None if no matcher matches, returns a collection
         name if one does.
     """
     for matcher in collection_matchers:
@@ -83,8 +83,8 @@ def _find_collection_from_matchers(
 
 
 def find_collection(
-    collection_config: Union[dict[str, str], list[dict[str, Any]]], item: dict[str, Any]
-) -> Optional[str]:
+    collection_config: dict[str, str] | list[dict[str, Any]], item: dict[str, Any]
+) -> str | None:
     """Find the collection for a given STAC Item from either a list of collection
        matchers or a legacy collection mapping.
 
@@ -95,7 +95,7 @@ def find_collection(
         item (dict): A STAC Item represented as a dictionary.
 
     Returns:
-        Optional[str]: Returns None if no match is found, returns a collection name if
+        str | None: Returns None if no match is found, returns a collection name if
         one is found.
     """
     if not collection_config:
