@@ -11,7 +11,7 @@ from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
-from typing import Any, Callable, Iterable, Optional, Union
+from typing import Any, Callable, Iterable
 
 import fsspec
 from boto3utils import s3
@@ -29,7 +29,7 @@ from .payload import Payload
 from .utils import find_collection as utils_find_collection
 
 # types
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 
 class DeprecatedStoreTrueAction(argparse._StoreTrueAction):
@@ -92,8 +92,8 @@ class Task(ABC):
     def __init__(
         self: "Task",
         payload: dict[str, Any],
-        workdir: Optional[PathLike] = None,
-        save_workdir: Optional[bool] = None,
+        workdir: PathLike | None = None,
+        save_workdir: bool | None = None,
         skip_upload: bool = False,  # deprecated
         skip_validation: bool = False,  # deprecated
         upload: bool = True,
@@ -280,7 +280,7 @@ class Task(ABC):
         upload_options collections attribute according to the first matching
         expression in the order they are defined."""
         if self.payload.collection_matchers:
-            collection_config: Union[dict[str, str], list[dict[str, Any]]] = (
+            collection_config: dict[str, str] | list[dict[str, Any]] = (
                 self.payload.collection_matchers
             )
         else:
@@ -294,9 +294,9 @@ class Task(ABC):
         self,
         item: Item,
         path_template: str = "${collection}/${id}",
-        config: Optional[DownloadConfig] = None,
+        config: DownloadConfig | None = None,
         keep_non_downloaded: bool = True,
-        file_name: Optional[str] = "item.json",
+        file_name: str | None = "item.json",
     ) -> Item:
         """Download provided asset keys for the given item. Assets are
         saved in workdir in a directory (as specified by path_template), and
@@ -304,13 +304,13 @@ class Task(ABC):
 
         Args:
             item (pystac.Item): STAC Item for which assets need be downloaded.
-            path_template (Optional[str]): String to be interpolated to specify
+            path_template (str | None): String to be interpolated to specify
                 where to store downloaded files.
-            config (Optional[DownloadConfig]): Configuration for downloading an item
+            config (DownloadConfig | None): Configuration for downloading an item
                 and its assets.
-            keep_original_filenames (Optional[bool]): Controls whether original
+            keep_original_filenames (bool | None): Controls whether original
                 file names should be used, or asset key + extension.
-            file_name (Optional[str]): The name of the item file to save.
+            file_name (str | None): The name of the item file to save.
         """
         return asyncio.get_event_loop().run_until_complete(
             download_item_assets(
@@ -326,9 +326,9 @@ class Task(ABC):
         self,
         items: Iterable[Item],
         path_template: str = "${collection}/${id}",
-        config: Optional[DownloadConfig] = None,
+        config: DownloadConfig | None = None,
         keep_non_downloaded: bool = True,
-        file_name: Optional[str] = "item.json",
+        file_name: str | None = "item.json",
     ) -> list[Item]:
         """Download provided asset keys for the given items. Assets are
         saved in workdir in a directory (as specified by path_template), and
@@ -337,13 +337,13 @@ class Task(ABC):
         Args:
             items (list[pystac.Item]): List of STAC Items for which assets need
                 be downloaded.
-            path_template (Optional[str]): String to be interpolated to specify
+            path_template (str | None): String to be interpolated to specify
                 where to store downloaded files.
-            config (Optional[DownloadConfig]): Configuration for downloading items
+            config (DownloadConfig | None): Configuration for downloading items
                 and their assets.
-            keep_original_filenames (Optional[bool]): Controls whether original
+            keep_original_filenames (bool | None): Controls whether original
                 file names should be used, or asset key + extension.
-            file_name (Optional[str]): The name of the item file to save.
+            file_name (str | None): The name of the item file to save.
         """
         return list(
             asyncio.get_event_loop().run_until_complete(
@@ -360,8 +360,8 @@ class Task(ABC):
     def upload_item_assets_to_s3(
         self,
         item: Item,
-        assets: Optional[list[str]] = None,
-        s3_client: Optional[s3] = None,
+        assets: list[str] | None = None,
+        s3_client: s3 | None = None,
     ) -> Item:
         if self._upload:
             upload_options = self.payload.get_collection_upload_options(
@@ -386,7 +386,7 @@ class Task(ABC):
     def upload_local_item_assets_to_s3(
         self,
         item: Item,
-        s3_client: Optional[s3] = None,
+        s3_client: s3 | None = None,
     ) -> Item:
         return self.upload_item_assets_to_s3(
             item=item,
