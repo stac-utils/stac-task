@@ -76,19 +76,14 @@ Task input is referred to as a "payload" and has the following top-level fields.
 
 Provides configuration for a Task.
 
-| Field Name          | Type                         | Description                                                                                                                                   |
-| ------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| description         | string                       | Description of the process configuration                                                                                                      |
-| upload_options      | UploadOptions Object         | **CONDITIONAL.** An `UploadOptions` object                                                                                                    |
-| collection_matchers | [CollectionMatcher Object]   | **CONDITIONAL.** An array of `CollectionMatcher` objects used for collection assignment. Mutually exclusive with `upload_options.collections` |
-| collection_options  | Map<string, Map<string, Any> | Dictionary of collection-specific configuration options                                                                                       |
-| tasks               | Map<string, Map<string, Any> | Dictionary of task configurations                                                                                                             |
-| workflow_options    | Map<string, Any>             | Dictionary of configuration options applied to all tasks in a workflow                                                                        |
-
-Either `collection_matchers` OR `upload_options.collections` must be provided for
-collection assignment. When using `collection_matchers`, each referenced collection must
-have upload options available either in `collection_options` or in the global
-`upload_options`.
+| Field Name          | Type                         | Description                                                                                                                  |
+| ------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| description         | string                       | Description of the process configuration                                                                                     |
+| upload_options      | UploadOptions Object         | An `UploadOptions` object                                                                                                    |
+| collection_matchers | [CollectionMatcher Object]   | An array of `CollectionMatcher` objects used for collection assignment. Mutually exclusive with `upload_options.collections` |
+| collection_options  | Map<string, Map<string, Any> | Dictionary of collection-specific configuration options                                                                      |
+| tasks               | Map<string, Map<string, Any> | Dictionary of task configurations                                                                                            |
+| workflow_options    | Map<string, Any>             | Dictionary of configuration options applied to all tasks in a workflow                                                       |
 
 ### UploadOptions Object
 
