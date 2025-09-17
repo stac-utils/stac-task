@@ -89,6 +89,9 @@ A possible input payload looks like the following:
       "id": "my-task/workflow-my-task/5427299e5b635537f33c07e0ad32fb87",
       "process": [
          {
+            "upload_options": {
+               "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}"
+            },
             "collection_matchers": [
                {
                   "type": "jsonpath",
@@ -96,13 +99,6 @@ A possible input payload looks like the following:
                   "collection_name": "my-collection"
                }
             ],
-            "collection_options": {
-               "my-collection": {
-                  "upload_options": {
-                     "path_template": "{collection}/{year}/{month}/{day}/{item_id}"
-                  }
-               }
-            },
             "tasks": {
                "my-task": {
                   "item_id": "G23923"
@@ -117,16 +113,15 @@ collection. More than one matcher can be defined, and the first one that matches
 used. In this case, we only have one matcher defined that matches on any Item ``id``
 value. Collection assignment occurs after the Tasks's ``process`` method is called.
 
-The ``collection_options`` object defines AWS S3 upload options for Item assets for each
-collection. In this case, we define a path template that uses the collection ID, year,
-month, day, and Item ID to construct the S3 key for the Item assets. Our example Task
-does not upload any Item assets to S3, so the upload options are not used and could
+The ``upload_options`` object defines AWS S3 upload options for Item assets In this
+case, the only option defined is a ``path_template`` that uses an Item's collection ID,
+year, month, day, and ID to construct the S3 key for the Item's assets. Our example Task
+does not upload any Item assets to S3, so the ``upload_options`` are not used and could
 be an empty object in this case.
 
 Running the example module defined above with ``python my-task.py run in.json`` results
 in the following output JSON, which contains the original input payload plus a new
-``features`` attribute array containing the Item created by the Task's ``process``
-method.
+``features`` array containing the Item created by the Task's ``process`` method.
 
 .. code-block:: json
 
