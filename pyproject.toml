@@ -65,6 +65,7 @@ docs = [
 Issues = "https://github.com/stac-utils/stactask/issues"
 Github = "https://github.com/stac-utils/stac-task"
 Changelog = "https://github.com/stac-utils/stac-task/blob/main/CHANGELOG.md"
+Documentation = "https://stac-task.readthedocs.io/en/stable/"
 
 [tool.mypy]
 strict = true
