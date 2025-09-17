@@ -51,22 +51,22 @@ containing a task parameter ``item_id`` and generates a STAC Item with this ID.
       # override from Task
       def process(self, **kwargs: Any) -> list[dict[str, Any]]:
          item = Item(
-               id=self.task_options["item_id"],
-               geometry={
-                  "type": "Polygon",
-                  "coordinates": [
-                     [
-                           [100.0, 0.0],
-                           [101.0, 0.0],
-                           [101.0, 1.0],
-                           [100.0, 1.0],
-                           [100.0, 0.0],
-                     ]
-                  ],
-               },
-               bbox=None,
-               datetime=datetime.now(timezone.utc),
-               properties={},
+            id=self.task_options["item_id"],
+            geometry={
+               "type": "Polygon",
+               "coordinates": [
+                  [
+                     [100.0, 0.0],
+                     [101.0, 0.0],
+                     [101.0, 1.0],
+                     [100.0, 1.0],
+                     [100.0, 0.0],
+                  ]
+               ],
+            },
+            bbox=None,
+            datetime=datetime.now(timezone.utc),
+            properties={},
          )
 
          self.logger.debug(f"Created Item with id '{item.id}'")
