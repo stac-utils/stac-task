@@ -462,6 +462,22 @@ class Task(ABC):
         return item
 
     @classmethod
+    def configure_logging(cls, loglevel: str) -> None:
+        """Configures logging."""
+        logging.basicConfig(level=loglevel)
+
+        # quiet these loud loggers
+        for ql in [
+            "botocore",
+            "s3transfer",
+            "urllib3",
+            "fsspec",
+            "asyncio",
+            "aiobotocore",
+        ]:
+            logging.getLogger(ql).propagate = False
+
+    @classmethod
     def handler(cls, payload: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
         task = None
         try:
@@ -612,7 +628,7 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
             if pargs.get("output") is None:
                 pargs["output"] = Path(pargs["workdir"]) / "output-payload.json"
 
-        if pargs.get("command", None) is None:
+        if pargs.get("command") is None:
             parser.print_help()
             sys.exit(0)
 
@@ -625,18 +641,7 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
 
         # logging
         loglevel = args.pop("logging")
-        logging.basicConfig(level=loglevel)
-
-        # quiet these loud loggers
-        for ql in [
-            "botocore",
-            "s3transfer",
-            "urllib3",
-            "fsspec",
-            "asyncio",
-            "aiobotocore",
-        ]:
-            logging.getLogger(ql).propagate = False
+        cls.configure_logging(loglevel)
 
         if cmd == "run":
             href = args.pop("input", None)
