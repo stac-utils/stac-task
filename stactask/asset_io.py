@@ -145,7 +145,7 @@ def read_s3_item_json(
         s3_client = global_s3_client
 
     if not s3_client.exists(url):
-        logger.warning("Item does not exist at %s", url)
+        logger.warning("Item does not exist at %s", url, exc_info=True)
         return None
 
     try:
