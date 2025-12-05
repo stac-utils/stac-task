@@ -133,3 +133,45 @@ def upload_item_assets_to_s3(
         _item["assets"][key]["href"] = url_out
 
     return Item.from_dict(_item)
+
+
+def read_s3_item_json(
+    url: str,
+    s3_client: s3 | None = None,
+) -> Item | None:
+    """Attempt to read-in a STAC Item JSON from S3"""
+
+    if s3_client is None:
+        s3_client = global_s3_client
+
+    if not s3_client.exists(url):
+        logger.warning("Item does not exist at %s", url)
+        return None
+
+    try:
+        item_dict = s3_client.read_json(url)
+        return Item.from_dict(item_dict)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Could not read item from %s: %s", url, e)
+        return None
+
+
+def upload_item_json_to_s3(
+    item: Item,
+    url: str,
+    s3_client: s3 | None = None,
+    public: bool = False,
+) -> None:
+    """Upload a STAC Item JSON to S3.
+
+    Args:
+        item: STAC Item to upload
+        url: S3 URL to upload to
+        s3_client: S3 client to use. Defaults to global_s3_client.
+        public: Whether to make the uploaded item public. Defaults to False.
+    """
+    if s3_client is None:
+        s3_client = global_s3_client
+
+    logger.debug("Uploading item JSON to %s", url)
+    s3_client.upload_json(item.to_dict(transform_hrefs=False), url, public=public)

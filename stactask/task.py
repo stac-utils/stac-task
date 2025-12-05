@@ -7,6 +7,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -14,12 +15,16 @@ from typing import Any
 
 import fsspec
 from boto3utils import s3
-from pystac import Asset, Item, ItemCollection
+from pystac import Asset, Item, ItemCollection, Link
+from pystac.layout import LayoutTemplate
+from pystac.utils import datetime_to_str
 
 from .asset_io import (
     download_item_assets,
     download_items_assets,
+    read_s3_item_json,
     upload_item_assets_to_s3,
+    upload_item_json_to_s3,
 )
 from .config import DownloadConfig
 from .exceptions import FailedValidation
@@ -393,6 +398,90 @@ class Task(ABC):
             assets=self._get_local_asset_keys(item),
             s3_client=s3_client,
         )
+
+    def _update_item_timestamps(
+        self,
+        item: Item,
+        url: str,
+        s3_client: s3 | None = None,
+    ) -> None:
+        now = datetime_to_str(datetime.now(timezone.utc))
+        created = item.properties.get("created")
+
+        existing_item = read_s3_item_json(url, s3_client=s3_client)
+        if existing_item is not None:
+            created = existing_item.properties.get("created")
+
+        if created is None:
+            created = now
+
+        item.properties["created"] = created
+        item.properties["updated"] = now
+
+    def _update_item_links(self, item: Item, url: str) -> None:
+        # Remove existing self and canonical links
+        item.links = [
+            link for link in item.links if link.rel not in ["self", "canonical"]
+        ]
+
+        # Add new canonical and self links
+        item.add_link(Link(rel="canonical", target=url, media_type="application/json"))
+        item.add_link(Link(rel="self", target=url, media_type="application/json"))
+
+    def upload_item_to_s3(
+        self,
+        item: Item,
+        s3_client: s3 | None = None,
+        public: bool = False,
+    ) -> Item:
+        """Upload a STAC Item JSON to S3.
+
+        Note:
+            * Since this method uploads the Item in its present state, it should only
+              be called after all asset HREFs are finalized, for instance, after assets
+              have been uploaded to S3 via upload_item_assets_to_s3.
+            * The method will change certain Item properties and Links:
+                * if there is no `created` timestamp it is set
+                * the `updated` timestamp is set
+                * canonical and self links are added/updated
+            * The input item is modified in-place; same item is returned.
+
+        Args:
+            item: STAC Item to upload
+            s3_client: S3 client to use. Defaults to global_s3_client.
+            public: Whether to make the uploaded item public. Defaults to False.
+        """
+        if not self._upload:
+            self.logger.warning("Skipping upload of item")
+            return item
+
+        # Validate upload_options and path_template
+        path_template = self.payload.upload_options.get("path_template")
+        if not path_template:
+            raise ValueError(
+                f"Missing required 'path_template' in upload_options "
+                f"for collection '{item.collection_id}'",
+            )
+
+        # Generate S3 URL
+        layout = LayoutTemplate(f"{path_template}/{item.id}.json")
+        url = layout.substitute(item)
+
+        # Update timestamps
+        self._update_item_timestamps(item, url, s3_client)
+
+        # Update links
+        self._update_item_links(item, url)
+
+        # Upload to S3
+        upload_item_json_to_s3(
+            item,
+            url,
+            s3_client=s3_client,
+            public=public,
+        )
+
+        return item
 
     # this should be in PySTAC
     @staticmethod
