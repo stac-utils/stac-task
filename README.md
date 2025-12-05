@@ -58,6 +58,9 @@ class MyTask(Task):
         # upload the new asset to S3
         item = self.upload_item_assets_to_s3(item, assets=['new-asset'])
 
+        # upload the updated item to S3
+        item = self.upload_item_to_s3(item)
+
         # this task returns a single item
         return [item.to_dict(include_self_link=True, transform_hrefs=False)]
 ```
