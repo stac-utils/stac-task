@@ -454,38 +454,29 @@ class Task(ABC):
             self.logger.warning("Skipping upload of item %s", item.id)
             return item
 
-        _item = item.full_copy()
-
         # Validate upload_options and path_template
-        upload_options = self.payload.get_collection_upload_options(
-            _item.collection_id,
-        )
+        upload_options = self.payload.get_collection_upload_options(item.collection_id)
         path_template = upload_options.get("path_template")
         if not path_template:
             raise ValueError(
                 f"Missing required 'path_template' in upload_options "
-                f"for collection '{_item.collection_id}'",
+                f"for collection '{item.collection_id}'",
             )
 
         # Generate S3 URL
-        layout = LayoutTemplate(f"{path_template.rstrip('/')}/{_item.id}.json")
-        url = layout.substitute(_item)
+        layout = LayoutTemplate(f"{path_template.rstrip('/')}/{item.id}.json")
+        url = layout.substitute(item)
 
         # Update timestamps
-        self._update_item_timestamps(_item, url, s3_client)
+        self._update_item_timestamps(item, url, s3_client)
 
         # Update links
-        self._update_item_links(_item, url)
+        self._update_item_links(item, url)
 
-        # Upload to S3
-        upload_item_json_to_s3(
-            _item,
-            url,
-            s3_client=s3_client,
-            public=public,
-        )
+        # Upload to S3 (mutated item)
+        upload_item_json_to_s3(item, url, s3_client=s3_client, public=public)
 
-        return _item
+        return item
 
     # this should be in PySTAC
     @staticmethod
