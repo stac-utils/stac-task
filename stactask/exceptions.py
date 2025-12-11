@@ -22,4 +22,4 @@ class StorageReadError(Exception):
 
 
 class PystacConversionError(pystac.errors.STACError):
-    """Generic exception class for pystacconversion errors."""
+    """Generic exception class for pystac conversion errors."""
