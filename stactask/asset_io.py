@@ -11,6 +11,7 @@ from pystac import Item
 from pystac.layout import LayoutTemplate
 
 from .config import DownloadConfig
+from .exceptions import PystacConversionError, StorageReadError
 
 logger = logging.getLogger(__name__)
 
@@ -150,10 +151,15 @@ def read_s3_item_json(
 
     try:
         item_dict = s3_client.read_json(url)
+    except Exception as e:
+        raise StorageReadError(f"Could not retrieve item from {url}: {e}") from e
+
+    try:
         return Item.from_dict(item_dict)
-    except Exception as e:  # noqa: BLE001
-        logger.warning("Could not read item from %s: %s", url, e)
-        return None
+    except Exception as e:
+        raise PystacConversionError(
+            f"Could not convert object at {url} to a Pystac object: {e}",
+        ) from e
 
 
 def upload_item_json_to_s3(
