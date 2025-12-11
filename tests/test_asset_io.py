@@ -3,9 +3,11 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
 from pystac import Item
 
 from stactask.asset_io import read_s3_item_json, upload_item_json_to_s3
+from stactask.exceptions import PystacConversionError, StorageReadError
 
 
 def create_test_item() -> Item:
@@ -136,16 +138,12 @@ def test_read_s3_item_json_cannot_parse() -> None:
     mock_s3_client.exists.return_value = True
     mock_s3_client.read_json.return_value = {"invalid": "data"}
 
-    # Act
-    with patch("stactask.asset_io.logger") as mock_logger:
-        item = read_s3_item_json(url, s3_client=mock_s3_client)
+    # Act / Assert: conversion should raise PystacConversionError
+    with pytest.raises(PystacConversionError):
+        read_s3_item_json(url, s3_client=mock_s3_client)
 
-        # Assert
-        assert item is None
-        mock_s3_client.exists.assert_called_once_with(url)
-        mock_s3_client.read_json.assert_called_once_with(url)
-        mock_logger.warning.assert_called_once()
-        assert "Could not read item from" in str(mock_logger.warning.call_args)
+    mock_s3_client.exists.assert_called_once_with(url)
+    mock_s3_client.read_json.assert_called_once_with(url)
 
 
 def test_read_s3_item_json_read_fails() -> None:
@@ -156,18 +154,12 @@ def test_read_s3_item_json_read_fails() -> None:
     mock_s3_client.exists.return_value = True
     mock_s3_client.read_json.side_effect = Exception("Network error")
 
-    # Act
-    with patch("stactask.asset_io.logger") as mock_logger:
-        item = read_s3_item_json(url, s3_client=mock_s3_client)
+    # Act / Assert: retrieval should raise StorageReadError
+    with pytest.raises(StorageReadError):
+        read_s3_item_json(url, s3_client=mock_s3_client)
 
-        # Assert
-        assert item is None
-        mock_s3_client.exists.assert_called_once_with(url)
-        mock_s3_client.read_json.assert_called_once_with(url)
-        mock_logger.warning.assert_called_once()
-        warning_call = mock_logger.warning.call_args[0]
-        assert "Could not read item from" in warning_call[0]
-        assert url in warning_call[1]
+    mock_s3_client.exists.assert_called_once_with(url)
+    mock_s3_client.read_json.assert_called_once_with(url)
 
 
 def test_read_s3_item_json_uses_global_client() -> None:
