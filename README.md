@@ -58,9 +58,26 @@ class MyTask(Task):
         # upload the new asset to S3
         item = self.upload_item_assets_to_s3(item, assets=['new-asset'])
 
+        # upload the updated item to S3
+        item = self.upload_item_to_s3(item)
+
         # this task returns a single item
         return [item.to_dict(include_self_link=True, transform_hrefs=False)]
 ```
+**A note about uploading...**
+
+`stactask.Task` includes two primary convenience upload methods:
+* `upload_item_assets_to_s3` for an Item's Assets (local asset files are uploaded)
+* `upload_item_to_s3` for the Item itself (the Item is written to S3 as a JSON file)
+
+Both of these methods _change_ the Item object:
+* `upload_item_assets_to_s3` replaces asset HREFs with an S3 URI;
+* `upload_item_to_s3` updates:
+   * the Item's `updated` date-time property and its `created` property (if needed)
+   * canonical and self Links (to reflect its new S3 location)
+
+These methods should be called in the order shown above (Assets > Item) so that the
+various HREFs remain consistent with their final destinations.
 
 ## Task Input
 
