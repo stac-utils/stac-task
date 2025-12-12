@@ -1,11 +1,11 @@
 Welcome to STAC Task's documentation!
 =====================================
 
-**STAC Task** is a Python library for geospatial processing pipeline developers
+**stac-task** is a Python library for geospatial processing pipeline developers
 that provides a standardized way of writing code.
 
 Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
+project :ref:`installation`.
 
 .. note::
 

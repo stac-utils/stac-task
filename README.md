@@ -1,31 +1,34 @@
 <!-- omit from toc -->
 # STAC Task (stac-task)
 
-[![Build Status](https://github.com/stac-utils/stac-task/workflows/CI/badge.svg?branch=main)](https://github.com/stac-utils/stac-task/actions/workflows/continuous-integration.yml)
-[![PyPI version](https://badge.fury.io/py/stac-task.svg)](https://badge.fury.io/py/stac-task)
+[![CI](https://github.com/stac-utils/stac-task/actions/workflows/continuous-integration.yml/badge.svg?branch=main)](https://github.com/stac-utils/stac-task/actions/workflows/continuous-integration.yml)
+[![PyPI version](https://badge.fury.io/py/stactask.svg)](https://badge.fury.io/py/stactask)
 [![Documentation Status](https://readthedocs.org/projects/stac-task/badge/?version=latest)](https://stac-task.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/stac-utils/stac-task/branch/main/graph/badge.svg)](https://codecov.io/gh/stac-utils/stac-task)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 - [Quickstart for Creating New Tasks](#quickstart-for-creating-new-tasks)
 - [Task Input](#task-input)
-  - [ProcessDefinition Object](#processdefinition-object)
-    - [UploadOptions Object](#uploadoptions-object)
-      - [path\_template](#path_template)
-      - [collections](#collections)
-    - [tasks](#tasks)
-    - [TaskConfig Object](#taskconfig-object)
-- [Full Process Definition Example](#full-process-definition-example)
+- [ProcessDefinition Object](#processdefinition-object)
+  - [UploadOptions Object](#uploadoptions-object)
+    - [path\_template](#path_template)
+    - [collections](#collections)
+  - [CollectionMatcher Object](#collectionmatcher-object)
+  - [collection\_options](#collection_options)
+  - [tasks](#tasks)
+  - [workflow_options](#workflow_options)
+  - [Full ProcessDefinition Example](#full-processdefinition-example)
 - [Migration](#migration)
   - [0.4.x -\> 0.5.x](#04x---05x)
+  - [0.5.x -\> 0.6.0](#05x---060)
 - [Development](#development)
 - [Contributing](#contributing)
 
-This Python library consists of the Task class, which is used to create custom tasks based
-on a "STAC In, STAC Out" approach. The Task class acts as wrapper around custom code and provides
-several convenience methods for modifying STAC Items, creating derived Items, and providing a CLI.
-
-This library is based on a [branch of cirrus-lib](https://github.com/cirrus-geo/cirrus-lib/tree/features/task-class) except aims to be more generic.
+This Python library consists of a Task class and Payload class. The Task class is used
+to create custom tasks based on a "STAC In, STAC Out" approach. The Task class acts as
+wrapper around custom code and provides several convenience methods for modifying STAC
+Items, creating derived Items, and providing a CLI. The Payload class provides input
+payload validation and structured access to payload components.
 
 ## Quickstart for Creating New Tasks
 
@@ -38,7 +41,7 @@ class MyTask(Task):
     name = "my-task"
     description = "this task does it all"
 
-    def validate(self, payload: dict[str, Any]) -> bool:
+    def validate(self) -> bool:
         return len(self.items) == 1
 
     def process(self, **kwargs: Any) -> list[dict[str, Any]]:
@@ -50,72 +53,179 @@ class MyTask(Task):
             config=DownloadConfig(include=['data'])
         )
 
-        # operate on the local file to create a new asset
-        item = self.upload_item_assets_to_s3(item)
+        # operate on the local 'data' asset file to create a new asset...
+
+        # upload the new asset to S3
+        item = self.upload_item_assets_to_s3(item, assets=['new-asset'])
+
+        # upload the updated item to S3
+        item = self.upload_item_to_s3(item)
 
         # this task returns a single item
         return [item.to_dict(include_self_link=True, transform_hrefs=False)]
 ```
+**A note about uploading...**
+
+`stactask.Task` includes two primary convenience upload methods:
+* `upload_item_assets_to_s3` for an Item's Assets (local asset files are uploaded)
+* `upload_item_to_s3` for the Item itself (the Item is written to S3 as a JSON file)
+
+Both of these methods _change_ the Item object:
+* `upload_item_assets_to_s3` replaces asset HREFs with an S3 URI;
+* `upload_item_to_s3` updates:
+   * the Item's `updated` date-time property and its `created` property (if needed)
+   * canonical and self Links (to reflect its new S3 location)
+
+These methods should be called in the order shown above (Assets > Item) so that the
+various HREFs remain consistent with their final destinations.
 
 ## Task Input
 
-| Field Name | Type              | Description               |
-| ---------- | ----------------- | ------------------------- |
-| type       | string            | Must be FeatureCollection |
-| features   | [Item]            | A list of STAC `Item`     |
-| process    | ProcessDefinition | A Process Definition      |
+Task input is referred to as a "payload" and has the following top-level fields.
 
-### ProcessDefinition Object
+| Field Name | Type                       | Description                                           |
+| ---------- | -------------------------- | ----------------------------------------------------- |
+| type       | string                     | Must be "FeatureCollection"                           |
+| features   | [Item]                     | An array of STAC Items                                |
+| process    | [ProcessDefinition Object] | **REQUIRED.** An array of `ProcessDefinition` objects |
 
-A STAC task can be provided additional configuration via the 'process' field in the input
-ItemCollection.
+## ProcessDefinition Object
 
-| Field Name     | Type          | Description                                                                                                                                                                    |
-| -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| description    | string        | Optional description of the process configuration                                                                                                                              |
-| upload_options | UploadOptions | Options used when uploading assets to a remote server                                                                                                                          |
-| tasks          | Map<str, Map> | Dictionary of task configurations. A list of [task configurations](#taskconfig-object) is supported for backwards compatibility reasons, but a dictionary should be preferred. |
+Provides configuration for a Task.
 
-#### UploadOptions Object
+| Field Name          | Type                         | Description                                                                                                                  |
+| ------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| description         | string                       | Description of the process configuration                                                                                     |
+| upload_options      | UploadOptions Object         | An `UploadOptions` object                                                                                                    |
+| collection_matchers | [CollectionMatcher Object]   | An array of `CollectionMatcher` objects used for collection assignment. Mutually exclusive with `upload_options.collections` |
+| collection_options  | Map<string, Map<string, Any> | Dictionary of collection-specific configuration options                                                                      |
+| tasks               | Map<string, Map<string, Any> | Dictionary of task configurations                                                                                            |
+| workflow_options    | Map<string, Any>             | Dictionary of configuration options applied to all tasks in a workflow                                                       |
 
-| Field Name    | Type          | Description                                                                             |
-| ------------- | ------------- | --------------------------------------------------------------------------------------- |
-| path_template | string        | **REQUIRED** A string template for specifying the location of uploaded assets           |
-| public_assets | [str]         | A list of asset keys that should be marked as public when uploaded                      |
-| headers       | Map<str, str> | A set of key, value headers to send when uploading data to s3                           |
-| collections   | Map<str, str> | A mapping of output collection name to a JSONPath pattern (for matching Items)          |
-| s3_urls       | bool          | Controls if the final published URLs should be an s3 (s3://*bucket*/*key*) or https URL |
+### UploadOptions Object
 
-##### path_template
+Options used when uploading Item assets to a AWS S3. If `collection_options` is
+provided, the Task will look there first for collection-specific upload options before
+falling back to these upload options.
 
-The path_template string is a way to control the output location of uploaded assets from a STAC Item using metadata from the Item itself.
-The template can contain fixed strings along with variables used for substitution.
-See [the PySTAC documentation for `LayoutTemplate`](https://pystac.readthedocs.io/en/stable/api/layout.html#pystac.layout.LayoutTemplate) for a list of supported template variables and their meaning.
+| Field Name    | Type                | Description                                                                                                  |
+| ------------- | ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| path_template | string              | **REQUIRED.** A string template for specifying the location of uploaded assets                               |
+| public_assets | [string]            | A list of asset keys that should be marked as public when uploaded                                           |
+| headers       | Map<string, string> | A set of key, value headers to send when uploading data to S3                                                |
+| collections   | Map<string, string> | **DEPRECATED.** A mapping of output collection name to a JSONPath pattern                                    |
+| s3_urls       | boolean             | Controls if the final published URLs should be in S3 (`true`) or https (`false`) format. Defaults to `false` |
 
-##### collections
+#### path_template
 
-The collections dictionary provides a collection ID and JSONPath pattern for matching against STAC Items.
-At the end of processing, before the final STAC Items are returned, the Task class can be used to assign
-all of the Items to specific collection IDs. For each Item the JSONPath pattern for all collections will be
-compared. The first match will cause the Item's Collection ID to be set to the provided value.
+The `path_template` string is a way to control the output location of uploaded assets
+from a STAC Item using metadata from the Item itself. The template can contain fixed
+strings along with variables used for substitution. See [the PySTAC documentation for
+`LayoutTemplate`](https://pystac.readthedocs.io/en/stable/api/layout.html#pystac.layout.LayoutTemplate)
+for a list of supported template variables and their meaning.
 
-For example:
+Example:
+
+```json
+"path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}"
+```
+
+#### collections
+
+Deprecated. The `collections` dictionary provides a collection ID and JSONPath pattern
+for matching against STAC Items. At the end of processing, before the final STAC Items
+are returned, the Task class can be used to assign all of the Items to specific
+collection IDs. For each Item the JSONPath pattern for all collections will be compared.
+The first match will cause the Item's Collection ID to be set to the provided value.
+This field is deprecated in favor of the `collection_matchers` array, which guarantees
+order during the matching process.
+
+Example:
 
 ```json
 "collections": {
-    "landsat-c2l2": "$[?(@.id =~ 'LC08.*')]"
+    "landsat-c2l2": "$[?(@.id =~ 'LC08.*')]",
+    "sentinel-2-l2a": "$[?(@.id =~ 'S2.*')]"
 }
 ```
 
-In this example, the task will set any STAC Items that have an ID beginning with "LC08" to the `landsat-c2l2` collection.
+In this example, the task will set any STAC Items that have an ID beginning with "LC08"
+to the `landsat-c2l2` collection and any STAC Items that have an ID beginning with "S2"
+to the `sentinel-2-l2a` collection. See [JSONPath Online
+Evaluator](https://jsonpath.com) to experiment with JSONPath and
+[regex101](https://regex101.com) to experiment with regex.
 
-See [JSONPath Online Evaluator](https://jsonpath.com) to experiment with JSONPath and [regex101](https://regex101.com) to experiment with regex.
+### CollectionMatcher Object
 
-#### tasks
+The `collection_matchers` array provides deterministic ordering to collection
+assignment. This is mutually exclusive with the legacy `collections` field in
+`UploadOptions`. Collection matchers are processed in the order they appear in the
+array, and the first match determines the collection assignment.
 
-The tasks field is a dictionary with an optional key for each task. If present, it contains
-a dictionary that is converted to a set of keywords and passed to the Task's `process` function.
-The documentation for each task will provide the list of available parameters.
+| Field Name      | Type   | Description                                                                                     |
+| --------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| type            | string | **REQUIRED.** The matcher type. Supported values: "jsonpath", "catch_all"                       |
+| pattern         | string | **CONDITIONAL.** JSONPath pattern for matching Items. Required for all types except "catch_all" |
+| collection_name | string | **REQUIRED.** The collection ID to assign to matching Items                                     |
+
+Example:
+
+```json
+"collection_matchers": [
+    {
+        "type": "jsonpath",
+        "pattern": "$[?(@.id =~ 'LC08.*')]",
+        "collection_name": "landsat-c2l2"
+    },
+    {
+        "type": "jsonpath",
+        "pattern": "$[?(@.id =~ 'S2.*')]",
+        "collection_name": "sentinel-2-l2a"
+    },
+    {
+        "type": "catch_all",
+        "collection_name": "default-collection"
+    }
+]
+```
+
+### collection_options
+
+The `collection_options` field is a dictionary that allows you to specify
+collection-specific configuration options, including `UploadOptions` objects. For
+example, when uploading asset data to S3, the Task will first look for
+collection-specific upload options and fall back to the global options (the top-level
+`upload_options` dictionary) if none are found.
+
+Example:
+
+```json
+"collection_options": {
+    "sentinel-2-l2a": {
+        "upload_options": {
+            "path_template": "s3://sentinel-bucket/${collection}/${year}/${month}/${day}/${id}",
+            "headers": {
+                "StorageClass": "INTELLIGENT_TIERING"
+            }
+        }
+    },
+    "landsat-c2l2": {
+        "upload_options": {
+            "path_template": "s3://landsat-bucket/${collection}/${path}/${row}/${id}",
+            "public_assets": ["thumbnail", "overview"]
+        }
+    }
+}
+```
+
+### tasks
+
+The `tasks` field is a dictionary with an optional key for each task. If present, it
+contains a dictionary that is converted to a set of keywords and passed to the Task's
+`process` function. The documentation for each Task should provide the list of available
+parameters.
+
+Example:
 
 ```json
 {
@@ -130,37 +240,69 @@ The documentation for each task will provide the list of available parameters.
 }
 ```
 
-In the example above a task named `task-a` would have the `param1=value1` passed as a keyword, while `task-c`
-would have `param2=value2` passed. If there were a `task-b` to be run it would not be passed any keywords.
+In the example above, a task named `task-a` would have the `param1=value1` passed as a
+keyword, while `task-c` would have `param2=value2` passed. If there were a `task-b` to
+be run, it would not be passed any keywords.
 
-#### TaskConfig Object
+### workflow_options
 
-**DEPRECATED**: `tasks` should be a dictionary of parameters, with task names as keys. See [tasks](#tasks) for more information.
+The `workflow_options` field is a dictionary of options that apply to all tasks in the
+workflow. The `workflow_options` dictionary is combined with each task's option
+dictionary. If a key in the `workflow_options` dictionary conflicts with a key in a
+task's option dictionary, the task option value takes precedence.
 
-A Task Configuration contains information for running a specific task.
+Example:
 
-| Field Name | Type          | Description                                                                          |
-| ---------- | ------------- | ------------------------------------------------------------------------------------ |
-| name       | str           | **REQUIRED** Name of the task                                                        |
-| parameters | Map<str, str> | Dictionary of keyword parameters that will be passed to the Tasks `process` function |
+```json
+{
+    "workflow_options": {
+        "global_param": "global_value"
+    }
+}
+```
 
-## Full Process Definition Example
-
-Process definitions are sometimes called "Payloads":
+### Full ProcessDefinition Example
 
 ```json
 {
     "description": "My process configuration",
-    "collections": {
-        "landsat-c2l2": "$[?(@.id =~ 'LC08.*')]"
-    },
     "upload_options": {
-        "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}"
+        "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}",
+        "public_assets": ["thumbnail", "overview"]
+    },
+    "collection_matchers": [
+        {
+            "type": "jsonpath",
+            "pattern": "$[?(@.id =~ 'LC08.*')]",
+            "collection_name": "landsat-c2l2"
+        },
+        {
+            "type": "jsonpath",
+            "pattern": "$[?(@.id =~ 'S2.*')]",
+            "collection_name": "sentinel-2-l2a"
+        },
+        {
+            "type": "catch_all",
+            "collection_name": "default-collection"
+        }
+    ],
+    "collection_options": {
+        "sentinel-2-l2a": {
+            "upload_options": {
+                "path_template": "s3://sentinel-bucket/${collection}/${mgrs:utm_zone}/${mgrs:latitude_band}/${mgrs:grid_square}/${year}/${month}/${id}",
+                "headers": {
+                    "StorageClass": "INTELLIGENT_TIERING"
+                }
+            }
+        }
     },
     "tasks": {
         "task-name": {
             "param": "value"
         }
+    },
+    "workflow_options": {
+        "global_param": "global_value"
     }
 }
 ```
@@ -169,13 +311,13 @@ Process definitions are sometimes called "Payloads":
 
 ### 0.4.x -> 0.5.x
 
-In 0.5.0, the previous use of fsspec to download Item Assets has been replaced with
-the stac-asset library. This has necessitated a change in the parameters
-that the download methods accept.
+In 0.5.0, the previous use of fsspec to download Item Assets has been replaced with the
+stac-asset library. This has necessitated a change in the parameters that the download
+methods accept.
 
 The primary change is that the Task methods `download_item_assets` and
-`download_items_assets` (items plural) now accept fewer explicit and implicit
-(kwargs) parameters.
+`download_items_assets` (items plural) now accept fewer explicit and implicit (kwargs)
+parameters.
 
 Previously, the methods looked like:
 
@@ -225,8 +367,9 @@ async def download_item_assets(
 ) -> Item:
 ```
 
-Additionally, `kwargs` keys were set to pass configuration through to fsspec. The most common
-parameter was `requester_pays`, to set the Requester Pays flag in AWS S3 requests.
+Additionally, `kwargs` keys were set to pass configuration through to fsspec. The most
+common parameter was `requester_pays`, to set the Requester Pays flag in AWS S3
+requests.
 
 Many of these parameters can be directly translated into configuration passed in a
 `DownloadConfig` object, which is just a wrapper over the `stac_asset.Config` object.
@@ -239,17 +382,16 @@ Migration of these various parameters to `DownloadConfig` are as follows:
   `FileNameStrategy.FILE_NAME` if True or `FileNameStrategy.KEY` if False
 - `overwrite`: set `overwrite`
 - `save_item`: none, Item is always saved
-- `absolute_path`: none. To create or retrieve the Asset hrefs as absolute paths, use either
-  `Item#make_all_asset_hrefs_absolute()` or `Asset#get_absolute_href()`
+- `absolute_path`: none. To create or retrieve the Asset hrefs as absolute paths, use
+  either `Item#make_all_asset_hrefs_absolute()` or `Asset#get_absolute_href()`
 
 ### 0.5.x -> 0.6.0
 
-Previously, the `validate` method was a _classmethod_, validating the payload
-argument passed.  This has now been made an instance method, which validates
-the `self._payload` copy of the payload, from which the `Task` instance is
-constructed.  This is behaviorally the same, in that construction will fail if
-validation fails, but allows implementers to utilize the instance method's
-convenience functions.
+Previously, the `validate` method was a _classmethod_, validating the payload argument
+passed.  This has now been made an instance method, which validates the `self._payload`
+copy of the payload, from which the `Task` instance is constructed.  This is
+behaviorally the same, in that construction will fail if validation fails, but allows
+implementers to utilize the instance method's convenience functions.
 
 Previous implementations of `validate` would have been similar to this:
 
@@ -270,27 +412,28 @@ And will now need to be updated to this form:
 
 ## Development
 
-Clone, install in editable mode with development requirements, and install the **pre-commit** hooks:
+Get [uv](https://docs.astral.sh/uv/getting-started/installation/). Then:
 
 ```shell
 git clone https://github.com/stac-utils/stac-task
 cd stac-task
-pip install -e '.[dev]'
-pre-commit install
+uv sync --group dev
+uv run pre-commit install
 ```
 
 To run the tests:
 
 ```shell
-pytest
+uv run pytest
 ```
 
 To lint all the files:
 
 ```shell
-pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 ## Contributing
 
-Use Github [issues](https://github.com/stac-utils/stac-task/issues) and [pull requests](https://github.com/stac-utils/stac-task/pulls).
+Use Github [issues](https://github.com/stac-utils/stac-task/issues) and [pull
+requests](https://github.com/stac-utils/stac-task/pulls).

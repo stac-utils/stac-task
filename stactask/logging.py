@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     _LoggerAdapter = logging.LoggerAdapter[logging.Logger]  # pragma: no cover
@@ -10,12 +10,11 @@ else:
 
 
 class TaskLoggerAdapter(_LoggerAdapter):
-    def __init__(self, logger: logging.Logger, prefix: Optional[str]) -> None:
+    def __init__(self, logger: logging.Logger, prefix: str | None) -> None:
         super().__init__(logger, {})
         self.prefix = prefix
 
     def process(self, msg: str, kwargs: Any) -> tuple[str, Any]:
         if self.prefix is not None:
             return f"[{self.prefix}] {msg}", kwargs
-        else:
-            return msg, kwargs
+        return msg, kwargs

@@ -4,66 +4,72 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   pull_request:
 
 jobs:
-  standard:
+  standard-lint-test:
     name: Lint and test
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version:
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
+          - "3.13"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
-      - name: Install dependencies for linting
-        run: pip install '.[dev]'
+      - uses: astral-sh/setup-uv@v6
+      - name: Install dependencies
+        run: uv sync --locked --group dev
       - name: Lint
-        run: pre-commit run --all-files
-      - name: Install dependencies for testing
-        run: pip install '.[test]'
+        run: uv run pre-commit run --all-files
       - name: Test
-        run: pytest
+        run: uv run pytest
+  minimum-dependencies-test:
+    name: Minimum dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - uses: astral-sh/setup-uv@v6
+      - name: Install minimum dependencies
+        run: uv sync --resolution lowest-direct --group dev
+      - name: Test
+        run: uv run pytest
   codecov:
     name: Codecov
     needs:
-      - standard
+      - standard-lint-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
       - name: Install
-        run: pip install '.[test]'
+        run: uv sync --locked --group dev
       - name: Test
-        run: pytest --cov=stactask
+        run: uv run pytest --cov=stactask --cov-report=xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
           fail_ci_if_error: false
   docs:
     name: Docs
     needs:
-      - standard
+      - standard-lint-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
       - name: Install
-        run: pip install . -r docs/requirements.txt
+        run: uv sync --locked --only-group docs
       - name: Make docs
-        run: cd docs && make html
+        run: cd docs && uv run make html
