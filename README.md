@@ -65,6 +65,7 @@ class MyTask(Task):
         return [item.to_dict(include_self_link=True, transform_hrefs=False)]
 ```
 **A note about uploading...**
+
 `stactask.Task` includes two primary convenience upload methods:
 * `upload_item_assets_to_s3` for an Item's Assets (local asset files are uploaded)
 * `upload_item_to_s3` for the Item itself (the Item is written to S3 as a JSON file)
