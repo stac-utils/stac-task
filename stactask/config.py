@@ -4,5 +4,5 @@ from stac_asset import Config
 
 
 @dataclass
-class DownloadConfig(Config):  # type: ignore
+class DownloadConfig(Config):
     pass
