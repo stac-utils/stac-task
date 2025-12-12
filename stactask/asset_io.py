@@ -1,7 +1,9 @@
 import asyncio
 import logging
+from collections.abc import Iterable
 from os import path as op
-from typing import Any, Iterable, Optional, Union
+from pathlib import Path
+from typing import Any
 
 import stac_asset
 from boto3utils import s3
@@ -19,9 +21,9 @@ global_s3_client = s3()
 async def download_item_assets(
     item: Item,
     path_template: str = "${collection}/${id}",
-    config: Optional[DownloadConfig] = None,
+    config: DownloadConfig | None = None,
     keep_non_downloaded: bool = True,
-    file_name: Optional[str] = "item.json",
+    file_name: str | None = "item.json",
 ) -> Item:
     return await stac_asset.download_item(
         item=item.clone(),
@@ -35,9 +37,9 @@ async def download_item_assets(
 async def download_items_assets(
     items: Iterable[Item],
     path_template: str = "${collection}/${id}",
-    config: Optional[DownloadConfig] = None,
+    config: DownloadConfig | None = None,
     keep_non_downloaded: bool = True,
-    file_name: Optional[str] = "item.json",
+    file_name: str | None = "item.json",
 ) -> list[Item]:
     return await asyncio.gather(
         *[
@@ -48,36 +50,36 @@ async def download_items_assets(
                     config=config,
                     keep_non_downloaded=keep_non_downloaded,
                     file_name=file_name,
-                )
+                ),
             )
             for item in items
-        ]
+        ],
     )
 
 
 def upload_item_assets_to_s3(
     item: Item,
-    assets: Optional[list[str]] = None,
-    public_assets: Union[None, list[str], str] = None,
+    assets: list[str] | None = None,
+    public_assets: None | list[str] | str = None,
     path_template: str = "${collection}/${id}",
     s3_urls: bool = False,
-    headers: Optional[dict[str, Any]] = None,
-    s3_client: Optional[s3] = None,
+    headers: dict[str, Any] | None = None,
+    s3_client: s3 | None = None,
     **kwargs: Any,  # unused, but retain to permit unused attributes from upload_options
 ) -> Item:
     """Upload Item assets to an S3 bucket
     Args:
         item (Item): STAC Item
-        assets (list[str], optional): List of asset keys to upload. Defaults to None.
-        public_assets (list[str], optional): List of assets keys that should be
-            public. Defaults to [].
-        path_template (str, optional): Path string template. Defaults to
+        assets (list[str] | None): List of asset keys to upload. Defaults to None.
+        public_assets (list[str] | None): List of assets keys that should be
+            public. Defaults to None
+        path_template (str | None): Path string template. Defaults to
             '${collection}/${id}'.
-        s3_urls (bool, optional): Return s3 URLs instead of http URLs. Defaults
+        s3_urls (bool | None): Return s3 URLs instead of http URLs. Defaults
             to False.
-        headers (dict, optional): Dictionary of headers to set on uploaded
-            assets. Defaults to {}.
-        s3_client (boto3utils.s3, optional): Use this s3 object instead of the default
+        headers (dict | None): Dictionary of headers to set on uploaded
+            assets. Defaults to None.
+        s3_client (boto3utils.s3 | None): Use this s3 object instead of the default
             global one. Defaults to None.
     Returns:
         Item: A new STAC Item with uploaded assets pointing to newly uploaded file URLs
@@ -104,25 +106,29 @@ def upload_item_assets_to_s3(
     # if assets not provided, upload all assets
     _assets = assets if assets is not None else _item["assets"].keys()
 
-    for key in [a for a in _assets if a in _item["assets"].keys()]:
+    for key in [a for a in _assets if a in _item["assets"]]:
         asset = _item["assets"][key]
         filename = asset["href"]
-        if not op.exists(filename):
-            logger.warning(f"Cannot upload {filename}: does not exist")
+        if not Path(filename).exists():
+            logger.warning("Cannot upload %s: does not exist", filename)
             continue
-        public = True if key in public_assets else False
+        public = key in public_assets
         _headers = {}
         if "type" in asset:
             _headers["ContentType"] = asset["type"]
         _headers.update(headers)
         # output URL
-        layout = LayoutTemplate(op.join(path_template, op.basename(filename)))
+        layout = LayoutTemplate(op.join(path_template, op.basename(filename)))  # noqa: PTH118, PTH119
         url = layout.substitute(item)
 
         # upload
-        logger.debug(f"Uploading {filename} to {url}")
+        logger.debug("Uploading %s to %s", filename, url)
         url_out = s3_client.upload(
-            filename, url, public=public, extra=_headers, http_url=not s3_urls
+            filename,
+            url,
+            public=public,
+            extra=_headers,
+            http_url=not s3_urls,
         )
         _item["assets"][key]["href"] = url_out
 

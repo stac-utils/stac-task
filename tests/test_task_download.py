@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +14,7 @@ from .tasks import NothingTask
 def item_collection() -> dict[str, Any]:
     name = "sentinel2-l2a-j2k-payload"
     filename = Path(__file__).parent / "fixtures" / f"{name}.json"
-    with open(filename) as f:
+    with Path.open(filename) as f:
         items = json.loads(f.read())
     assert isinstance(items, dict)
     return items
@@ -28,7 +27,8 @@ def test_download_nosuch_asset(tmp_path: Path, item_collection: dict[str, Any]) 
         save_workdir=True,
     )
     item = t.download_item_assets(
-        t.items[0], config=DownloadConfig(include=["nosuch_asset"])
+        t.items[0],
+        config=DownloadConfig(include=["nosuch_asset"]),
     )
 
     # new item has same assets hrefs as old item
@@ -38,7 +38,8 @@ def test_download_nosuch_asset(tmp_path: Path, item_collection: dict[str, Any]) 
 
 
 def test_download_asset_dont_keep_existing(
-    tmp_path: Path, item_collection: dict[str, Any]
+    tmp_path: Path,
+    item_collection: dict[str, Any],
 ) -> None:
     t = NothingTask(
         item_collection,
@@ -59,13 +60,17 @@ def test_download_asset_dont_keep_existing(
 def test_download_item_asset(tmp_path: Path, item_collection: dict[str, Any]) -> None:
     t = NothingTask(item_collection, workdir=tmp_path / "test-task-download-item-asset")
     item = t.download_item_assets(
-        t.items[0], config=DownloadConfig(include=["tileinfo_metadata"])
+        t.items[0],
+        config=DownloadConfig(include=["tileinfo_metadata"]),
     )
-    assert Path(item.assets["tileinfo_metadata"].get_absolute_href()).is_file()
+    href = item.assets["tileinfo_metadata"].get_absolute_href()
+    assert href is not None
+    assert Path(href).is_file()
 
 
 def test_download_keep_original_filenames(
-    tmp_path: Path, item_collection: dict[str, Any]
+    tmp_path: Path,
+    item_collection: dict[str, Any],
 ) -> None:
     t = NothingTask(
         item_collection,
@@ -84,15 +89,17 @@ def test_download_keep_original_filenames(
 
 
 def test_download_item_asset_local(
-    tmp_path: Path, item_collection: dict[str, Any]
+    tmp_path: Path,
+    item_collection: dict[str, Any],
 ) -> None:
     t = NothingTask(item_collection, workdir=tmp_path / "test-task-download-item-asset")
     item = t.download_item_assets(
-        t.items[0], config=DownloadConfig(include=["tileinfo_metadata"])
+        t.items[0],
+        config=DownloadConfig(include=["tileinfo_metadata"]),
     )
 
     assert (
-        Path(os.path.dirname(item.self_href)) / item.assets["tileinfo_metadata"].href
+        Path(Path(item.self_href).parent) / item.assets["tileinfo_metadata"].href
     ).is_file()
 
     # Downloaded to local, as in prev test.
@@ -104,6 +111,7 @@ def test_download_item_asset_local(
     )
     assert "again" in item.self_href
     href = item.assets["tileinfo_metadata"].get_absolute_href()
+    assert href is not None
     assert "again" in href
     assert Path(href).is_file()
 
@@ -120,8 +128,12 @@ def test_download_item_assets(tmp_path: Path, item_collection: dict[str, Any]) -
         config=DownloadConfig(include=["tileinfo_metadata", "granule_metadata"]),
     )
 
-    assert Path(item.assets["tileinfo_metadata"].get_absolute_href()).is_file()
-    assert Path(item.assets["granule_metadata"].get_absolute_href()).is_file()
+    href = item.assets["tileinfo_metadata"].get_absolute_href()
+    assert href is not None
+    assert Path(href).is_file()
+    href = item.assets["granule_metadata"].get_absolute_href()
+    assert href is not None
+    assert Path(href).is_file()
 
 
 def test_download_items_assets(tmp_path: Path, item_collection: dict[str, Any]) -> None:
@@ -135,7 +147,9 @@ def test_download_items_assets(tmp_path: Path, item_collection: dict[str, Any]) 
 
     assert len(items) == 2
     for item in items:
-        assert Path(item.assets[asset_key].get_absolute_href()).is_file()
+        href = item.assets[asset_key].get_absolute_href()
+        assert href is not None
+        assert Path(href).is_file()
 
 
 # @vcr.use_cassette(str(cassettepath / 'download_assets'))
@@ -147,7 +161,10 @@ def test_download_large_asset(tmp_path: Path, item_collection: dict[str, Any]) -
         save_workdir=True,
     )
     item = t.download_item_assets(
-        t.items[0], config=DownloadConfig(s3_requester_pays=True, include=["red"])
+        t.items[0],
+        config=DownloadConfig(s3_requester_pays=True, include=["red"]),
     )
 
-    assert Path(item.assets["red"].get_absolute_href()).is_file()
+    href = item.assets["red"].get_absolute_href()
+    assert href is not None
+    assert Path(href).is_file()

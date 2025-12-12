@@ -2,18 +2,32 @@
 
 import os
 import sys
+import subprocess
+from datetime import datetime
 
-sys.path.insert(
-    0, os.path.abspath("../../src")
-)  # Source code dir relative to this file
+sys.path.insert(0, os.path.abspath("../.."))  # Source code dir relative to this file
 
 # -- Project information
 
 project = "STAC Task"
-copyright = "2021, Element 84, Inc."
+copyright = f"{datetime.now().year}, Element 84, Inc."
 
-release = "0.6"
-version = "0.6.0"
+
+def get_latest_tag() -> str:
+    try:
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
+    except:
+        return "0.0.0"
+
+
+release = get_latest_tag()
+version = release
 
 # -- General configuration
 
