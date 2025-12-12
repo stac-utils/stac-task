@@ -1,12 +1,17 @@
-from importlib.metadata import PackageNotFoundError, version
-
-try:
-    __version__ = version("stactask")
-except PackageNotFoundError:
-    # package is not installed
-    pass
-
 from .config import DownloadConfig
+from .payload import Payload
 from .task import Task
 
-__all__ = ["Task", "DownloadConfig"]
+try:
+    from .__version__ import __version__, __version_tuple__
+except ImportError:
+    __version__ = "0.0.0"
+    __version_tuple__ = ("0", "0", "0")
+
+__all__ = [
+    "DownloadConfig",
+    "Payload",
+    "Task",
+    "__version__",
+    "__version_tuple__",
+]
