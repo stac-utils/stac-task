@@ -2,61 +2,89 @@ import argparse
 import asyncio
 import json
 import logging
-import os
 import sys
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable
 from copy import deepcopy
-from os import makedirs
+from datetime import datetime, timezone
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
-from typing import Any, Callable, Iterable, Optional, Union
+from typing import Any
 
 import fsspec
 from boto3utils import s3
-from pystac import Asset, Item, ItemCollection
+from pystac import Asset, Item, ItemCollection, Link
+from pystac.layout import LayoutTemplate
+from pystac.utils import datetime_to_str
 
 from .asset_io import (
     download_item_assets,
     download_items_assets,
+    read_s3_item_json,
     upload_item_assets_to_s3,
+    upload_item_json_to_s3,
 )
 from .config import DownloadConfig
 from .exceptions import FailedValidation
 from .logging import TaskLoggerAdapter
+from .payload import Payload
 from .utils import find_collection as utils_find_collection
 
 # types
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 
 class DeprecatedStoreTrueAction(argparse._StoreTrueAction):
     def __call__(self, parser, namespace, values, option_string=None) -> None:  # type: ignore
-        warnings.warn("Argument %s is deprecated." % self.option_strings)
+        warnings.warn(f"Argument {self.option_strings} is deprecated.", stacklevel=2)
         super().__call__(parser, namespace, values, option_string)
 
 
 class Task(ABC):
     """
-    Tasks can use parameters provided in a `process` Dictionary that is supplied in
-    the ItemCollection JSON under the "process" field. An example process
-    definition:
+    Tasks can access input payload configuration in two ways: through properties and
+    methods on the `self.payload` Payload class (e.g.,
+    `self.payload.collection_options`) or by accessing the underlying dictionary
+    directly (e.g., `self.payload["process"]["collection_options"]`).
 
     ```
     {
-        "description": "My process configuration"
+        "description": "My process configuration",
         "upload_options": {
             "path_template": "s3://my-bucket/${collection}/${year}/${month}/${day}/${id}",
-            "collections": {
-                "landsat-c2l2": ""
+            "public_assets": ["thumbnail", "overview"]
+        },
+        "collection_matchers": [
+            {
+                "type": "jsonpath",
+                "pattern": "$[?(@.id =~ 'S2.*')]",
+                "collection_name": "sentinel-2-l2a"
+            },
+            {
+                "type": "catch_all",
+                "collection_name": "default-collection"
+            }
+        ],
+        "collection_options": {
+            "sentinel-2-l2a": {
+                "upload_options": {
+                    "path_template": "s3://sentinel-bucket/${collection}/${mgrs:utm_zone}/${mgrs:latitude_band}/${mgrs:grid_square}/${year}/${month}/${id}",
+                    "headers": {
+                        "StorageClass": "INTELLIGENT_TIERING"
+                    }
+                }
             }
         },
         "tasks": {
             "task-name": {
                 "param": "value"
             }
-        ]
+        },
+        "workflow_options": {
+            "global_param": "global_value"
+        }
     }
     ```
     """
@@ -68,19 +96,18 @@ class Task(ABC):
     def __init__(
         self: "Task",
         payload: dict[str, Any],
-        workdir: Optional[PathLike] = None,
-        save_workdir: Optional[bool] = None,
+        workdir: PathLike | None = None,
+        save_workdir: bool | None = None,
         skip_upload: bool = False,  # deprecated
         skip_validation: bool = False,  # deprecated
         upload: bool = True,
         validate: bool = True,
     ):
+        self.payload = Payload(payload)
+        self.payload.validate()
 
-        self._payload = payload
-
-        if not skip_validation and validate:
-            if not self.validate():
-                raise FailedValidation()
+        if not skip_validation and validate and not self.validate():
+            raise FailedValidation()
 
         # set instance variables
         if skip_upload:
@@ -97,80 +124,101 @@ class Task(ABC):
             self._save_workdir = save_workdir if save_workdir is not None else False
         else:
             self._workdir = Path(workdir).absolute()
-            makedirs(self._workdir, exist_ok=True)
+            self._workdir.mkdir(parents=True, exist_ok=True)
             # if a workdir was specified we don't want to rm by default
             self._save_workdir = save_workdir if save_workdir is not None else True
 
         self.logger = TaskLoggerAdapter(
             logging.getLogger(self.name),
-            self._payload.get("id"),
+            self.payload.get("id"),
         )
 
     @property
+    def _payload(self) -> dict[str, Any]:
+        warnings.warn(
+            "`_payload` is deprecated, use `payload` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload
+
+    @_payload.setter
+    def _payload(self, value: dict[str, Any]) -> None:
+        warnings.warn(
+            "`_payload` is deprecated, use `payload` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.payload = Payload(value)
+
+    @property
     def process_definition(self) -> dict[str, Any]:
-        process = self._payload.get("process", {})
-        if isinstance(process, dict):
-            return process
-        else:
-            raise ValueError(f"process is not a dict: {type(process)}")
+        warnings.warn(
+            (
+                "`process_definition` is deprecated, "
+                "use `payload.process_definition` instead"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.process_definition
+
+    @property
+    def workflow_options(self) -> dict[str, Any]:
+        warnings.warn(
+            (
+                "`workflow_options` is deprecated, "
+                "use `payload.workflow_options` instead"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.workflow_options
+
+    @property
+    def task_options(self) -> dict[str, Any]:
+        return self.payload.task_options_dict.get(self.name, {})
 
     @property
     def parameters(self) -> dict[str, Any]:
-        task_configs = self.process_definition.get("tasks", [])
-        if isinstance(task_configs, list):
-            warnings.warn(
-                "task configs is list, use a dictionary instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            task_config_list = [cfg for cfg in task_configs if cfg["name"] == self.name]
-            if len(task_config_list) == 0:
-                return {}
-            else:
-                task_config: dict[str, Any] = task_config_list[0]
-                parameters = task_config.get("parameters", {})
-                if isinstance(parameters, dict):
-                    return parameters
-                else:
-                    raise ValueError(f"parameters is not a dict: {type(parameters)}")
-        elif isinstance(task_configs, dict):
-            config = task_configs.get(self.name, {})
-            if isinstance(config, dict):
-                return config
-            else:
-                raise ValueError(
-                    f"task config for {self.name} is not a dict: {type(config)}"
-                )
-        else:
-            raise ValueError(f"unexpected value for 'tasks': {task_configs}")
+        return {**self.payload.workflow_options, **self.task_options}
 
     @property
     def upload_options(self) -> dict[str, Any]:
-        upload_options = self.process_definition.get("upload_options", {})
-        if isinstance(upload_options, dict):
-            return upload_options
-        else:
-            raise ValueError(f"upload_options is not a dict: {type(upload_options)}")
+        warnings.warn(
+            "`upload_options` is deprecated, use `payload.upload_options` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.upload_options
 
     @property
     def collection_mapping(self) -> dict[str, str]:
-        collection_mapping = self.upload_options.get("collections", {})
-        if isinstance(collection_mapping, dict):
-            return collection_mapping
-        else:
-            raise ValueError(f"collections is not a dict: {type(collection_mapping)}")
+        warnings.warn(
+            (
+                "`collection_mapping` is deprecated, "
+                "use `payload.collection_mapping` instead"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.collection_mapping
 
     @property
     def items_as_dicts(self) -> list[dict[str, Any]]:
-        features = self._payload.get("features", [])
-        if isinstance(features, list):
-            return features
-        else:
-            raise ValueError(f"features is not a list: {type(features)}")
+        warnings.warn(
+            "`items_as_dicts` is deprecated, use `payload.items_as_dicts` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payload.items_as_dicts
 
     @property
     def items(self) -> ItemCollection:
-        items_dict = {"type": "FeatureCollection", "features": self.items_as_dicts}
+        items_dict = {
+            "type": "FeatureCollection",
+            "features": self.payload.items_as_dicts,
+        }
         return ItemCollection.from_dict(items_dict, preserve_dict=True)
 
     @classmethod
@@ -179,8 +227,9 @@ class Task(ABC):
             "add_software_version is deprecated, "
             "use add_software_version_to_item instead",
             DeprecationWarning,
+            stacklevel=2,
         )
-        modified_items = list()
+        modified_items = []
         for item in items:
             modified_items.append(cls.add_software_version_to_item(item))
         return modified_items
@@ -210,7 +259,7 @@ class Task(ABC):
         return item
 
     def validate(self) -> bool:
-        """Validates `self._payload` and returns True if valid. If invalid, raises
+        """Validates `self.payload` and returns True if valid. If invalid, raises
         ``stactask.exceptions.FailedValidation`` or returns False."""
         # put validation logic on input Items and process definition here
         return True
@@ -218,32 +267,38 @@ class Task(ABC):
     def cleanup_workdir(self) -> None:
         """Remove work directory if configured not to save it"""
         try:
-            if (
-                not self._save_workdir
-                and self._workdir
-                and os.path.exists(self._workdir)
-            ):
+            if not self._save_workdir and self._workdir and self._workdir.exists():
                 self.logger.debug("Removing work directory %s", self._workdir)
                 rmtree(self._workdir)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.logger.warning(
-                "Failed removing work directory %s: %s", self._workdir, e
+                "Failed removing work directory %s: %s",
+                self._workdir,
+                e,
             )
 
     def assign_collections(self) -> None:
-        """Assigns new collection names based on upload_options collections attribute
-        according to the first matching expression in the order they are defined."""
-        for item in self._payload["features"]:
-            if coll := utils_find_collection(self.collection_mapping, item):
+        """Assigns new collection names based on collection_matchers or the legacy
+        upload_options collections attribute according to the first matching
+        expression in the order they are defined."""
+        if self.payload.collection_matchers:
+            collection_config: dict[str, str] | list[dict[str, Any]] = (
+                self.payload.collection_matchers
+            )
+        else:
+            collection_config = self.payload.collection_mapping
+
+        for item in self.payload["features"]:
+            if coll := utils_find_collection(collection_config, item):
                 item["collection"] = coll
 
     def download_item_assets(
         self,
         item: Item,
         path_template: str = "${collection}/${id}",
-        config: Optional[DownloadConfig] = None,
+        config: DownloadConfig | None = None,
         keep_non_downloaded: bool = True,
-        file_name: Optional[str] = "item.json",
+        file_name: str | None = "item.json",
     ) -> Item:
         """Download provided asset keys for the given item. Assets are
         saved in workdir in a directory (as specified by path_template), and
@@ -251,13 +306,13 @@ class Task(ABC):
 
         Args:
             item (pystac.Item): STAC Item for which assets need be downloaded.
-            path_template (Optional[str]): String to be interpolated to specify
+            path_template (str | None): String to be interpolated to specify
                 where to store downloaded files.
-            config (Optional[DownloadConfig]): Configuration for downloading an item
+            config (DownloadConfig | None): Configuration for downloading an item
                 and its assets.
-            keep_original_filenames (Optional[bool]): Controls whether original
+            keep_original_filenames (bool | None): Controls whether original
                 file names should be used, or asset key + extension.
-            file_name (Optional[str]): The name of the item file to save.
+            file_name (str | None): The name of the item file to save.
         """
         return asyncio.get_event_loop().run_until_complete(
             download_item_assets(
@@ -266,16 +321,16 @@ class Task(ABC):
                 config=config,
                 keep_non_downloaded=keep_non_downloaded,
                 file_name=file_name,
-            )
+            ),
         )
 
     def download_items_assets(
         self,
         items: Iterable[Item],
         path_template: str = "${collection}/${id}",
-        config: Optional[DownloadConfig] = None,
+        config: DownloadConfig | None = None,
         keep_non_downloaded: bool = True,
-        file_name: Optional[str] = "item.json",
+        file_name: str | None = "item.json",
     ) -> list[Item]:
         """Download provided asset keys for the given items. Assets are
         saved in workdir in a directory (as specified by path_template), and
@@ -284,13 +339,13 @@ class Task(ABC):
         Args:
             items (list[pystac.Item]): List of STAC Items for which assets need
                 be downloaded.
-            path_template (Optional[str]): String to be interpolated to specify
+            path_template (str | None): String to be interpolated to specify
                 where to store downloaded files.
-            config (Optional[DownloadConfig]): Configuration for downloading items
+            config (DownloadConfig | None): Configuration for downloading items
                 and their assets.
-            keep_original_filenames (Optional[bool]): Controls whether original
+            keep_original_filenames (bool | None): Controls whether original
                 file names should be used, or asset key + extension.
-            file_name (Optional[str]): The name of the item file to save.
+            file_name (str | None): The name of the item file to save.
         """
         return list(
             asyncio.get_event_loop().run_until_complete(
@@ -300,19 +355,25 @@ class Task(ABC):
                     config=config,
                     keep_non_downloaded=keep_non_downloaded,
                     file_name=file_name,
-                )
-            )
+                ),
+            ),
         )
 
     def upload_item_assets_to_s3(
         self,
         item: Item,
-        assets: Optional[list[str]] = None,
-        s3_client: Optional[s3] = None,
+        assets: list[str] | None = None,
+        s3_client: s3 | None = None,
     ) -> Item:
         if self._upload:
+            upload_options = self.payload.get_collection_upload_options(
+                item.collection_id,
+            )
             item = upload_item_assets_to_s3(
-                item=item, assets=assets, s3_client=s3_client, **self.upload_options
+                item=item,
+                assets=assets,
+                s3_client=s3_client,
+                **upload_options,
             )
         else:
             self.logger.warning("Skipping upload of new and modified assets")
@@ -330,13 +391,92 @@ class Task(ABC):
     def upload_local_item_assets_to_s3(
         self,
         item: Item,
-        s3_client: Optional[s3] = None,
+        s3_client: s3 | None = None,
     ) -> Item:
         return self.upload_item_assets_to_s3(
             item=item,
             assets=self._get_local_asset_keys(item),
             s3_client=s3_client,
         )
+
+    def _update_item_timestamps(
+        self,
+        item: Item,
+        url: str,
+        s3_client: s3 | None = None,
+    ) -> None:
+        now = datetime_to_str(datetime.now(timezone.utc))
+        created = item.properties.get("created")
+
+        existing_item = read_s3_item_json(url, s3_client=s3_client)
+        if existing_item is not None:
+            created = existing_item.properties.get("created")
+
+        if created is None:
+            created = now
+
+        item.properties["created"] = created
+        item.properties["updated"] = now
+
+    def _update_item_links(self, item: Item, url: str) -> None:
+        # Remove existing self and canonical links
+        item.links = [
+            link for link in item.links if link.rel not in ["self", "canonical"]
+        ]
+
+        # Add new canonical and self links
+        item.add_link(Link(rel="canonical", target=url, media_type="application/json"))
+        item.add_link(Link(rel="self", target=url, media_type="application/json"))
+
+    def upload_item_to_s3(
+        self,
+        item: Item,
+        s3_client: s3 | None = None,
+        public: bool = False,
+    ) -> Item:
+        """Upload a STAC Item JSON to S3.
+
+        Note:
+            * Since this method uploads the Item in its present state, it should only
+              be called after all asset HREFs are finalized, for instance, after assets
+              have been uploaded to S3 via upload_item_assets_to_s3.
+            * The method will change certain Item properties and Links:
+                * if there is no `created` timestamp it is set
+                * the `updated` timestamp is set
+                * canonical and self links are added/updated
+
+        Args:
+            item: STAC Item to upload
+            s3_client: S3 client to use. Defaults to global_s3_client.
+            public: Whether to make the uploaded item public. Defaults to False.
+        """
+        if not self._upload:
+            self.logger.warning("Skipping upload of item %s", item.id)
+            return item
+
+        # Validate upload_options and path_template
+        upload_options = self.payload.get_collection_upload_options(item.collection_id)
+        path_template = upload_options.get("path_template")
+        if not path_template:
+            raise ValueError(
+                f"Missing required 'path_template' in upload_options "
+                f"for collection '{item.collection_id}'",
+            )
+
+        # Generate S3 URL
+        layout = LayoutTemplate(f"{path_template.rstrip('/')}/{item.id}.json")
+        url = layout.substitute(item)
+
+        # Update timestamps
+        self._update_item_timestamps(item, url, s3_client)
+
+        # Update links
+        self._update_item_links(item, url)
+
+        # Upload to S3 (mutated item)
+        upload_item_json_to_s3(item, url, s3_client=s3_client, public=public)
+
+        return item
 
     # this should be in PySTAC
     @staticmethod
@@ -354,7 +494,7 @@ class Task(ABC):
                     "rel": "derived_from",
                     "href": links[0],
                     "type": "application/json",
-                }
+                },
             )
         return new_item
 
@@ -375,9 +515,7 @@ class Task(ABC):
         E.g. add software version information.
 
         Most tasks should prefer to not override this method, as logic should be
-        kept in :py:meth:`Task.process`. If you do override this method, make
-        sure to call ``super().post_process_item()`` AFTER doing any custom
-        post-processing, so any regular behavior can take your changes into account.
+        kept in :py:meth:`Task.process`.
 
         Args:
             item: An item produced by :py:meth:`Task.process`
@@ -385,9 +523,26 @@ class Task(ABC):
         Returns:
             dict[str, Any]: The item with any additional attributes applied.
         """
-        assert "stac_extensions" in item
-        assert isinstance(item["stac_extensions"], list)
-        item["stac_extensions"].sort()
+        return item
+
+    def _post_process_item(self, item: dict[str, Any]) -> dict[str, Any]:
+        """Perform post-processing operations on an item.
+
+        Args:
+            item: An item produced by :py:meth:`Task.process`
+
+        Returns:
+            dict[str, Any]: The item with any additional attributes applied.
+        """
+        self.post_process_item(item)
+
+        if "stac_extensions" in item:
+            if not isinstance(item["stac_extensions"], list):
+                raise TypeError(
+                    "stac_extensions must be type list, "
+                    f"not type {type(item['stac_extensions'])}",
+                )
+            item["stac_extensions"].sort()
         return item
 
     @classmethod
@@ -401,16 +556,16 @@ class Task(ABC):
 
             task = cls(payload, **kwargs)
             try:
-                items = list()
+                items = []
                 for item in task.process(**task.parameters):
-                    items.append(task.post_process_item(item))
+                    items.append(task._post_process_item(item))
 
-                task._payload["features"] = items
+                task.payload["features"] = items
                 task.assign_collections()
 
-                return task._payload
+                return task.payload
             except Exception as err:
-                task.logger.error(err, exc_info=True)
+                task.logger.exception(err)
                 raise err
         finally:
             if task:
@@ -429,7 +584,9 @@ class Task(ABC):
 
         pparser = argparse.ArgumentParser(add_help=False)
         pparser.add_argument(
-            "--logging", default="INFO", help="DEBUG, INFO, WARN, ERROR, CRITICAL"
+            "--logging",
+            default="INFO",
+            help="DEBUG, INFO, WARN, ERROR, CRITICAL",
         )
 
         subparsers = parser0.add_subparsers(dest="command")
@@ -587,27 +744,27 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
                     f.write(json.dumps(payload_out))
 
 
-# from https://pythonalgos.com/runtimeerror-event-loop-is-closed-asyncio-fix/
-"""fix yelling at me error"""
-from asyncio.proactor_events import _ProactorBasePipeTransport  # noqa
-from functools import wraps  # noqa
+if sys.platform == "win32":
+    from asyncio.proactor_events import _ProactorBasePipeTransport
+    from functools import wraps
 
+    def _silence_event_loop_closed(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        """Suppress 'Event loop is closed' RuntimeError on Windows.
 
-def silence_event_loop_closed(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
-    @wraps(func)
-    def wrapper(self, *args: Any, **kwargs: Any) -> Any:  # type: ignore
-        try:
-            return func(self, *args, **kwargs)
-        except RuntimeError as e:
-            if str(e) != "Event loop is closed":
-                raise
+        This is a known issue with asyncio on Windows when using the ProactorEventLoop.
+        See: https://bugs.python.org/issue39232
+        """
 
-    return wrapper
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):  # type: ignore
+            try:
+                return func(self, *args, **kwargs)
+            except RuntimeError as e:
+                if "Event loop is closed" not in str(e):
+                    raise
 
+        return wrapper
 
-setattr(
-    _ProactorBasePipeTransport,
-    "__del__",
-    silence_event_loop_closed(_ProactorBasePipeTransport.__del__),
-)
-"""fix yelling at me error end"""
+    _ProactorBasePipeTransport.__del__ = _silence_event_loop_closed(  # type: ignore[method-assign]
+        _ProactorBasePipeTransport.__del__,
+    )
