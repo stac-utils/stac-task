@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import inspect
 import json
 import logging
 import sys
@@ -10,11 +11,13 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import rmtree
+import subprocess
 from tempfile import mkdtemp
 from typing import Any
 
 import fsspec
 from boto3utils import s3
+from pydantic import BaseModel
 from pystac import Asset, Item, ItemCollection, Link
 from pystac.layout import LayoutTemplate
 from pystac.utils import datetime_to_str
@@ -27,7 +30,7 @@ from .asset_io import (
     upload_item_json_to_s3,
 )
 from .config import DownloadConfig
-from .exceptions import FailedValidation
+from .exceptions import FailedValidation, InvalidOutputSchema
 from .logging import TaskLoggerAdapter
 from .payload import Payload
 from .utils import find_collection as utils_find_collection
@@ -678,6 +681,26 @@ class Task(ABC):
 workdir = 'local-output', output = 'local-output/output-payload.json') """,
         )
 
+        # build
+        parser = subparsers.add_parser(
+            "build",
+            parents=[pparser],
+            formatter_class=dhf,
+            help="Build STAC Task",
+        )
+
+        parser.add_argument(
+            "--image-uri",
+            required=True,
+            help="URI to push docker image to",
+        )
+
+        parser.add_argument(
+            "--output",
+            default=None,
+            help="Write output task metadata to this URL",
+        )
+
         # turn Namespace into dictionary
         pargs = vars(parser0.parse_args(args))
         # only keep keys that are not None
@@ -722,26 +745,64 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
         ]:
             logging.getLogger(ql).propagate = False
 
-        if cmd == "run":
-            href = args.pop("input", None)
-            href_out = args.pop("output", None)
+        match cmd:
+            case "run":
+                href = args.pop("input", None)
+                href_out = args.pop("output", None)
 
-            # read input
-            if href is None:
-                payload = json.load(sys.stdin)
-            else:
-                with fsspec.open(href) as f:
-                    payload = json.loads(f.read())
+                # read input
+                if href is None:
+                    payload = json.load(sys.stdin)
+                else:
+                    with fsspec.open(href) as f:
+                        payload = json.loads(f.read())
 
-            # run task handler
-            payload_out = cls.handler(payload, **args)
+                # run task handler
+                payload_out = cls.handler(payload, **args)
 
-            # write output
-            if href_out is None:
-                json.dump(payload_out, sys.stdout)
-            else:
-                with fsspec.open(href_out, "w") as f:
-                    f.write(json.dumps(payload_out))
+                # write output
+                if href_out is None:
+                    json.dump(payload_out, sys.stdout)
+                else:
+                    with fsspec.open(href_out, "w") as f:
+                        f.write(json.dumps(payload_out))
+            case "build":
+                # build docker image
+                subprocess.check_call([
+                    'docker', 'buildx', 'build',
+                    '-t', f"{args['image_uri']}:{cls.version}",
+                    '-f', 'Dockerfile', '.',
+                ])
+
+                # push docker image
+                def _push_image():
+                    return f"{args['image_uri']}:{cls.version}",
+
+                uri = _push_image()
+
+                # create task metadata document
+                input_schema = output_schema = None
+                if cls.input_model:
+                    input_schema = cls.input_model.model_json_schema()
+                if cls.output_model:
+                    output_schema = cls.output_model.model_json_schema()
+
+                task_metadata = {
+                    "name": cls.name,
+                    "version": cls.version,
+                    "description": cls.description,
+                    "input_schema": input_schema,
+                    "output_schema": output_schema,
+                    "uri": uri,
+                }
+
+                # write output
+                href_out = args.pop("output", None)
+                if href_out is None:
+                    json.dump(task_metadata, sys.stdout)
+                else:
+                    with fsspec.open(href_out, "w") as f:
+                        f.write(json.dumps(task_metadata))
 
 
 if sys.platform == "win32":
