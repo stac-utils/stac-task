@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import inspect
 import json
 import logging
 import sys
@@ -11,7 +10,6 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import rmtree
-import subprocess
 from tempfile import mkdtemp
 from typing import Any
 
@@ -30,7 +28,7 @@ from .asset_io import (
     upload_item_json_to_s3,
 )
 from .config import DownloadConfig
-from .exceptions import FailedValidation, InvalidOutputSchema
+from .exceptions import FailedValidation
 from .logging import TaskLoggerAdapter
 from .payload import Payload
 from .utils import find_collection as utils_find_collection
@@ -95,6 +93,9 @@ class Task(ABC):
     name = "task"
     description = "A task for doing things"
     version = "0.1.0"
+
+    input_model: BaseModel | None = None
+    output_model: BaseModel | None = None
 
     def __init__(
         self: "Task",

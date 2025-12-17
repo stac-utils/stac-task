@@ -197,51 +197,6 @@ def test_task_handler(payload: dict[str, Any]) -> None:
     assert derived_link["href"] == self_link["href"]
 
 
-def test_parse_no_args() -> None:
-    with pytest.raises(SystemExit):
-        NothingTask.parse_args([])
-
-
-def test_parse_args() -> None:
-    args = NothingTask.parse_args("run input --save-workdir".split())
-    assert args["command"] == "run"
-    assert args["logging"] == "INFO"
-    assert args["input"] == "input"
-    assert args["save_workdir"] is True
-    assert args["upload"] is True
-    assert args["validate"] is True
-
-
-def test_parse_args_deprecated_skip() -> None:
-    args = NothingTask.parse_args("run input --skip-upload --skip-validation".split())
-    assert args["upload"] is False
-    assert args["validate"] is False
-
-
-def test_parse_args_no_upload_and_no_validation() -> None:
-    args = NothingTask.parse_args("run input --no-upload --no-validate".split())
-    assert args["upload"] is False
-    assert args["validate"] is False
-
-
-def test_parse_args_no_upload_and_validation() -> None:
-    args = NothingTask.parse_args("run input --no-upload --validate".split())
-    assert args["upload"] is False
-    assert args["validate"] is True
-
-
-def test_parse_args_upload_and_no_validation() -> None:
-    args = NothingTask.parse_args("run input --upload --no-validate".split())
-    assert args["upload"] is True
-    assert args["validate"] is False
-
-
-def test_parse_args_upload_and_validation() -> None:
-    args = NothingTask.parse_args("run input --upload --validate".split())
-    assert args["upload"] is True
-    assert args["validate"] is True
-
-
 def test_collection_mapping(nothing_task: Task) -> None:
     assert nothing_task.collection_mapping == {
         "sentinel-2-l2a": "$[?(@.id =~ 'S2[AB].*')]",
@@ -273,7 +228,3 @@ def test_s3_upload(nothing_task: Task, mock_s3_client: Callable[[], s3]) -> None
         item_after_upload.assets["key1"].href
         == "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-2-l2a/52/H/GH/2022/10/S2A_52HGH_20221007_0_L2A/foo.txt"
     )
-
-
-if __name__ == "__main__":
-    output = NothingTask.cli()

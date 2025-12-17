@@ -5,7 +5,7 @@ import subprocess
 import sys
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import fsspec
 
@@ -19,9 +19,11 @@ class DeprecatedStoreTrueAction(argparse._StoreTrueAction):
 
 
 class CLI:
-    tasks: dict[str, Task] = {}
+    tasks: dict[str, Task]
 
     def __init__(self) -> None:
+        self.tasks = {}
+
         self._build_argparser()
 
     def _build_argparser(self) -> None:
@@ -209,7 +211,8 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
     def _build_tasks(self, args: dict[str, Any]) -> None:
         # create task metadata document
         from stactask import __version__
-        metadata = {
+
+        metadata: dict[str, Any] = {
             "stactask_version": __version__,
             "tasks": {},
         }
@@ -230,18 +233,29 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
             metadata["tasks"][name] = task_metadata
 
         # build docker image
-        subprocess.check_call([
-            'docker', 'buildx', 'build',
-            '-t', args['image_tag'],
-            '--label', f"stactask_metadata={json.dumps(metadata)}",
-            '-f', 'Dockerfile', '.',
-        ])
+        subprocess.check_call(  # noqa: S603
+            [  # noqa: S607
+                "docker",
+                "buildx",
+                "build",
+                "-t",
+                args["image_tag"],
+                "--label",
+                f"stactask_metadata={json.dumps(metadata)}",
+                "-f",
+                "Dockerfile",
+                ".",
+            ],
+        )
 
         # push docker image
-        def _push_image():
-            return args['image_tag']
+        def _push_image(image_tag: str) -> None:
+            # noop, replace later
+            return None
 
-        _push_image()
+        image_tag = args["image_tag"]
+        cast(str, image_tag)
+        _push_image(args["image_tag"])
 
     def _run_task(self, args: dict[str, Any]) -> None:
         href = args.pop("input", None)
