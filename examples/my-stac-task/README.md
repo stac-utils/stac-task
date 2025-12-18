@@ -14,7 +14,7 @@ STAC tasks are generally assumed (but not required) to be part of a [Cirrus work
 
 ## Building the STAC task scaffolding
 
-`my-stac-task` lives in the `examples/` section of the `stac-task` code repository. To generate the scaffolding for a STAC task, `my-stac-task` should first be copied to a local directory; second, task naming needs to be adjusted to suit user needs.  There are a few ways to do that - here are two: 
+`my-stac-task` lives in the `examples/` section of the `stac-task` code repository. To generate the scaffolding for a STAC task, `my-stac-task` should first be copied to a local directory; second, task naming needs to be adjusted to suit user needs.  There are a few ways to do that - here are two:
 
 #### via GitHub Content Downloader
 
@@ -75,7 +75,7 @@ uv run my-stac-task run -h
 
 ## Template Usage
 
-This example STAC task is intended to be used as a template. 
+This example STAC task is intended to be used as a template.
 - Update `pyproject.toml` with the project name, authors, description, dependencies, etc.
 - Rename the folder `src/my_stac_task` to match the project name
 - Add test payload fixtures under `tests/fixtures`

@@ -103,7 +103,7 @@ Once you have a Cirrus process payload (including its STAC Items, if applicable)
 For additional context, this is the basic internal STAC Task workflow:
 1. The task is initiated by passing in a Cirrus process payload
 * by the `handler` function, or
-* by the `CLI` 
+* by the `CLI`
 2. The `stactask.Task.handler` _class method_ is called (not to be confused with any handler _function_...)
 * the Task is instantiated with a payload
 * the payload is validated
@@ -156,10 +156,10 @@ The `process` method is the heart of your task - this is where any business logi
 def process(self, **kwargs: Any) -> List[str]:
     for item in self.items:
         self.logger.info(f"Processing item: {item.id}")
-        
+
         # Example logic: Add a custom property
         item.properties["my_task:status"] = "processed"
-        
+
     return [item.to_dict() for item in items]
 ```
 Note: the `kwargs` argument exists in the `process` method to facilitate passing in task and workflow option parameters internally within `stactask.Task` - it must remain in the local method definition...
@@ -274,7 +274,7 @@ items_as_dicts - Items in the features list of the payload as Python dictionarie
 
 parameters - a dictionary of task and workflow parameters
 
-process_definition - the Cirrus payload process block as a dictionary 
+process_definition - the Cirrus payload process block as a dictionary
 
 task_options - payload task options for this task
 
@@ -295,7 +295,7 @@ workflow_options - payload workflow options
 def process(self, items: List[Item], **kwargs: Any) -> List[Item]:
     # Use the built-in logger
     self.logger.info("Downloading extra config from S3...")
-    
+
     # Use the built-in s3 utility
     config_data = self.s3.read_json("s3://my-bucket/config.json")
     ...
@@ -316,10 +316,10 @@ def process(self, items: List[Item], **kwargs: Any) -> List[Item]:
         # 1. Logic to create a local file (e.g., 'output.tif')
         # 2. Add it to the item
         item.add_asset("data", pystac.Asset(href="output.tif"))
-        
+
         # 3. Automatically upload local assets to S3 and update HREFs
         self.upload_item_assets(item)
-        
+
         processed_items.append(item)
     return processed_items
 

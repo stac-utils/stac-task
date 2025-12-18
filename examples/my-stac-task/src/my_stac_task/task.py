@@ -4,13 +4,14 @@ from stactask import Task
 
 from .processor import process_item
 
+
 class MyStacTask(Task):
     name = "my-stac-task"
     description = "An example STAC Task"
 
     def validate(self) -> None:
         """Custom validation logic for the task.
-        
+
         Bespoke validation task-specific parameters can be implemented here.
         This method is called by the parent class during task initialization.
         """
@@ -18,7 +19,7 @@ class MyStacTask(Task):
 
     def process(self, **kwargs: Any) -> list[dict[str, Any]]:
         """Core task processing logic.
-        
+
         This method is called by the parent class to perform the main work of the task.
         All business logic should be implemented here.
         """
