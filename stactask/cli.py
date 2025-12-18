@@ -27,20 +27,25 @@ class CLI:
         self._build_argparser()
 
     def _build_argparser(self) -> None:
-        self._parser = argparse.ArgumentParser(description="?!?!?!?!")
+        self._parser = argparse.ArgumentParser(description="STAC Task management tools")
         self._parser.add_argument(
             "--version",
             help="Print version and exit",
             action="version",
             version="???",
         )
-        pparser = argparse.ArgumentParser(add_help=False)
         self._parser.add_argument(
             "--logging",
             default="INFO",
             help="DEBUG, INFO, WARN, ERROR, CRITICAL",
         )
+        self._parser.add_argument(
+            "--output",
+            default=None,
+            help="Write output payload to this URL",
+        )
 
+        pparser = argparse.ArgumentParser(add_help=False)
         subparsers = self._parser.add_subparsers(dest="command")
 
         # run
@@ -62,11 +67,6 @@ class CLI:
             help="Name of the task you wish to run",
         )
 
-        run_parser.add_argument(
-            "--output",
-            default=None,
-            help="Write output payload to this URL",
-        )
 
         # additional options
         run_parser.add_argument(
@@ -136,18 +136,12 @@ class CLI:
 workdir = 'local-output', output = 'local-output/output-payload.json') """,
         )
 
-        # build
+        # metadata
         build_parser = subparsers.add_parser(
-            "build",
+            "metadata",
             parents=[pparser],
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            help="Build all STAC Tasks",
-        )
-
-        build_parser.add_argument(
-            "--image-tag",
-            required=True,
-            help="URI to push docker image to",
+            help="Output metadata document for all registered STAC Tasks",
         )
 
         build_parser.add_argument(
@@ -166,6 +160,8 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
         loglevel = args.pop("logging")
         logging.basicConfig(level=loglevel)
 
+        href_out = args.pop("output", None)
+
         # quiet these loud loggers
         for ql in [
             "botocore",
@@ -179,9 +175,11 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
 
         match cmd:
             case "run":
-                self._run_task(args)
-            case "build":
-                self._build_tasks(args)
+                output = self._run_task(args)
+            case "metadata":
+                output = self._task_metadata()
+
+        self._write_output(output, href_out)
 
     def _parse_args(self, args: list[str]) -> dict[str, Any]:
         # turn Namespace into dictionary
@@ -208,7 +206,7 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
 
         return pargs
 
-    def _build_tasks(self, args: dict[str, Any]) -> None:
+    def _task_metadata(self) -> dict[str, Any]:
         # create task metadata document
         from stactask import __version__
 
@@ -217,49 +215,12 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
             "tasks": {},
         }
         for name, task in self.tasks.items():
-            input_schema = output_schema = None
-            if task.input_model:
-                input_schema = task.input_model.model_json_schema()
-            if task.output_model:
-                output_schema = task.output_model.model_json_schema()
+            metadata["tasks"][name] = task.metadata()
 
-            task_metadata = {
-                "name": name,
-                "version": task.version,
-                "description": task.description,
-                "input_schema": input_schema,
-                "output_schema": output_schema,
-            }
-            metadata["tasks"][name] = task_metadata
+        return metadata
 
-        # build docker image
-        subprocess.check_call(  # noqa: S603
-            [  # noqa: S607
-                "docker",
-                "buildx",
-                "build",
-                "-t",
-                args["image_tag"],
-                "--label",
-                f"stactask_metadata={json.dumps(metadata)}",
-                "-f",
-                "Dockerfile",
-                ".",
-            ],
-        )
-
-        # push docker image
-        def _push_image(image_tag: str) -> None:
-            # noop, replace later
-            return None
-
-        image_tag = args["image_tag"]
-        cast(str, image_tag)
-        _push_image(args["image_tag"])
-
-    def _run_task(self, args: dict[str, Any]) -> None:
+    def _run_task(self, args: dict[str, Any]) -> dict[str, Any]:
         href = args.pop("input", None)
-        href_out = args.pop("output", None)
 
         # read input
         if href is None:
@@ -272,9 +233,11 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
         task_name = args.pop("task")
         payload_out = self.tasks[task_name].handler(payload, **args)
 
-        # write output
+        return payload_out
+
+    def _write_output(self, output: dict[str, Any], href_out: str | None = None) -> None:
         if href_out is None:
-            json.dump(payload_out, sys.stdout)
+            json.dump(output, sys.stdout)
         else:
             with fsspec.open(href_out, "w") as f:
-                f.write(json.dumps(payload_out))
+                f.write(json.dumps(output))

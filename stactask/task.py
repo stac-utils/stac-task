@@ -155,6 +155,22 @@ class Task(ABC):
         )
         self.payload = Payload(value)
 
+    @classmethod
+    def metadata(cls) -> dict[str, str]:
+        input_schema = output_schema = None
+        if cls.input_model:
+            input_schema = cls.input_model.model_json_schema()
+        if cls.output_model:
+            output_schema = cls.output_model.model_json_schema()
+
+        return {
+            "name": cls.name,
+            "version": cls.version,
+            "description": cls.description,
+            "input_schema": input_schema,
+            "output_schema": output_schema,
+        }
+
     @property
     def process_definition(self) -> dict[str, Any]:
         warnings.warn(

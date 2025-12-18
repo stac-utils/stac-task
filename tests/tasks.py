@@ -1,5 +1,7 @@
 from typing import Any
 
+from pydantic import BaseModel
+
 from stactask import Task
 from stactask.exceptions import FailedValidation
 
@@ -32,3 +34,24 @@ class DerivedItemTask(Task):
     def process(self, **kwargs: Any) -> list[dict[str, Any]]:
         assert kwargs["parameter"] == "value"
         return [self.create_item_from_item(self.items_as_dicts[0])]
+
+
+class InputModel(BaseModel):
+    a: int
+    b: str
+
+
+class OutputModel(BaseModel):
+    c: float
+
+
+class SchemaTask(Task):
+    name = "schema-task"
+    description = "this task defines input and output models"
+    version = "0.2.0"
+
+    input_model = InputModel
+    output_model = OutputModel
+
+    def process(self, **kwargs: Any) -> list[dict[str, Any]]:
+        return [OutputModel(c=2.7)]
