@@ -1,0 +1,52 @@
+{
+  "features": [
+      {
+          "type": "Feature",
+          "stac_version": "1.1.0",
+          "stac_extensions": [],
+          "id": "example-item",
+          "bbox": [-71.466769, 42.339271, -70.263734, 43.345864],
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [-71.4667693618289, 43.3262376051166],
+                [-71.4278035338514, 42.3392708844627],
+                [-70.6447744862405, 42.3532726633038],
+                [-70.2637344878527, 43.3458642540582],
+                [-71.4667693618289, 43.3262376051166]
+              ]
+            ]
+          },
+          "properties": {
+              "datetime": "2025-03-04T15:41:14Z",
+              "example-property": "value"
+          },
+          "assets": {
+              "example_asset": {
+                  "title": "Example",
+                  "type": "image/tiff",
+                  "href": "http://example.com/example_asset.tif"
+              }
+          },
+          "links": []
+      }
+  ],
+  "process": [
+    {
+      "id": "collection-0/workflow-workflow-1/item-1",
+      "workflow": "workflow-1",
+      "output_options": {
+        "path_template": "/${collection}/${year}/${month}/${day}/${id}",
+        "collections": {
+          "collection-1": ".*"
+        }
+      },
+      "tasks": {
+        "my-stac-task": {
+          "param1": "value1"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "process": [
+    {
+      "id": "invalid-collection-0/workflow-workflow-1/item-1",
+      "workflow": "workflow-1",
+      "output_options": {
+        "path_template": "/${collection}/${year}/${month}/${day}/${id}",
+        "collections": {
+          "collection-1": ".*"
+        }
+      },
+      "tasks": {
+        "my-stac-task": {
+          "param1": "value1"
+        }
+      }
+    }
+  ]
+}
