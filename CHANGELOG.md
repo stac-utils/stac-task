@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### ⚠️ Breaking Change
 
 - ([#176]) Removed support for Python 3.9.
+- add a doc defining `stactask.Task` features (properties, attributes, and instance methods)
 
 ### Added
 
