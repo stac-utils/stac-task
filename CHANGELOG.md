@@ -5,11 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- ([#153]) Adds `upload_item_to_s3` method to the `Task` class to upload a
+  STAC Item to S3 using configured upload options.
+
 ## [v0.7.0] - 2025-09-17
 
 ### ⚠️ Breaking Change
 
 - ([#176]) Removed support for Python 3.9.
+- add a doc defining `stactask.Task` features (properties, attributes, and instance methods)
 
 ### Added
 
