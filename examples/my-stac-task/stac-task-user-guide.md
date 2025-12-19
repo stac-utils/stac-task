@@ -225,7 +225,7 @@ This is an example payload for reference:
 }
 ```
 
-* `type`: the JSON object is actually a GeoJSON FeatureCollection wiht an additional `process` field
+* `type`: the JSON object is actually a GeoJSON FeatureCollection with an additional `process` field
 * `features`: if present, contains STAC Item(s)
 * `process`: process definition containing task, workflow, and upload options - the process definition is exposed as `self.process_definition` in the `Task` object.
    * `tasks`: contains custom parameters on a per-task basis - in this example the `my-stac-task` key points to custom parameters for this task
@@ -247,60 +247,6 @@ def process(self, **kwargs: Any) -> List[Item]:
 
 ```
 
----
-
-## Convenience Features
-
-The `Task` base class provides several built-in utilities to simplify cloud-based geospatial work.
-
-add_software_version_to_item - Adds software version information to a single item.  Uses the processing extension.
-        item["properties"]["processing:software"] = {cls.name: cls.version}
-
-assign_collections - Assigns new collection names based on collection_matchers or the legacy
-        upload_options collections attribute according to the first matching
-        expression in the order they are defined.
-
-download_item_assets - Download provided asset keys for the given item. Assets are
-        saved in workdir in a directory (as specified by path_template), and
-        the items are updated with the new asset hrefs.
-
-download_items_assets - Download provided asset keys for the given items. Assets are
-        saved in workdir in a directory (as specified by path_template), and
-        the items are updated with the new asset hrefs.
-
-items - `pystac.ItemCollection` of the Items in the payload
-
-items_as_dicts - Items in the features list of the payload as Python dictionaries
-
-parameters - a dictionary of task and workflow parameters
-
-process_definition - the Cirrus payload process block as a dictionary
-
-task_options - payload task options for this task
-
-upload_item_assets_to_s3 - Upload Item assets to an S3 bucket; returns A new STAC Item with uploaded assets pointing to newly uploaded file URLs
-
-upload_item_to_s3 - Upload the canonical version of the Item to S3
-
-upload_options - payload upload options (note that this is the process-level options and not the collection-level options)
-
-workflow_options - payload workflow options
-
-### Built-in Logger and S3 Object
-
-* **`self.logger`**: A pre-configured logger that includes task metadata.
-* **`self.s3`**: A `boto3utils.s3` instance for easy reading/writing to AWS S3.
-
-```python
-def process(self, items: List[Item], **kwargs: Any) -> List[Item]:
-    # Use the built-in logger
-    self.logger.info("Downloading extra config from S3...")
-
-    # Use the built-in s3 utility
-    config_data = self.s3.read_json("s3://my-bucket/config.json")
-    ...
-
-```
 
 ### Uploading Assets and Items
 
@@ -347,15 +293,6 @@ Including a CLI allows you to run and debug your task locally using a JSON file 
 ```python
 if __name__ == "__main__":
     MyProcessingTask.cli()
-
-```
-
-## Running a STAC Task
-
-### Running locally
-
-```bash
-python src/my_task/task.py run input_payload.json --local --workdir ./tmp
 
 ```
 

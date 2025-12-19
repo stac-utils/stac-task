@@ -16,7 +16,7 @@ STAC tasks are generally assumed (but not required) to be part of a [Cirrus work
 
 `my-stac-task` lives in the `examples/` section of the `stac-task` code repository. To generate the scaffolding for a STAC task, `my-stac-task` should first be copied to a local directory; second, task naming needs to be adjusted to suit user needs.  There are a few ways to do that - here are two:
 
-#### via GitHub Content Downloader
+### via GitHub Content Downloader
 
 If you have `uv` installed, you can use the command below to set-up a task - `uv` will use the GitHub Content Downloader library to draw directly from the `stac-task` public repository and place the files locally.
 
@@ -82,7 +82,17 @@ This example STAC task is intended to be used as a template.
 - Add code to `src/<project-name>/task.py` and add supporting files as needed
 - Update the Repostitory URL in CHANGELOG.md and keep it up to date with versions
 
+### AI Prompt for Project Set-up
 
+Rename the `my-stac-task` project to <my-new-project>.
+Find and replace all instances of `my-stac-task`:
+* replace all kebab case with the new project name (_e.g._ project and task references)
+* replace all camel case with a camel cased version of the new project name (_e.g._ `task.MyStacTask` references)
+* replace all snake case with a snake cased version of the new project name (_e.g._ source code directory)
+
+Validate the results of name changing:
+* Ensure all tests pass by running `uv run pytest -vv`.  Investigate the cause of any test failure and fix any project name references that are incorrect.
+* Ensure the CLI still runs locally using this payload: `tests/fixtures/payloads/success/payload1/in.json` and the `--local` argument.  Review any CLI failure and fix any project name references.
 
 # Versions and Releases
 
@@ -93,7 +103,7 @@ This project uses CalVer for versioning releases.  The format is specified as
 
 | token | description                     | example(s)             |
 |-------|---------------------------------|------------------------|
-| YYYY  | the full year                   | 2006, 2016, 2106)      |
+| YYYY  | the full year                   | 2006, 2016, 2112       |
 | 0M    | the zero-padded month           | 01, 02 ... 11, 12      |
 | 0D    | the zero-padded day of month    | 01, 02 ... 30, 31      |
 | MICRO | (optional) free form, as needed | alpha, rc0, post0, ... |
