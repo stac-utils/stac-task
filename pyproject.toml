@@ -69,6 +69,7 @@ Documentation = "https://stac-task.readthedocs.io/en/stable/"
 
 [tool.mypy]
 strict = true
+exclude = '(^|/)(examples/my-stac-task|build|dist|\.venv)(/|$)'
 
 [[tool.mypy.overrides]]
 module = ["boto3utils", "jsonpath_ng.ext", "fsspec"]
@@ -121,3 +122,6 @@ env = [
     "AWS_SESSION_TOKEN=baz",
 ]
 filterwarnings = ["ignore::UserWarning:stactask.*:"]
+testpaths = ["tests"]
+# don't recursively collect tests from example folders or virtual envs
+norecursedirs = ["examples", ".venv", ".eggs", "build"]

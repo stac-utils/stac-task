@@ -42,9 +42,19 @@ repos:
         types: [text]
         stages: [pre-commit, pre-push, manual]
       - id: mypy
-        name: mypy
+        name: mypy (project)
         entry: mypy
         language: python
         'types_or': [python, pyi]
-        args: []
+        args: ["."]
+        pass_filenames: false
+        require_serial: true
+
+      - id: mypy_examples
+        name: mypy (examples)
+        entry: bash
+        language: system
+        'types_or': [python, pyi]
+        args: ["-lc", "cd examples/my-stac-task && uv run mypy ."]
+        pass_filenames: false
         require_serial: true

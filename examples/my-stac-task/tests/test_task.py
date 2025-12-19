@@ -8,8 +8,8 @@ from my_stac_task.task import MyStacTask
 
 
 # Helper function to get test data
-def get_test_cases():
-    test_cases = []
+def get_test_cases() -> list[tuple[Path, Path, bool]]:
+    test_cases: list[tuple[Path, Path, bool]] = []
     fixtures_dir = Path(__file__).parent / "fixtures" / "payloads"
 
     # Walk through the directory and find all directories with an 'in.json' file
@@ -48,7 +48,4 @@ def test_task(
         # If we expect a successful result, compare the actual and expected output
         expected_output = json.loads(expected_output_file.read_text())
         actual_output = MyStacTask.handler(payload=input_payload, upload=False)
-        # assert json.dumps(expected_output, sort_keys=True) == json.dumps(actual_output, sort_keys=True), "JSON objects do not match"
-        # print(expected_output)
-        # print(actual_output)
         assert actual_output == expected_output

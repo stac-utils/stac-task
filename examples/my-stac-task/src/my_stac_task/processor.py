@@ -75,6 +75,6 @@ def process_item(payload: Payload) -> Payload:
     # add the Item to the payload features list
     if payload.get("features") is None:
         payload["features"] = []
-    payload.get("features").append(item.to_dict())
+    payload.get("features").append(item.to_dict())  # type: ignore
 
     return payload

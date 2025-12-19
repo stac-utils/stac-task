@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from stactask import Task
 
@@ -9,7 +9,7 @@ class MyStacTask(Task):
     name = "my-stac-task"
     description = "An example STAC Task"
 
-    def validate(self) -> None:
+    def validate(self) -> bool:
         """Custom validation logic for the task.
 
         Bespoke validation task-specific parameters can be implemented here.
@@ -33,10 +33,14 @@ class MyStacTask(Task):
         updated_payload = process_item(self.payload)
 
         # return a list of Items
-        return updated_payload.get("features", [])
+        features = cast(list[dict[str, Any]], updated_payload.get("features", []))
+        return features
 
 
-def lambda_handler(event: dict, context: dict = {}):
+def lambda_handler(
+    event: dict[str, Any],
+    context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     return MyStacTask.handler(payload=event)
 
 

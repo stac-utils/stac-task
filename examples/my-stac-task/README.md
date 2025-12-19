@@ -32,6 +32,12 @@ An alternative method is just to clone `stac-task` locally and `examples/my-stac
 
 ### Initialize the STAC task project
 
+Initialize `git`:
+```bash
+git init
+git add .
+```
+
 Once `uv` is installed, the project's environment can be initialized as follows:
 ```bash
 # Create and activate the local virtual environment
