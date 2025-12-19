@@ -30,7 +30,7 @@ uvx --from github-content-downloader ghcd https://github.com/stac-utils/stac-tas
 
 An alternative method is just to clone `stac-task` locally and `examples/my-stac-task` to the desired location.
 
-### Initialize the STAC task project
+## Initialize the STAC task project
 
 Initialize `git`:
 ```bash
@@ -66,7 +66,7 @@ uv run pytest -vv
 ```
 The `tests/test_task.py` module contains test code to iterate through the input payloads in `fixtures`, which contains a series of input and payload files, each pair in it's own folder. For expected errors in tests an `exception.txt` file is provided intead of an output payload.
 
-### Run the task
+## Run the task
 
 `my-stac-task` can be run from the command line using the `stac-task` CLI (from the root directory):
 ```bash
@@ -88,13 +88,17 @@ This example STAC task is intended to be used as a template.
 - Add code to `src/<project-name>/task.py` and add supporting files as needed
 - Update the Repostitory URL in CHANGELOG.md and keep it up to date with versions
 
-### AI Prompt for Project Set-up
+## AI Prompt for Project Set-up
 
 Rename the `my-stac-task` project to <my-new-project>.
 Find and replace all instances of `my-stac-task`:
 * replace all kebab case with the new project name (_e.g._ project and task references)
 * replace all camel case with a camel cased version of the new project name (_e.g._ `task.MyStacTask` references)
 * replace all snake case with a snake cased version of the new project name (_e.g._ source code directory)
+
+Do not change any naming in:
+* `stac-task-user-guide.md`
+* `README.md`
 
 Validate the results of name changing:
 * Ensure all tests pass by running `uv run pytest -vv`.  Investigate the cause of any test failure and fix any project name references that are incorrect.

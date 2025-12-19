@@ -10,25 +10,20 @@ The objective of this document is to provide basic instructions as to how to cre
 
 1. [The STAC Task Philosophy](#the-stac-task-philosophy)
 2. [Project Anatomy](#project-anatomy)
-3. [Task Workflow](#task-workflow)
-3. [The Task Class](#the-task-class)
-* [The Task Module](#the-task-module)
-* [The Task Object](#the-task-object)
-* [The `process` Method](#the-process-method)
-
-
-4. [Configuration and the Cirrus Payload](#configuration-and-the-cirrus-payload)
-* [The `process_definition` Object](#the-process_definition-object)
-* [The Payload Object](#the-payload-object)
-
-
-5. [Convenience Features](#convenience-features)
-* [Built-in Logger and S3 Object](#built-in-logger-and-s3-object)
-* [Uploading Assets and Items](#uploading-assets-and-items)
-
-
-6. [Entry Points: Handler and CLI](#entry-points-handler-and-cli)
-7. [Running a STAC Task](#running-a-stac-task)
+3. [The Basics](#the-basics)
+4. [Task Workflow](#task-workflow)
+5. [The Task Class](#the-task-class)
+    - [The Task Module](#the-task-module)
+    - [The Task Object](#the-task-object)
+    - [The `process` Method](#the-process-method)
+    - [The Handler Function](#the-handler-function)
+6. [Configuration and the Cirrus Payload](#configuration-and-the-cirrus-payload)
+    - [The Cirrus Process Payload](#the-cirrus-process-payload)
+    - [The `process_definition` Object](#the-process_definition-object)
+    - [Uploading Assets and Items](#uploading-assets-and-items)
+7. [Entry Points: Handler and CLI](#entry-points-handler-and-cli)
+    - [The Handler](#the-handler)
+    - [The CLI](#the-cli)
 8. [External Resources](#external-resources)
 
 ---
@@ -108,7 +103,7 @@ For additional context, this is the basic internal STAC Task workflow:
 * the Task is instantiated with a payload
 * the payload is validated
 * task and workflow parameters are extracted
-3. The process method is called
+3. The `process` method is called
 * all user-defined processing executes
 * optionally:
    * STAC Items are created or adjusted
@@ -162,7 +157,7 @@ def process(self, **kwargs: Any) -> List[str]:
 
     return [item.to_dict() for item in items]
 ```
-Note: the `kwargs` argument exists in the `process` method to facilitate passing in task and workflow option parameters internally within `stactask.Task` - it must remain in the local method definition...
+Note: the `kwargs` argument exists in the `process` method to facilitate passing in task and workflow option parameters internally within `stactask.Task` - it must remain in the local method definition even though it cannot be used directly here...
 
 ### The Handler Function
 
@@ -246,7 +241,6 @@ def process(self, **kwargs: Any) -> List[Item]:
     ...
 
 ```
-
 
 ### Uploading Assets and Items
 
