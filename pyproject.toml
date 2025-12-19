@@ -53,7 +53,7 @@ dev = [
     "pytest~=8.0",
     "pytest-cov~=6.0",
     "pytest-env~=1.1",
-    "moto~=5.0.5",
+    "moto~=5.1.18",
     "esbonio~=0.16.0",
 ]
 docs = [
