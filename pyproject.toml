@@ -54,7 +54,7 @@ dev = [
     "pytest-cov~=7.0",
     "pytest-env~=1.1",
     "moto~=5.1.18",
-    "esbonio~=0.16.0",
+    "esbonio~=1.0.0",
 ]
 docs = [
     "sphinx~=8.1.3",
