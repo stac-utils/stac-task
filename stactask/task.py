@@ -696,7 +696,7 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
             if pargs.get("output") is None:
                 pargs["output"] = Path(pargs["workdir"]) / "output-payload.json"
 
-        if pargs.get("command", None) is None:
+        if pargs.get("command") is None:
             parser.print_help()
             sys.exit(0)
 
