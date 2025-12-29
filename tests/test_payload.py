@@ -162,9 +162,10 @@ def payload_collection_missing_upload_options() -> dict[str, Any]:
 
 
 @pytest.fixture
-def payload_collection_missing_upload_options_and_global_upload_options() -> (
-    dict[str, Any]
-):
+def payload_collection_missing_upload_options_and_global_upload_options() -> dict[
+    str,
+    Any,
+]:
     """Payload with collection matcher but missing global upload options and upload
     options for collection."""
     return {
