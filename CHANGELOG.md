@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - ([#153]) Adds `upload_item_to_s3` method to the `Task` class to upload a
   STAC Item to S3 using configured upload options.
+- ([#183]) Adds Task methods to add file metadata to Item Assets (supported by the File
+  STAC Extension) - user-facing functions are `add_fileinfo_to_local_assets` (multiple
+  Item Assets) and `add_fileinfo_to_local_asset` (single Item Asset).
 
 ## [v0.7.0] - 2025-09-17
 
