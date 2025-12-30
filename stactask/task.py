@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import hashlib
 import json
 import logging
 import sys
@@ -12,10 +13,13 @@ from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
 from typing import Any
+from urllib.parse import urlparse
 
 import fsspec
+import multihash  # type: ignore[import-untyped]
 from boto3utils import s3
 from pystac import Asset, Item, ItemCollection, Link
+from pystac.extensions.file import ByteOrder, FileExtension
 from pystac.layout import LayoutTemplate
 from pystac.utils import datetime_to_str
 
@@ -380,6 +384,23 @@ class Task(ABC):
 
         return item
 
+    def _is_local_href(self, href: str) -> bool:
+        """Check if asset href is local
+
+        Returns True if the href points to the local file system.
+        Handles Unix paths, Windows paths, and file:// URIs.
+        """
+
+        parsed = urlparse(href)
+
+        # 1. Handle Windows drive letters
+        if len(parsed.scheme) == 1 and parsed.scheme.isalpha():
+            return True
+
+        # 2. Check for explicit local or empty schemes (absolute/relative paths)
+        #    & Everything else (s3, http, gs, az, etc.) is remote
+        return parsed.scheme in ("", "file")
+
     def _is_local_asset(self, asset: Asset) -> bool:
         return bool(asset.href.startswith(str(self._workdir)))
 
@@ -477,6 +498,146 @@ class Task(ABC):
         upload_item_json_to_s3(item, url, s3_client=s3_client, public=public)
 
         return item
+
+    def add_fileinfo_to_local_assets(
+        self,
+        item: Item,
+        hash_algorithm: str = "sha2-256",
+    ) -> None:
+        """Add file metadata to all local assets in an item.
+
+        Adds size and checksum File STAC Extension metadata fields to all assets with
+        local hrefs. Non-local assets are skipped.
+
+        Args:
+            item: STAC Item whose assets will be updated with file metadata.
+            hash_algorithm: Multihash algorithm name to use for computing checksums.
+                Defaults to "sha2-256" - see compute_multihash() docs for supported
+                algorithms.
+        """
+        for asset in item.assets.values():
+            if self._is_local_href(asset.href):
+                self.add_fileinfo_to_local_asset(
+                    asset,
+                    autofill=True,
+                    hash_algorithm=hash_algorithm,
+                )
+            else:
+                self.logger.info(
+                    "Skipping automated file info for non-local or missing asset: %s",
+                    asset.href,
+                )
+
+    def add_fileinfo_to_local_asset(
+        self,
+        asset: Asset,
+        checksum: str | None = None,
+        size: int | None = None,
+        header_size: int | None = None,
+        byte_order: ByteOrder | None = None,
+        local_path: str | None = None,
+        autofill: bool = False,
+        hash_algorithm: str = "sha2-256",
+    ) -> None:
+        """Add file extension metadata to a single local asset.
+
+        Manual values take precedence over autofilled values. When autofill is enabled,
+        size and checksum are computed from the local file if not already set.
+
+        Args:
+            asset: STAC Asset to update with file metadata.
+            checksum: Multihash checksum value to set - uses the sha-256 algorithm by
+                default (see hash_algorithm arg). If None and autofill is True, will be
+                computed from the file.
+            size: File size in bytes. If None and autofill is True, will be computed
+                from the file.
+            header_size: Size of header data in bytes for binary formats.
+            byte_order: Byte order for binary data (big-endian or little-endian).
+            local_path: Local filesystem path where the asset data is stored.
+            autofill: If True, automatically compute size and checksum for local files
+                when not explicitly provided.
+            hash_algorithm: Multihash algorithm name to use for computing checksums
+                when autofill is enabled. Defaults to "sha2-256" - see
+                compute_multihash() docs for supported algorithms.
+        """
+        fext = FileExtension.ext(asset, add_if_missing=True)
+
+        # Apply manual values
+        if checksum:
+            fext.checksum = checksum
+        if size is not None:
+            fext.size = size
+        if header_size is not None:
+            fext.header_size = header_size
+        if byte_order:
+            fext.byte_order = byte_order
+        if local_path:
+            fext.local_path = local_path
+
+        # Autofill logic
+        if autofill and self._is_local_href(asset.href):
+            path = Path(asset.href)
+
+            if fext.size is None:
+                fext.size = path.stat().st_size
+
+            if fext.checksum is None:
+                try:
+                    fext.checksum = self.compute_multihash(
+                        path,
+                        algorithm=hash_algorithm,
+                    )
+                except OSError as e:
+                    self.logger.error(
+                        "Failed to compute hash for %s: %s",
+                        path,
+                        e,
+                    )
+
+    @staticmethod
+    def compute_multihash(path: Path, algorithm: str = "sha2-256") -> str:
+        """Compute a multihash checksum for a file.
+
+        Uses hashlib.file_digest (Python 3.11+) when available for optimal
+        performance. Falls back to chunked reading (64KB chunks) for older
+        Python versions.
+
+        Args:
+            path: Path to the file to hash.
+            algorithm: Multihash algorithm name (e.g., "sha2-256", "sha2-512").
+                Defaults to "sha2-256". Valid strings are those supported by the
+                multihash library and hashlib (with "sha2-" prefix) and can be
+                found in the multicodecs library docs:
+                https://github.com/multiformats/multicodec/blob/master/table.csv
+                or via `multihash.NAMES.keys()`.
+
+        Returns:
+            str: Hexadecimal multihash string.
+
+        Raises:
+            ValueError: If the specified algorithm is not supported by hashlib.
+        """
+        hashlib_name = algorithm.replace("sha2-", "sha").replace("-", "_")
+
+        if hashlib_name not in hashlib.algorithms_available:
+            raise ValueError(f"Algorithm '{algorithm}' not supported by hashlib.")
+
+        with path.open("rb") as f:
+            # Use file_digest if available (Python 3.11+)
+            if hasattr(hashlib, "file_digest"):
+                digest = hashlib.file_digest(f, hashlib_name).digest()
+            else:
+                # Fallback for Python < 3.11: read file in chunks
+                hash_obj = hashlib.new(hashlib_name)
+                while chunk := f.read(65536):  # 64KB chunks
+                    hash_obj.update(chunk)
+                digest = hash_obj.digest()
+
+        # Get multihash code for the algorithm
+        if algorithm not in multihash.NAMES:
+            raise ValueError(f"Algorithm '{algorithm}' not supported by multihash.")
+
+        return str(multihash.encode(digest, multihash.NAMES[algorithm]).hex())
 
     # this should be in PySTAC
     @staticmethod
