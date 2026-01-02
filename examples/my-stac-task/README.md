@@ -28,11 +28,11 @@ uvx --from github-content-downloader ghcd https://github.com/stac-utils/stac-tas
 
 ### via `stac-task` clone
 
-An alternative method is just to clone `stac-task` locally and `examples/my-stac-task` to the desired location.
+An alternative method is just to clone `stac-task` locally and copy `examples/my-stac-task` to the desired location.
 
 ## Initialize the STAC task project
 
-Initialize `git`:
+Initialize `git` in the STAC Task project directory:
 ```bash
 git init
 git add .
@@ -82,7 +82,8 @@ uv run my-stac-task run -h
 ## Template Usage
 
 This example STAC task is intended to be used as a template.
-- Update `pyproject.toml` with the project name, authors, description, dependencies, etc.
+- Update `pyproject.toml` with the project name, authors, description, dependencies,
+  etc.
 - Rename the folder `src/my_stac_task` to match the project name
 - Add test payload fixtures under `tests/fixtures`
 - Add code to `src/<project-name>/task.py` and add supporting files as needed
@@ -90,19 +91,27 @@ This example STAC task is intended to be used as a template.
 
 ## AI Prompt for Project Set-up
 
-Rename the `my-stac-task` project to <my-new-project>.
+Use the following markdown-formatted AI prompt to do any renaming for your project (replace `<my-new-project>` with your desired kebab-cased project name).
+```
+Rename the `my-stac-task` project to `<my-new-project>`.
 Find and replace all instances of `my-stac-task`:
 * replace all kebab case with the new project name (_e.g._ project and task references)
-* replace all camel case with a camel cased version of the new project name (_e.g._ `task.MyStacTask` references)
-* replace all snake case with a snake cased version of the new project name (_e.g._ source code directory)
+* replace all camel case with a camel cased version of the new project name (_e.g._
+  `task.MyStacTask` references)
+* replace all snake case with a snake cased version of the new project name (_e.g._
+  source code directory)
 
 Do not change any naming in:
 * `stac-task-user-guide.md`
 * `README.md`
 
 Validate the results of name changing:
-* Ensure all tests pass by running `uv run pytest -vv`.  Investigate the cause of any test failure and fix any project name references that are incorrect.
-* Ensure the CLI still runs locally using this payload: `tests/fixtures/payloads/success/payload1/in.json` and the `--local` argument.  Review any CLI failure and fix any project name references.
+* Ensure all tests pass by running `uv run pytest -vv`.  Investigate the cause of any
+  test failure and fix any project name references that are incorrect.
+* Ensure the CLI still runs locally using this payload:
+  `tests/fixtures/payloads/success/payload1/in.json` and the `--local` argument.  Review
+  any CLI failure and fix any project name references.
+```
 
 # Versions and Releases
 
