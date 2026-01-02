@@ -4,6 +4,16 @@
 
 This document describes how to initialize a local code repository and provides some background on `stac-task` and Cirrus payloads.
 
+## Table of Contents
+
+- [What do you need to know?](#what-do-you-need-to-know)
+- [Building the STAC task scaffolding](#build-the-stac-task-scaffolding)
+- [Initialize the STAC task project](#initialize-the-stac-task-project)
+- [Run the task](#run-the-task)
+- [Template Usage](#template-usage)
+- [AI Prompt for Project Set-up](#ai-prompt-for-project-set-up)
+- [Versions and Releases](#versions-and-releases)
+
 ## What do you need to know?
 
 Users should have some basic familiarity with [SpatioTemporal Asset Catalog (STAC)](https://stacspec.org/) concepts as well as the [specification/schemas for STAC objects](https://github.com/radiantearth/stac-spec).
@@ -12,7 +22,7 @@ STAC tasks are generally assumed (but not required) to be part of a [Cirrus work
 
 `my-stac-task` is set-up for and intended to be managed with [uv](https://docs.astral.sh/uv/).  Users should [install uv](https://docs.astral.sh/uv/getting-started/installation/) and see the specific initialization guidance below.
 
-## Building the STAC task scaffolding
+## Build the STAC task scaffolding
 
 `my-stac-task` lives in the `examples/` section of the `stac-task` code repository. To generate the scaffolding for a STAC task, `my-stac-task` should first be copied to a local directory; second, task naming needs to be adjusted to suit user needs.  There are a few ways to do that - here are two:
 
@@ -92,7 +102,7 @@ This example STAC task is intended to be used as a template.
 ## AI Prompt for Project Set-up
 
 Use the following markdown-formatted AI prompt to do any renaming for your project (replace `<my-new-project>` with your desired kebab-cased project name).
-```
+```markdown
 Rename the `my-stac-task` project to `<my-new-project>`.
 Find and replace all instances of `my-stac-task`:
 * replace all kebab case with the new project name (_e.g._ project and task references)
