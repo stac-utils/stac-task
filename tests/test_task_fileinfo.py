@@ -142,7 +142,7 @@ class TestComputeMultihash:
 
     def test_compute_multihash_invalid_algorithm(self, test_file_1: Path) -> None:
         """Test that invalid algorithm raises ValueError."""
-        with pytest.raises(ValueError, match="not supported"):
+        with pytest.raises(ValueError, match="Unsupported hash function"):
             Task.compute_multihash(test_file_1, algorithm="invalid-algo")
 
     def test_compute_multihash_nonexistent_file(self) -> None:

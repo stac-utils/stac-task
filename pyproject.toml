@@ -31,7 +31,7 @@ dependencies = [
     "jsonpath_ng>=1.5.3",
     "requests>=2.28.1",
     "s3fs>=2022.8.2",
-    "multihash>=0.1.1",
+    "py-multihash>=3.0.0",
 ]
 dynamic = [
     "version"

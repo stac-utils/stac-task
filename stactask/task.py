@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import hashlib
 import json
 import logging
 import sys
@@ -598,18 +597,16 @@ class Task(ABC):
     def compute_multihash(path: Path, algorithm: str = "sha2-256") -> str:
         """Compute a multihash checksum for a file.
 
-        Uses hashlib.file_digest (Python 3.11+) when available for optimal
-        performance. Falls back to chunked reading (64KB chunks) for older
-        Python versions.
+        Uses py-multihash to compute a multihash-compatible checksum.
 
         Args:
             path: Path to the file to hash.
             algorithm: Multihash algorithm name (e.g., "sha2-256", "sha2-512").
                 Defaults to "sha2-256". Valid strings are those supported by the
-                multihash library and hashlib (with "sha2-" prefix) and can be
-                found in the multicodecs library docs:
+                py-multihash library and can be found in the multicodecs library docs:
                 https://github.com/multiformats/multicodec/blob/master/table.csv
-                or via `multihash.NAMES.keys()`.
+                Algorithm strings can also be listed with:
+                `multihash.constants.HASH_CODES.keys()`
 
         Returns:
             str: Hexadecimal multihash string.
@@ -617,27 +614,14 @@ class Task(ABC):
         Raises:
             ValueError: If the specified algorithm is not supported by hashlib.
         """
-        hashlib_name = algorithm.replace("sha2-", "sha").replace("-", "_")
+        # check that the algorithm is supported by py-multihash and extract the
+        # algorithm code
+        code = multihash.coerce_code(algorithm)
 
-        if hashlib_name not in hashlib.algorithms_available:
-            raise ValueError(f"Algorithm '{algorithm}' not supported by hashlib.")
-
-        with path.open("rb") as f:
-            # Use file_digest if available (Python 3.11+)
-            if hasattr(hashlib, "file_digest"):
-                digest = hashlib.file_digest(f, hashlib_name).digest()
-            else:
-                # Fallback for Python < 3.11: read file in chunks
-                hash_obj = hashlib.new(hashlib_name)
-                while chunk := f.read(65536):  # 64KB chunks
-                    hash_obj.update(chunk)
-                digest = hash_obj.digest()
-
-        # Get multihash code for the algorithm
-        if algorithm not in multihash.NAMES:
-            raise ValueError(f"Algorithm '{algorithm}' not supported by multihash.")
-
-        return str(multihash.encode(digest, multihash.NAMES[algorithm]).hex())
+        # compute the multihash
+        with path.open(mode="rb") as f:
+            mh = multihash.sum_stream(f, code)
+        return multihash.to_hex_string(mh.encode())  # type: ignore[no-any-return]
 
     # this should be in PySTAC
     @staticmethod
