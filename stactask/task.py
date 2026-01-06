@@ -586,12 +586,9 @@ class Task(ABC):
                         path,
                         algorithm=hash_algorithm,
                     )
-                except (OSError, ValueError) as e:
-                    self.logger.error(
-                        "Failed to compute hash for %s: %s",
-                        path,
-                        e,
-                    )
+                except (OSError, ValueError):
+                    self.logger.exception("Failed to compute hash for %s", path)
+                    raise
 
     @staticmethod
     def compute_multihash(path: Path, algorithm: str = "sha2-256") -> str:
