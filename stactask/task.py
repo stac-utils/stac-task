@@ -586,7 +586,7 @@ class Task(ABC):
                         path,
                         algorithm=hash_algorithm,
                     )
-                except OSError as e:
+                except (OSError, ValueError) as e:
                     self.logger.error(
                         "Failed to compute hash for %s: %s",
                         path,
