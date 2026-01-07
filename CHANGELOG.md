@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ([#153]) Adds `upload_item_to_s3` method to the `Task` class to upload a
   STAC Item to S3 using configured upload options.
 
+### Changed
+
+- ([#204]) The logging format can now include a Lambda RequestId and makes consistent
+  use of colons to separate the log message elements.
+
 ## [v0.7.0] - 2025-09-17
 
 ### ⚠️ Breaking Change
@@ -193,6 +198,7 @@ Initial release.
 [v0.1.1]: <https://github.com/stac-utils/stac-task/compare/v0.1.0...v0.1.1>
 [v0.1.0]: <https://github.com/stac-utils/stac-task/tree/v0.1.0>
 
+[#204]: https://github.com/stac-utils/stac-task/pull/204
 [#176]: https://github.com/stac-utils/stac-task/pull/176
 [#167]: https://github.com/stac-utils/stac-task/pull/167
 [#166]: https://github.com/stac-utils/stac-task/pull/166
