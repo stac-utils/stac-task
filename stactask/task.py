@@ -17,6 +17,7 @@ from urllib.parse import urlparse
 import fsspec
 import multihash  # type: ignore[import-untyped]
 from boto3utils import s3
+from multihash import MultihashError
 from pystac import Asset, Item, ItemCollection, Link
 from pystac.extensions.file import ByteOrder, FileExtension
 from pystac.layout import LayoutTemplate
@@ -586,9 +587,8 @@ class Task(ABC):
                         path,
                         algorithm=hash_algorithm,
                     )
-                except (OSError, ValueError):
-                    self.logger.exception("Failed to compute hash for %s", path)
-                    raise
+                except Exception as e:
+                    raise MultihashError("Failed to compute hash for %s", path) from e
 
     @staticmethod
     def compute_multihash(path: Path, algorithm: str = "sha2-256") -> str:
