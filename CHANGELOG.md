@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - ([#153]) Adds `upload_item_to_s3` method to the `Task` class to upload a
   STAC Item to S3 using configured upload options.
+- ([201]) Adds a payload doc (single source of truth) and adjusts other
+  references accordingly.
 
 ## [v0.7.0] - 2025-09-17
 
