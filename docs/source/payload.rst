@@ -13,11 +13,12 @@ The conceptual thought process behind constructing a payload is this:
 
 1. Identify or define the STAC Item(s) to be processed.
 2. Define the workflow:
-    - How should the workflow be structured? (*e.g.* single STAC task? series
-      of STAC tasks?)
-    - What global parameters should be applied to all tasks in the workflow?
-    - How should each task be configured? (*i.e.*, what parameters are required
-      for each task)?
+
+   - How should the workflow be structured? (*e.g.* single STAC task? series
+     of STAC tasks?)
+   - What global parameters should be applied to all tasks in the workflow?
+   - How should each task be configured? (*i.e.*, what parameters are required
+     for each task)?
 3. How should Collections be assigned to the output STAC Item(s)?
 4. How and where should Items and Item Assets be uploaded?
 
@@ -44,7 +45,7 @@ fields.
      - An array of STAC Items
    * - :ref:`process <process-definition>`
      - [ProcessDefinition Object]
-     - An array of :ref:`ProcessDefinition <process-definition>` objects
+     - An array of one :ref:`ProcessDefinition <process-definition>` object
 
 A very basic payload with a single STAC Item and a single global workflow
 parameter might look like this:
@@ -71,10 +72,10 @@ parameter might look like this:
 ProcessDefinition Object
 ========================
 
-The ``process`` block includes a ``ProcessDefinition`` object that provides the
-configuration options for a Task or a workflow of Tasks. Each Task in the
-workflow can have its own configuration options, and there are also global
-options that apply to all Tasks in the workflow.
+The ``process`` block (array) must include a *single* ``ProcessDefinition``
+object that provides the configuration options for a Task or a workflow of
+Tasks. Each Task in the workflow can have its own configuration options, and
+there are also global options that apply to all Tasks in the workflow.
 
 The following fields are supported in a ``ProcessDefinition`` object:
 
@@ -159,7 +160,7 @@ Here is an example ``tasks`` dictionary with two tasks, ``task-a`` and ``task-c`
 
 In the example above, a task named ``task-a`` would have the ``param1=value1``
 key-value pair passed as a keyword, while ``task-c`` would have
-``param2=value2`` passed. If there were a ``task-b`` to be run, it would not be
+``param2=value2`` passed in. If there were a ``task-b`` to be run, it would not be
 passed any keywords.
 
 .. _upload-options:
@@ -182,30 +183,30 @@ The following fields are supported in an ``UploadOptions`` object:
      - Description
    * - path_template
      - string
-     - **REQUIRED.** A string template for specifying the location of uploaded assets
+     - **REQUIRED.** A string template for specifying the location of uploaded Assets
    * - public_assets
      - [string]
-     - A list of asset keys that should be marked as public when uploaded
+     - A list of Asset keys that should be marked as public when uploaded
    * - headers
      - Map<string, string>
      - A set of key, value headers to send when uploading data to S3
    * - collections
      - Map<string, string>
-     - **DEPRECATED.** A mapping of output collection name to a JSONPath
+     - **DEPRECATED.** A mapping of output Collection name to a JSONPath
        pattern
    * - s3_urls
      - boolean
      - Controls the format of hrefs (URLs) in the output STAC Item(s) - either
        *s3://* if ``true`` or *https://* if false. Defaults to ``false``
 
-Upload options can be defined either globally or by collection:
+Upload options can be defined either globally or by Collection:
 
    - If the ``process`` block has a top-level ``upload_options`` key, that
      ``UploadOptions`` object will define global upload options.
-   - If collection-specific options are provided (via the ``collection_options``
+   - If Collection-specific options are provided (via the ``collection_options``
      key in the ``ProcessDefinition`` object), and those options include an
      ``upload_options`` key, ``stac-task`` will override the global options with
-     the collection-specific options for any Items assigned to that collection.
+     the Collection-specific options for any Items assigned to that Collection.
      See :ref:`collection-options <collection-options>`, below, for more
      information.
 
@@ -240,7 +241,7 @@ Example:
        "...other fields..."
    }
 
-...would have its assets uploaded to this path:
+...would have its Assets uploaded to this path:
 ``s3://my-bucket/landsat-c2l2/2020/07/16/LC08_044034_20200716/``
 
 collections
@@ -253,7 +254,7 @@ collections
    **using the** ``collections`` **field may result in incorrect Collection
    assignment.**
 
-The ``collections`` dictionary provides a collection ID and JSONPath pattern
+The ``collections`` dictionary provides a Collection ID and JSONPath pattern
 for matching against STAC Items. Following processing, when Items are returned
 from the ``Task.process`` method Items are checked against the patterns in the
 ``collections`` dictionary and Collection ID is assigned based on JSONPath
@@ -271,8 +272,8 @@ Example:
    }
 
 In this example, the task will set any STAC Items that have an ID beginning
-with "LC08" to the ``landsat-c2l2`` collection and any STAC Items that have an
-ID beginning with "S2" to the ``sentinel-2-l2a`` collection.
+with "LC08" to the ``landsat-c2l2`` Collection and any STAC Items that have an
+ID beginning with "S2" to the ``sentinel-2-l2a`` Collection.
 
 s3_urls
 ^^^^^^^
@@ -294,12 +295,12 @@ CollectionMatcher Object
 ------------------------
 
 The ``collection_matchers`` array provides the information for ``stac-task`` to
-automatically search returned STAC Items and assign collections to them.
+automatically search returned STAC Items and assign a Collection to each one.
 Collection assignment works by searching an Item for a JSONPath pattern and, if
 that pattern is found, setting the Item's Collection. A "catch_all" object can
 be included to assign a Collection to any Item without a match.
 ``collection_matchers`` are processed in the order they appear in the array,
-thus the first match found determines the collection assignment.
+thus the first match found determines the Collection assignment.
 
 Note that Collection assignment occurs *after* Items have been returned from
 the ``Task.process`` method (*i.e.* after user-defined processing is
@@ -322,7 +323,7 @@ exclusive with the legacy ``collections`` field in ``UploadOptions``.
      - **CONDITIONAL.** JSONPath pattern for matching Items. Required for all types except "catch_all"
    * - collection_name
      - string
-     - **REQUIRED.** The collection ID to assign to matching Items
+     - **REQUIRED.** The Collection ID to assign to matching Items
 
 Example:
 
@@ -346,7 +347,7 @@ Example:
    ]
 
 In this example, Items whose ID begins with "LC08" will be assigned to the
-``landsat-c2l2`` collection, those whose ID begins with "S2" will be assigned
+``landsat-c2l2`` Collection, those whose ID begins with "S2" will be assigned
 to ``sentinel-2-l2a``, and any remaining Items will be assigned to
 ``default-collection``.
 
@@ -359,9 +360,9 @@ collection_options
 ------------------
 
 The ``collection_options`` field is a dictionary that allows you to specify
-collection-specific configuration options, including ``UploadOptions`` objects. For
-example, when uploading asset data to S3, the Task will first look for
-collection-specific upload options and fall back to the global options (the top-level
+Collection-specific configuration options, including ``UploadOptions`` objects. For
+example, when uploading Asset data to S3, the Task will first look for
+Collection-specific upload options and fall back to the global options (the top-level
 ``upload_options`` dictionary) if none are found.
 
 Example:
