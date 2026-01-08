@@ -106,6 +106,7 @@ class Task(ABC):
         skip_validation: bool = False,  # deprecated
         upload: bool = True,
         validate: bool = True,
+        aws_request_id: str | None = None,
     ):
         self.payload = Payload(payload)
         self.payload.validate()
@@ -133,8 +134,9 @@ class Task(ABC):
             self._save_workdir = save_workdir if save_workdir is not None else True
 
         self.logger = TaskLoggerAdapter(
-            logging.getLogger(self.name),
-            self.payload.get("id"),
+            logger=logging.getLogger(self.name),
+            payload_id=self.payload.get("id"),
+            aws_request_id=aws_request_id,
         )
 
     @property
