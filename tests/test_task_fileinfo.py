@@ -151,6 +151,29 @@ class TestComputeMultihash:
         with pytest.raises(FileNotFoundError):
             Task.compute_multihash(nonexistent)
 
+    def test_add_fileinfo_raises_multihasherror_on_compute_failure(
+        self,
+        simple_task: SimpleTestTask,
+        test_file_1: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Raise MultihashError if compute_multihash fails."""
+
+        item = create_test_item()
+        asset = Asset(href=str(test_file_1))
+        item.add_asset("test", asset)
+
+        # patch compute_multihash to error out
+        def _raise(path: Path, algorithm: str = "sha2-256") -> str:
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(Task, "compute_multihash", staticmethod(_raise))
+
+        from multihash import MultihashError  # type: ignore[import-untyped]
+
+        with pytest.raises(MultihashError):
+            simple_task.add_fileinfo_to_local_asset(asset, autofill=True)
+
 
 # Tests for add_fileinfo_to_local_asset
 class TestAddFileinfoToLocalAsset:

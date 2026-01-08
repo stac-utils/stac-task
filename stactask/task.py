@@ -588,7 +588,7 @@ class Task(ABC):
                         algorithm=hash_algorithm,
                     )
                 except Exception as e:
-                    raise MultihashError("Failed to compute hash for %s", path) from e
+                    raise MultihashError(f"Failed to compute hash for {path!s}") from e
 
     @staticmethod
     def compute_multihash(path: Path, algorithm: str = "sha2-256") -> str:
