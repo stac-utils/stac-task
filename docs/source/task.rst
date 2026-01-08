@@ -62,3 +62,11 @@ Instance methods
   local workdir and upload only those to S3 (based on path templates), updating hrefs.
 * **upload_item_to_s3**: Upload a single Item JSON to S3 (based on path templates) as a
   JSON file.
+* **add_fileinfo_to_local_assets**: Convenience method to add file information (``file
+  size``, multihash ``checksum``) to local Item Assets.  When called, the STAC File
+  extension is added to the Item's Extension list. Non-local assets are skipped.
+* **add_fileinfo_to_local_asset**: Convenience method to add file information to a
+  single local Asset. This method allows you to add any field from the
+  `STAC File extension <https://github.com/stac-extensions/file>`_. Metadata values are
+  passed in; ``file size`` and ``checksum`` are calculated automatically by default but
+  can be overridden. Non-local assets are skipped.
