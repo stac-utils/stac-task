@@ -1,11 +1,10 @@
 import argparse
 import json
 import logging
-import subprocess
 import sys
 import warnings
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import fsspec
 
@@ -66,7 +65,6 @@ class CLI:
             required=True,
             help="Name of the task you wish to run",
         )
-
 
         # additional options
         run_parser.add_argument(
@@ -231,11 +229,13 @@ workdir = 'local-output', output = 'local-output/output-payload.json') """,
 
         # run task handler
         task_name = args.pop("task")
-        payload_out = self.tasks[task_name].handler(payload, **args)
+        return self.tasks[task_name].handler(payload, **args)
 
-        return payload_out
-
-    def _write_output(self, output: dict[str, Any], href_out: str | None = None) -> None:
+    def _write_output(
+        self,
+        output: dict[str, Any],
+        href_out: str | None = None,
+    ) -> None:
         if href_out is None:
             json.dump(output, sys.stdout)
         else:
