@@ -15,7 +15,6 @@ from typing import Any
 
 import fsspec
 from boto3utils import s3
-from pydantic import BaseModel
 from pystac import Asset, Item, ItemCollection, Link
 from pystac.layout import LayoutTemplate
 from pystac.utils import datetime_to_str
@@ -94,9 +93,6 @@ class Task(ABC):
     description = "A task for doing things"
     version = "0.1.0"
 
-    input_model: BaseModel | None = None
-    output_model: BaseModel | None = None
-
     def __init__(
         self: "Task",
         payload: dict[str, Any],
@@ -156,19 +152,11 @@ class Task(ABC):
         self.payload = Payload(value)
 
     @classmethod
-    def metadata(cls) -> dict[str, str]:
-        input_schema = output_schema = None
-        if cls.input_model:
-            input_schema = cls.input_model.model_json_schema()
-        if cls.output_model:
-            output_schema = cls.output_model.model_json_schema()
-
+    def metadata(cls) -> dict[str, Any]:
         return {
             "name": cls.name,
             "version": cls.version,
             "description": cls.description,
-            "input_schema": input_schema,
-            "output_schema": output_schema,
         }
 
     @property
