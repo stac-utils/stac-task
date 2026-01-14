@@ -75,7 +75,10 @@ def test_failed_validation(payload: dict[str, Any]) -> None:
 
 def test_deprecated_payload_dict(nothing_task: Task) -> None:
     nothing_task._payload["process"] = nothing_task._payload["process"][0]
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"use `payload.process_definition` instead",
+    ):
         _ = nothing_task.process_definition
 
 
@@ -200,6 +203,53 @@ def test_task_handler(payload: dict[str, Any]) -> None:
         lk for lk in output_items["features"][0]["links"] if lk["rel"] == "derived_from"
     )
     assert derived_link["href"] == self_link["href"]
+
+
+def test_parse_no_args() -> None:
+    with pytest.raises(SystemExit):
+        NothingTask.parse_args([])
+
+
+def test_parse_args() -> None:
+    args = NothingTask.parse_args(["run", "input", "--save-workdir"])
+    assert args["command"] == "run"
+    assert args["logging"] == "INFO"
+    assert args["input"] == "input"
+    assert args["save_workdir"] is True
+    assert args["upload"] is True
+    assert args["validate"] is True
+
+
+def test_parse_args_deprecated_skip() -> None:
+    args = NothingTask.parse_args(
+        ["run", "input", "--skip-upload", "--skip-validation"],
+    )
+    assert args["upload"] is False
+    assert args["validate"] is False
+
+
+def test_parse_args_no_upload_and_no_validation() -> None:
+    args = NothingTask.parse_args(["run", "input", "--no-upload", "--no-validate"])
+    assert args["upload"] is False
+    assert args["validate"] is False
+
+
+def test_parse_args_no_upload_and_validation() -> None:
+    args = NothingTask.parse_args(["run", "input", "--no-upload", "--validate"])
+    assert args["upload"] is False
+    assert args["validate"] is True
+
+
+def test_parse_args_upload_and_no_validation() -> None:
+    args = NothingTask.parse_args(["run", "input", "--upload", "--no-validate"])
+    assert args["upload"] is True
+    assert args["validate"] is False
+
+
+def test_parse_args_upload_and_validation() -> None:
+    args = NothingTask.parse_args(["run", "input", "--upload", "--validate"])
+    assert args["upload"] is True
+    assert args["validate"] is True
 
 
 def test_collection_mapping(nothing_task: Task) -> None:

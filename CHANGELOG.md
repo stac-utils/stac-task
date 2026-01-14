@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Factored CLI out of `Task` class into its own module and added support
   for executing one of multiple tasks.
+- add a doc defining `stactask.Task` features (properties, attributes, and instance
+  methods)
+- ([#183]) Adds Task methods to add file metadata to Item Assets (supported by the STAC
+  File Info Extension) - user-facing functions are `add_fileinfo_to_local_assets`
+  (multiple Item Assets) and `add_fileinfo_to_local_asset` (single Item Asset).
 
 ## [v0.7.0] - 2025-09-17
 

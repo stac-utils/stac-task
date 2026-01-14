@@ -10,6 +10,9 @@ except ImportError:
     __version_tuple__ = ("0", "0", "0")
 
 __all__ = [
+    "DownloadConfig",
+    "Payload",
+    "Task",
     "__version__",
     "__version_tuple__",
     "CLI",
