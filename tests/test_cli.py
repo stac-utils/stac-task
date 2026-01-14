@@ -95,8 +95,6 @@ def test_metadata_command(cli: CLI) -> None:
                 "name": "nothing-task",
                 "description": "this task does nothing",
                 "version": "0.1.0",
-                "input_schema": None,
-                "output_schema": None,
             },
         },
     }

@@ -290,30 +290,4 @@ def test_task_metadata(schema_task: Task) -> None:
         "name": "schema-task",
         "version": "0.2.0",
         "description": "this task defines input and output models",
-        "input_schema": {
-            "properties": {
-                "a": {
-                    "title": "A",
-                    "type": "integer",
-                },
-                "b": {
-                    "title": "B",
-                    "type": "string",
-                },
-            },
-            "required": ["a", "b"],
-            "title": "InputModel",
-            "type": "object",
-        },
-        "output_schema": {
-            "properties": {
-                "c": {
-                    "title": "C",
-                    "type": "number",
-                },
-            },
-            "required": ["c"],
-            "title": "OutputModel",
-            "type": "object",
-        },
     }
