@@ -7,10 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### ⚠️ Breaking Change
+
+- `run` CLI command now has a required `--task` option.
+
 ### Added
 
 - ([#153]) Adds `upload_item_to_s3` method to the `Task` class to upload a
   STAC Item to S3 using configured upload options.
+- Adds `metadata` command to CLI to extract info about tasks registered with
+  CLI.
+
+### Changed
+
+- Factored CLI out of `Task` class into its own module and added support
+  for executing one of multiple tasks.
 - add a doc defining `stactask.Task` features (properties, attributes, and instance
   methods)
 - ([#183]) Adds Task methods to add file metadata to Item Assets (supported by the STAC

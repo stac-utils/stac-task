@@ -1,3 +1,4 @@
+from .cli import CLI
 from .config import DownloadConfig
 from .payload import Payload
 from .task import Task
@@ -14,4 +15,8 @@ __all__ = [
     "Task",
     "__version__",
     "__version_tuple__",
+    "CLI",
+    "Task",
+    "Payload",
+    "DownloadConfig",
 ]
