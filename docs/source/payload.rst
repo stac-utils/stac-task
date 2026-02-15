@@ -70,14 +70,14 @@ parameter might look like this:
 ProcessDefinition Object
 ========================
 
-The ``process`` block (array) should include a *single* ``ProcessDefinition``
+The ``process`` block (array) must include a *single* ``ProcessDefinition``
 object containing the configuration options for a Task or a workflow. Each Task
 in the workflow can have its own configuration options, and there are also
 global options that apply to all Tasks in the workflow.
 
-Note that while the ``process`` array *can* include multiple ``ProcessDefinition``
-objects, ``stac-task`` only supports a single ``ProcessDefinition`` and will
-only read the first one in the ``process`` array. **\***
+Note that while the ``process`` array *can* include multiple
+``ProcessDefinition`` objects, ``stac-task`` reads only the first
+``ProcessDefinition`` in the ``process`` array. **\***
 
 The following fields are supported in a ``ProcessDefinition`` object:
 
@@ -152,10 +152,10 @@ Here is an example ``tasks`` dictionary with two tasks, ``task-a`` and ``task-c`
        }
    }
 
-In the example above, a task named ``task-a`` would have the ``param1=value1``
+In the example above, a task named ``task-a`` would have the ``param1='value1'``
 key-value pair passed as a keyword, while ``task-c`` would have
-``param2=value2`` passed in. If there were a ``task-b`` to be run, it would not be
-passed any keywords.
+``param2='value2'`` passed in. If there were a ``task-b`` to be run, it would
+not be passed any keywords.
 
 .. _workflow-options:
 
@@ -169,15 +169,29 @@ If a key in the ``workflow_options`` dictionary conflicts with a key in a
 task's option dictionary, the task option value takes precedence.
 
 Here is an example of a ``workflow_options`` dictionary with a single global
-parameter:
+parameter, and how ``workflow_options`` interacts with task-specific parameter
+values:
 
 .. code-block:: json
 
    {
        "workflow_options": {
-           "global_param": "global_value"
+           "param1": "global_value"
+        },
+       "tasks": {
+           "task-a": {
+               "param1": "value1"
+           },
+           "task-c": {
+               "param2": "value2"
+           }
        }
    }
+
+In this case, ``task-a`` would get one keyword argument ``param1='value1'``
+(overriding the global value for ``param1``), while ``task-c`` would get two:
+``param1='global_value'`` and ``param2='value2'``. If another task ``task-b``
+also runs, it would get one keyword argument ``param1='global_value'``.
 
 .. _upload-options:
 
