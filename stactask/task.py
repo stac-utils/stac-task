@@ -156,6 +156,14 @@ class Task(ABC):
         )
         self.payload = Payload(value)
 
+    @classmethod
+    def metadata(cls) -> dict[str, Any]:
+        return {
+            "name": cls.name,
+            "version": cls.version,
+            "description": cls.description,
+        }
+
     @property
     def process_definition(self) -> dict[str, Any]:
         warnings.warn(

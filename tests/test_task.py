@@ -13,7 +13,7 @@ from pystac import Asset
 from stactask.exceptions import FailedValidation
 from stactask.task import Task
 
-from .tasks import DerivedItemTask, FailValidateTask, NothingTask
+from .tasks import DerivedItemTask, FailValidateTask, NothingTask, SchemaTask
 
 testpath = Path(__file__).parent
 cassettepath = testpath / "fixtures" / "cassettes"
@@ -36,6 +36,11 @@ def nothing_task(payload: dict[str, Any]) -> Task:
 @pytest.fixture
 def derived_item_task(payload: dict[str, Any]) -> Task:
     return DerivedItemTask(payload)
+
+
+@pytest.fixture
+def schema_task(payload: dict[str, Any]) -> Task:
+    return SchemaTask(payload)
 
 
 @pytest.fixture
@@ -280,5 +285,9 @@ def test_s3_upload(nothing_task: Task, mock_s3_client: Callable[[], s3]) -> None
     )
 
 
-if __name__ == "__main__":
-    output = NothingTask.cli()
+def test_task_metadata(schema_task: Task) -> None:
+    assert schema_task.metadata() == {
+        "name": "schema-task",
+        "version": "0.2.0",
+        "description": "this task defines input and output models",
+    }
