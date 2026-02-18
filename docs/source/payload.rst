@@ -7,16 +7,13 @@ A STAC task payload defines the inputs for a STAC task or a STAC workflow
 configuration that encapsulates both the STAC Items to process and options
 needed by ``stac-task``. A payload is a STAC FeatureCollection that (usually)
 contains one or more STAC Items and a ``process`` definition that configures
-the workflow.
+the task(s).
 
 The conceptual thought process behind constructing a payload is this:
 
 1. Identify or define the STAC Item(s) to be processed.
-2. Configure the STAC workflow:
-
-   - What is the proposed workflow (*e.g.* single task? series of tasks?)
-   - What parameters are required for each task? (And, are there any global
-     parameters that should apply to all tasks in the workflow?)
+2. Configure the STAC task(s): What parameters are required for each task?
+   (And, are there any global parameters that should apply to all tasks?)
 3. Which Collection(s) should be assigned to the output STAC Item(s) and how?
 4. Where should Items and Item Assets be uploaded?
 
@@ -45,8 +42,8 @@ fields.
      - [ProcessDefinition | ProcessDefinition]
      - An array of one or more :ref:`ProcessDefinition <process-definition>` objects
 
-A very basic payload with a single STAC Item and a single global workflow
-parameter might look like this:
+A very basic payload with a single STAC Item and a single global parameter
+might look like this:
 
 .. code-block:: json
 
@@ -71,9 +68,9 @@ ProcessDefinition Object
 ========================
 
 The ``process`` block (array) must include a *single* ``ProcessDefinition``
-object containing the configuration options for a Task or a workflow. Each Task
-in the workflow can have its own configuration options, and there are also
-global options that apply to all Tasks in the workflow.
+object containing the configuration options for a Task or a set of Tasks. Each
+Task can have its own configuration options, and there are also global options
+that apply to all Tasks.
 
 Note that while the ``process`` array *can* include multiple
 ``ProcessDefinition`` objects, ``stac-task`` reads only the first
@@ -96,7 +93,7 @@ The following fields are supported in a ``ProcessDefinition`` object:
      - Dictionary of task configurations
    * - :ref:`workflow_options <workflow-options>`
      - ``Map<string, Any>``
-     - Dictionary of configuration options applied to all tasks in a workflow
+     - Dictionary of configuration options applied to all tasks
    * - :ref:`upload_options <upload-options>`
      - ``UploadOptions`` Object
      - An :ref:`UploadOptions <upload-options>` object
@@ -474,7 +471,6 @@ the ``tasks`` dictionary.
         "features": [],
         "process": [
             {
-                "workflow": "image-ingest",
                 "upload_options": {
                     "path_template": "s3://image-bucket/${collection}/${year}/${month}/${day}/${id}",
                     "s3_urls": true
@@ -494,7 +490,7 @@ In this example, in addition to handling any image processing logic, the
 ``image-ingest`` task would create a new STAC Item based on the provided
 parameters. The variables in the ``path_template`` would be populated from the
 new STAC Item's properties. The output of the task would be a payload including
-the new STAC Item. There are no other tasks defined in the workflow.
+the new STAC Item. There are no other tasks defined in this payload.
 
 .. _cog-generation-single-stac-item-payload:
 
@@ -555,7 +551,6 @@ and provides the necessary parameters to generate a cloud-optimized GeoTIFF
         ],
         "process": [
             {
-                "workflow": "cog-generation",
                 "tasks": {
                     "cog-generation": {
                         "asset-key": "tif",
@@ -633,7 +628,6 @@ data to be processed.
         ],
         "process": [
             {
-                "description": "NDVI COG Workflow",
                 "workflow_options": {
                     "asset_keys": ["red", "nir"],
                 },
@@ -660,11 +654,11 @@ data to be processed.
         ]
     }
 
-The workflow described by this payload configures the `asset-fetcher` task to
-download the specified Assets, the `atmospheric-correction` task to apply
-AtmoFixer correction using a provided DEM, and the `ndvi-generator` task to
-calculate NDVI. Each task specifies an output Collection for the resulting STAC
+The payload configures 3 separate STAC tasks: the `asset-fetcher` task
+downloads the specified Assets, the `atmospheric-correction` task applies
+AtmoFixer correction using a provided DEM, and the `ndvi-generator` task
+calculates NDVI. Each task specifies an output Collection for the resulting STAC
 Items. The global ``asset_keys`` parameter ensures that only the red and NIR
-bands are processed throughout the workflow. The final output STAC Items and
+bands are processed by each task. The final output STAC Items and
 Assets are uploaded by each task to the specified S3 path via the
 ``upload_options``.
