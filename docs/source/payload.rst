@@ -166,8 +166,8 @@ If a key in the ``workflow_options`` dictionary conflicts with a key in a
 task's option dictionary, the task option value takes precedence.
 
 Here is an example of a ``workflow_options`` dictionary with a single global
-parameter, and how ``workflow_options`` interacts with task-specific parameter
-values:
+parameter that shows how ``workflow_options`` interacts with task-specific
+parameter values:
 
 .. code-block:: json
 
@@ -490,7 +490,7 @@ In this example, in addition to handling any image processing logic, the
 ``image-ingest`` task would create a new STAC Item based on the provided
 parameters. The variables in the ``path_template`` would be populated from the
 new STAC Item's properties. The output of the task would be a payload including
-the new STAC Item. There are no other tasks defined in this payload.
+the new STAC Item. There are no other task options defined in this payload.
 
 .. _cog-generation-single-stac-item-payload:
 
