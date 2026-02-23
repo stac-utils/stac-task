@@ -21,7 +21,10 @@ A simple task definition
 
 The intended use of **stac-task** is for a developer to extend the ``stactask.Task``
 class. A trivial example class that does this is shown below. It accepts a payload
-containing a task parameter ``item_id`` and generates a STAC Item with this ID.
+containing a task parameter ``item_id`` and generates a STAC Item with this ID. For AWS
+Lambda deployments, you must provide a handler function (shown in the example below).
+You can optionally pass the context's AWS Lambda request ID to the handler function to
+include it in log messages.
 
 .. code-block:: python
 
@@ -75,7 +78,7 @@ containing a task parameter ``item_id`` and generates a STAC Item with this ID.
 
    # Support for running as a Lambda Function
    def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-      return MyTask.handler(event)
+      return MyTask.handler(event, aws_request_id=context.aws_request_id)
 
    # Support for running as a CLI application
    if __name__ == "__main__":

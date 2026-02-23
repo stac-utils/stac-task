@@ -106,6 +106,7 @@ class Task(ABC):
         skip_validation: bool = False,  # deprecated
         upload: bool = True,
         validate: bool = True,
+        aws_request_id: str | None = None,
     ):
         self.payload = Payload(payload)
         self.payload.validate()
@@ -134,7 +135,7 @@ class Task(ABC):
 
         self.logger = TaskLoggerAdapter(
             logging.getLogger(self.name),
-            self.payload.get("id"),
+            " ".join(filter(None, [self.payload.get("id"), aws_request_id])),
         )
 
     @property

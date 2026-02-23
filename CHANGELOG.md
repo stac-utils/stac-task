@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ([#201]) Adds a payload doc (single source of truth) and adjusts other
   references accordingly.
 
+### Changed
+
+- ([#204]) Log records can now include an AWS Lambda RequestId in the log prefix.
+
 ## [v0.7.0] - 2025-09-17
 
 ### ⚠️ Breaking Change
@@ -199,6 +203,7 @@ Initial release.
 [v0.1.1]: <https://github.com/stac-utils/stac-task/compare/v0.1.0...v0.1.1>
 [v0.1.0]: <https://github.com/stac-utils/stac-task/tree/v0.1.0>
 
+[#204]: https://github.com/stac-utils/stac-task/pull/204
 [#176]: https://github.com/stac-utils/stac-task/pull/176
 [#167]: https://github.com/stac-utils/stac-task/pull/167
 [#166]: https://github.com/stac-utils/stac-task/pull/166
