@@ -5,13 +5,13 @@ import logging
 import sys
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Coroutine, Iterable
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
-from typing import Any
+from typing import Any, TypeVar
 from urllib.parse import urlparse
 
 import fsspec
@@ -38,6 +38,7 @@ from .utils import find_collection as utils_find_collection
 
 # types
 PathLike = str | Path
+T = TypeVar("T")
 
 
 class DeprecatedStoreTrueAction(argparse._StoreTrueAction):
@@ -297,6 +298,17 @@ class Task(ABC):
             if coll := utils_find_collection(collection_config, item):
                 item["collection"] = coll
 
+    @staticmethod
+    def _run_coroutine(coroutine_factory: Callable[[], Coroutine[Any, Any, T]]) -> T:
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(coroutine_factory())
+
+        raise RuntimeError(
+            "Sync Task download helpers cannot run inside an active event loop",
+        )
+
     def download_item_assets(
         self,
         item: Item,
@@ -319,8 +331,8 @@ class Task(ABC):
                 file names should be used, or asset key + extension.
             file_name (str | None): The name of the item file to save.
         """
-        return asyncio.get_event_loop().run_until_complete(
-            download_item_assets(
+        return self._run_coroutine(
+            lambda: download_item_assets(
                 item,
                 path_template=str(self._workdir / path_template),
                 config=config,
@@ -352,15 +364,13 @@ class Task(ABC):
                 file names should be used, or asset key + extension.
             file_name (str | None): The name of the item file to save.
         """
-        return list(
-            asyncio.get_event_loop().run_until_complete(
-                download_items_assets(
-                    items,
-                    path_template=str(self._workdir / path_template),
-                    config=config,
-                    keep_non_downloaded=keep_non_downloaded,
-                    file_name=file_name,
-                ),
+        return self._run_coroutine(
+            lambda: download_items_assets(
+                items,
+                path_template=str(self._workdir / path_template),
+                config=config,
+                keep_non_downloaded=keep_non_downloaded,
+                file_name=file_name,
             ),
         )
 
