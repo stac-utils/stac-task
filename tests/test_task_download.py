@@ -1,10 +1,12 @@
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import stac_asset
+from pystac import Item
 
+import stactask.task as task_module
 from stactask.config import DownloadConfig
 
 from .tasks import NothingTask
@@ -18,6 +20,41 @@ def item_collection() -> dict[str, Any]:
         items = json.loads(f.read())
     assert isinstance(items, dict)
     return items
+
+
+def test_download_helpers_do_not_request_default_event_loop(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    item_collection: dict[str, Any],
+) -> None:
+    async def fake_download_item_assets(*args: Any, **_kwargs: Any) -> Item:
+        return cast(Item, args[0])
+
+    async def fake_download_items_assets(*args: Any, **_kwargs: Any) -> list[Item]:
+        return cast("list[Item]", list(args[0]))
+
+    def fail_get_event_loop() -> None:
+        raise AssertionError("download helpers should not call get_event_loop()")
+
+    monkeypatch.setattr(task_module, "download_item_assets", fake_download_item_assets)
+    monkeypatch.setattr(
+        task_module,
+        "download_items_assets",
+        fake_download_items_assets,
+    )
+    monkeypatch.setattr(task_module.asyncio, "get_event_loop", fail_get_event_loop)
+
+    t = NothingTask(
+        item_collection,
+        workdir=tmp_path / "test-task-download-event-loop",
+        save_workdir=True,
+    )
+
+    item = t.download_item_assets(t.items[0])
+    items = t.download_items_assets(t.items)
+
+    assert item is t.items[0]
+    assert items == t.items
 
 
 def test_download_nosuch_asset(tmp_path: Path, item_collection: dict[str, Any]) -> None:
